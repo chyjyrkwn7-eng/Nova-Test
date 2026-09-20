@@ -27007,7 +27007,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-21";
+const APP_BUILD = "2026-09-20-22";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28329,7 +28329,12 @@ function showAppearance(){
   lbWrap.appendChild(document.createTextNode("Show me on the leaderboard"));
   const lbHint = document.createElement("span");
   lbHint.className = "ohint";
-  lbHint.textContent = "Shares your username, avatar, points, and stars \u2014 nothing else. Turning this off also hides the leaderboard itself, since seeing it means being on it. You can turn this off any time.";
+  /* Kept: exactly what gets shared, and that switching off hides the
+     board too - the one consequence someone would not guess. Dropped:
+     the explanation of WHY that is (seeing it means being on it) and
+     the reassurance that it can be turned off later, which a switch
+     already implies. */
+  lbHint.textContent = "Shares your name, avatar, points, and stars \u2014 nothing else. Turn this off and the leaderboard is hidden too.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
   lbSect.appendChild(lbRow);
