@@ -1,5 +1,6 @@
 {
-  "build": "2026-09-20-1",
-  "reinstall": false,
-  "note": ""
+  "build": "2026-09-20-2",
+  "note": "",
+  "frameId": "2026-09-20-statusbar",
+  "frameNote": ""
 }

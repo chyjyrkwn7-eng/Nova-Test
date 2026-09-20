@@ -3395,6 +3395,33 @@
     background:rgba(255,255,255,.55); color:#1A2027; border-color:rgba(255,255,255,.5);
     box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
+  /* The re-add-to-Home-Screen variant. Stacked rather than inline
+     because its message is a full sentence with a condition in it, not a
+     four-word status line, and it carries two actions instead of one -
+     side by side with that much text it wraps into a mess on a phone. */
+  .update-banner.is-frame{
+    position:fixed; flex-direction:column; align-items:stretch; gap:.6rem;
+    padding:.9rem 1.1rem 1rem;
+  }
+  .update-banner.is-frame .update-banner-text{ padding-right:1.5rem; }
+  .update-banner-row{ display:flex; gap:.5rem; }
+  /* Equal halves, so neither action reads as the default one. Re-adding
+     the icon and saying it is already done are both legitimate answers. */
+  .update-banner-row .update-banner-btn{ flex:1 1 0; }
+  .update-banner.is-frame .update-banner-close{
+    position:absolute; top:.4rem; right:.5rem;
+  }
+  /* Needed because one of these is an <a>, not a <button>: an anchor
+     brings its own underline and inline layout, and centres nothing. */
+  .update-banner-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    text-align:center; text-decoration:none;
+  }
+  .update-banner-btn.ghost{
+    background:transparent; color:inherit;
+    border:1px solid rgba(255,255,255,.18);
+  }
+  [data-theme="light"] .update-banner-btn.ghost{ border-color:rgba(18,26,32,.18); }
   /* Sync code entry: an inline status line under the field itself
      rather than a toast, since the message is specifically about
      that field's contents \u2014 subtle color rather than a loud banner,
@@ -26703,26 +26730,41 @@ function showToast(msg, tone){
    a person running a weeks-old copy has no way to know, and no obvious way
    to do anything about it. That is a real hazard once classmates are
    studying from this: a stale install keeps working perfectly while
-   quietly serving outdated questions. This checks a tiny sidecar file and
-   offers a one-tap reload when the deployed build differs from the running
-   one.
-   APP_BUILD MUST BE BUMPED TOGETHER WITH version.json, and to the same
-   value. They are two halves of one comparison: version.json is what the
-   server currently serves, APP_BUILD is baked into whatever copy is
+   quietly serving outdated questions.
+
+   version.json answers two separate questions, because they have two
+   genuinely different remedies:
+
+     build    - which version of the PAGE the server is serving. A reload
+                fixes a mismatch, so that notice offers one tap to reload.
+     frameId  - the last time something iOS only reads at INSTALL time
+                changed: the icon, the app name, or the launch status bar
+                colour. No reload can fix those, at all, ever. The only
+                remedy is removing the Home Screen icon and adding it
+                again, so that notice hands off to Safari to do it.
+
+   APP_BUILD MUST BE BUMPED TOGETHER WITH version.json's build, and to the
+   same value. They are two halves of one comparison: version.json is what
+   the server currently serves, APP_BUILD is baked into whatever copy is
    actually running. Bump only version.json and every user gets a banner
    that reloading can never clear; bump only APP_BUILD and nobody is ever
-   told there is an update. */
-const APP_BUILD = "2026-09-20-1";
+   told there is an update. frameId is the exception - it is deliberately
+   NOT compared against anything in this file, only against what each
+   device has already acknowledged, so bumping it alone is correct, and is
+   what re-prompts a whole class after an icon or name change. */
+const APP_BUILD = "2026-09-20-2";
+const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
 
 async function checkForUpdate(){
   if(document.getElementById("updatebanner")) return;
-  /* Never mid-test. The banner is tappable by definition, and tapping it
-     reloads the page - which would throw away an in-progress test with no
-     warning. It keeps until the test is over; the foreground check below
-     picks it up then. Bailing BEFORE the throttle stamp is set matters,
-     otherwise a long test would also burn the next 15 minutes of checks. */
+  /* Never mid-test. Both notices are tappable by definition, and one of
+     them reloads the page - which would throw away an in-progress test
+     with no warning. It keeps until the test is over; the foreground
+     check below picks it up then. Bailing BEFORE the throttle stamp is
+     set matters, otherwise a long test would also burn the next 15
+     minutes of checks. */
   if(typeof testInProgress !== "undefined" && testInProgress) return;
   if(document.getElementById("splashscreen")) return;
   const now = Date.now();
@@ -26739,58 +26781,132 @@ async function checkForUpdate(){
     if(!res.ok) return;
     info = await res.json();
   }catch(e){ return; }
-  if(!info || typeof info.build !== "string" || info.build === APP_BUILD) return;
-  let dismissed = null;
-  try{ dismissed = localStorage.getItem("class26e.update.dismissed"); }catch(e){}
-  /* Keyed to the specific build that was dismissed, not a plain flag, so
-     dismissing one update never silences the next one. */
-  if(dismissed === info.build) return;
-  showUpdateBanner(info);
+  if(!info) return;
+
+  /* Page updates win when both apply. Getting someone onto the current
+     code matters more than the colour of a strip, and the reload would
+     wipe the other banner off the screen mid-read anyway. The frame
+     notice is not lost - it is re-evaluated on the very next check. */
+  if(typeof info.build === "string" && info.build !== APP_BUILD){
+    let dismissed = null;
+    try{ dismissed = localStorage.getItem("class26e.update.dismissed"); }catch(e){}
+    /* Keyed to the specific build that was dismissed, not a plain flag, so
+       dismissing one update never silences the next one. */
+    if(dismissed !== info.build){ showUpdateBanner(info); return; }
+  }
+
+  maybeShowFrameNotice(info);
 }
 
 function showUpdateBanner(info){
   /* Not gated on theme.muteBanners. That setting exists to quiet
      celebration toasts - level-ups, streaks, unlocks - and someone who
      turned those off has not asked to be kept off the current version. */
-  const needsReinstall = info.reinstall === true;
   const bar = document.createElement("div");
   bar.className = "update-banner";
   bar.id = "updatebanner";
 
   const text = document.createElement("span");
   text.className = "update-banner-text";
-  text.textContent = info.note || (needsReinstall
-    ? "Nova needs a fresh install: delete the Nova icon from your Home Screen, then add it again from Safari."
-    : "A new version of Nova is ready.");
+  text.textContent = info.note || "A new version of Nova is ready.";
 
   const act = document.createElement("button");
   act.className = "update-banner-btn";
-  /* A reload genuinely cannot fix an icon, app name, or launch status bar
-     colour - iOS reads those once, when the app is added to the Home
-     Screen, and never again. So on a reinstall notice the button only
-     acknowledges the message; offering "Update" there would be a button
-     that visibly does nothing. */
-  act.textContent = needsReinstall ? "Got it" : "Update";
+  act.textContent = "Update";
   act.addEventListener("click", () => {
-    if(needsReinstall){ dismissUpdateBanner(info.build); return; }
     act.disabled = true;
-    act.textContent = "Updating\u2026";
+    act.textContent = "Updating…";
     applyUpdate();
   });
 
   const close = document.createElement("button");
   close.className = "update-banner-close";
   close.setAttribute("aria-label", "Dismiss");
-  close.textContent = "\u00D7";
-  close.addEventListener("click", () => dismissUpdateBanner(info.build));
+  close.textContent = "×";
+  close.addEventListener("click", () => {
+    try{ localStorage.setItem("class26e.update.dismissed", info.build); }catch(e){}
+    hideBanner();
+  });
 
   bar.append(text, act, close);
   document.body.appendChild(bar);
   requestAnimationFrame(() => bar.classList.add("show"));
 }
 
-function dismissUpdateBanner(build){
-  try{ localStorage.setItem("class26e.update.dismissed", build); }catch(e){}
+/* Only ever shown inside an installed Home Screen app. Someone reading
+   this in a Safari tab has no icon, no app name and no launch status bar
+   to fix, so the notice would be pure noise to them - and worse, the one
+   action it offers (open in Safari) is where they already are. */
+function maybeShowFrameNotice(info){
+  if(typeof info.frameId !== "string" || !info.frameId) return;
+  if(typeof isStandaloneApp === "function" && !isStandaloneApp()) return;
+  let acknowledged = null;
+  try{ acknowledged = localStorage.getItem(FRAME_OK_KEY); }catch(e){}
+  if(acknowledged === info.frameId) return;
+  showFrameNotice(info);
+}
+
+function showFrameNotice(info){
+  const bar = document.createElement("div");
+  bar.className = "update-banner is-frame";
+  bar.id = "updatebanner";
+
+  const text = document.createElement("span");
+  text.className = "update-banner-text";
+  /* Worded as a condition rather than an instruction on purpose. There is
+     no way to read back what iOS actually painted, so this cannot know
+     for certain that any given person is affected - and a flat "your app
+     is out of date" shown to someone whose app looks perfectly fine reads
+     as a bug in the app itself. Letting people check their own screen
+     costs nothing and is never wrong. */
+  text.textContent = info.frameNote ||
+    "If the bar at the very top of your screen looks grey, re-adding Nova to your Home Screen will fix it. Your progress stays.";
+
+  const row = document.createElement("div");
+  row.className = "update-banner-row";
+
+  /* An anchor with target="_blank", not a button calling window.open:
+     from a standalone Home Screen app this is what actually hands off to
+     Safari, which is the only place the Share sheet - and therefore Add
+     to Home Screen - exists at all. */
+  const open = document.createElement("a");
+  open.className = "update-banner-btn";
+  open.href = location.href;
+  open.target = "_blank";
+  open.rel = "noopener";
+  open.textContent = "Open in Safari";
+
+  /* Self-reported, because it has to be: nothing readable from a web page
+     changes when an icon is re-added, so there is no way to confirm it
+     independently. Acknowledging stores the frameId rather than a plain
+     flag, so a future icon or name change can re-prompt everyone simply
+     by bumping frameId in version.json. */
+  const done = document.createElement("button");
+  done.className = "update-banner-btn ghost";
+  done.textContent = "I've done this";
+  done.addEventListener("click", () => {
+    try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
+    hideBanner();
+  });
+
+  row.append(open, done);
+
+  /* Dismiss here is "not now", deliberately NOT "never" - it stores
+     nothing, so the notice returns on the next launch. The only way to
+     stop it for good is saying it is done, which is the outcome this
+     exists to produce. */
+  const close = document.createElement("button");
+  close.className = "update-banner-close";
+  close.setAttribute("aria-label", "Not now");
+  close.textContent = "×";
+  close.addEventListener("click", hideBanner);
+
+  bar.append(close, text, row);
+  document.body.appendChild(bar);
+  requestAnimationFrame(() => bar.classList.add("show"));
+}
+
+function hideBanner(){
   const bar = document.getElementById("updatebanner");
   if(!bar) return;
   bar.classList.remove("show");
