@@ -19212,6 +19212,13 @@ function resetEverything(){
      actually resets every synced device, not just the one that tapped it. */
   if(fbDb && syncCode){
     try { fbDb.collection("progress").doc(syncCode).delete().catch(() => {}); } catch(e){}
+    /* The leaderboard entry is a SEPARATE document and was not being
+       deleted here, so a reset account stayed on the board forever with
+       whatever numbers it had when it was abandoned - reported directly,
+       with several dead test accounts still listed. Deleting the
+       progress doc alone was never enough. Same best-effort, not
+       awaited, so a slow connection cannot block the local reset. */
+    try { fbDb.collection("leaderboard").doc(syncCode).delete().catch(() => {}); } catch(e){}
   }
   detachLiveListener();
   clearSyncCode();
@@ -19228,6 +19235,13 @@ function resetEverything(){
    the same reset here, so every device sharing a code actually ends up in
    the same fresh state, not just the one where "reset" was tapped. */
 function handleRemoteReset(){
+  /* Mirrors resetEverything's leaderboard cleanup. The device that
+     tapped Reset removes the shared code's entry, but if this device
+     gets here first - or that delete failed - clearing it from here too
+     costs nothing and closes the gap. */
+  if(fbDb && syncCode){
+    try { fbDb.collection("leaderboard").doc(syncCode).delete().catch(() => {}); } catch(e){}
+  }
   detachLiveListener();
   clearSyncCode();
   wipeLocalProgressAndSettings();
@@ -27036,7 +27050,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-23";
+const APP_BUILD = "2026-09-20-24";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28734,6 +28748,13 @@ function showAppearance(){
      nobody needs in normal use and the only one holding destructive
      actions, so it belongs last rather than above the two ordinary
      buttons people actually came looking for. */
+  /* These three had no header while every other group on the screen has
+     one, so they read as loose buttons after the Sync section rather
+     than as a section of their own. */
+  const miscLab = document.createElement("p");
+  miscLab.className = "slab section-divider motion-summary";
+  miscLab.textContent = "Miscellaneous";
+  panel.appendChild(miscLab);
   panel.appendChild(shareInstallRow);
   panel.appendChild(dataSect);
 
@@ -30251,7 +30272,15 @@ function renderLeaderboardList(list){
    full-width list is both the requested behaviour and the reason the
    rows can now afford an avatar and a readable name. */
 function renderLeaderboardRows(rows, entries){
+  /* Anyone with no correct answers is not shown. On a board ranked by
+     correct answers they have nothing to rank, and it is also what
+     clears out the strays: an abandoned or reset account, and any entry
+     written by an older build (which published points/stars and no
+     "correct" field at all), both read as 0. Without this the only
+     remedy for an already-orphaned entry would be deleting it by hand
+     in the Firestore console. */
   const sorted = entries.slice()
+    .filter(e => (e.correct || 0) > 0)
     .sort((a, b) => ((b.correct || 0) - (a.correct || 0)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || "")))
     .slice(0, 50);
