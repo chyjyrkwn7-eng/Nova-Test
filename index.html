@@ -17842,6 +17842,12 @@ new MutationObserver(() => {
      here is what lets a held notice appear the instant someone returns to
      Home, rather than waiting out the next check interval. */
   syncNoticeVisibility();
+  /* Self-healing: if the load-time check was spent during the splash, or
+     bailed because a test was running, arriving at a new screen tries
+     again. Safe to call this often - every early bail above is a cheap
+     synchronous test, and the 15-minute throttle is stamped before the
+     fetch is awaited, so this can never produce overlapping requests. */
+  checkForUpdate();
 }).observe(stage, { childList: true, subtree: true });
 const meterEl   = document.getElementById("meter");
 const countEl   = document.getElementById("count");
@@ -26809,10 +26815,11 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-6";
+const APP_BUILD = "2026-09-20-7";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
+let splashRetries = 0;
 /* Held rather than shown immediately, because a check can easily land
    while someone is deep in Settings or part-way through picking a test.
    The notice waits until they are somewhere it makes sense to interrupt. */
@@ -26861,7 +26868,29 @@ async function checkForUpdate(){
      set matters, otherwise a long test would also burn the next 15
      minutes of checks. */
   if(typeof testInProgress !== "undefined" && testInProgress) return;
-  if(document.getElementById("splashscreen")) return;
+  /* Retry rather than give up. The load-time check fires 2.5s in, and a
+     returning user's splash runs ~2.5s plus a fade - so on a cold launch
+     this lands during the splash about as often as not, and the old
+     bare return meant that single missed attempt was the only one a
+     fresh launch ever got. Reported directly: closing the app and
+     reopening it showed no banner at all, because the one check had
+     already been spent. Bounded so a splash that never clears cannot
+     leave this retrying forever. */
+  if(document.getElementById("splashscreen")){
+    /* The budget has to clear the LONGEST splash, not the typical one: a
+       returning user gets 2.5s but a first run gets 8s, plus a 0.7s fade
+       and the delay before the element is actually removed. Six retries
+       covered the first case and quietly ran out during the second
+       (caught exactly that way - splashRetries sat at its ceiling with
+       the fetch never once having run). 20 covers roughly 24s, far past
+       any splash this app can produce, while still being bounded so a
+       splash that never clears cannot leave this looping forever. */
+    if(splashRetries < 20){
+      splashRetries++;
+      setTimeout(checkForUpdate, 1200);
+    }
+    return;
+  }
   const now = Date.now();
   if(now - lastUpdateCheck < UPDATE_CHECK_MIN_GAP_MS) return;
   lastUpdateCheck = now;
@@ -27125,7 +27154,10 @@ async function applyUpdate(){
    which on iOS is by far the more common of the two, since a Home Screen
    app is rarely quit outright. The delay keeps the check clear of the
    splash and the initial render. */
-window.addEventListener("load", () => setTimeout(checkForUpdate, 2500));
+/* 1.5s rather than 2.5s: the retry loop above now handles landing during
+   the splash properly, so this no longer has to try to time its way past
+   it - it just starts, and retries until the app is actually on screen. */
+window.addEventListener("load", () => setTimeout(checkForUpdate, 1500));
 document.addEventListener("visibilitychange", () => {
   if(!document.hidden) checkForUpdate();
 });
