@@ -26969,7 +26969,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-14";
+const APP_BUILD = "2026-09-20-15";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -27973,7 +27973,14 @@ function armConfirm(btn, confirmLabel, onConfirm){
       btn.classList.add("danger");
       askEl = document.createElement("p");
       askEl.className = "confirm-ask";
-      askEl.textContent = "Are you sure? Tap “" + confirmLabel + "” again to confirm.";
+      /* Deliberately does NOT quote the button's armed label. Every
+         caller passes an instruction as that label ("Tap again to
+         reset"), so quoting it produced "Are you sure? Tap “Tap again
+         to reset” again to confirm." - which reads as noise and was
+         reported as the confirmation not being there at all. The
+         armed button sits directly above this line and says what it
+         does, so the line only has to supply the question. */
+      askEl.textContent = "Are you sure? Tap the button again to confirm, or wait to cancel.";
       const anchor = btn.parentElement;
       anchor.insertAdjacentElement("afterend", askEl);
       revertHandle = setTimeout(() => {
@@ -28527,10 +28534,30 @@ function showAppearance(){
     const advBodyInner = document.createElement("div");
     advBodyInner.className = "more-body-inner";
     advBody.appendChild(advBodyInner);
+    /* .more-body-inner has to keep overflow:hidden for the 0fr -> 1fr
+       grid collapse to clip its contents while animating, but leaving it
+       hidden once the section is open clips whatever sits at the edge of
+       that box - here the Reset button's own drop shadow, which got cut
+       into a hard-edged rectangle around the pill instead of fading out.
+       Confirmed by rendering with the clip removed: the shadow becomes a
+       soft rounded halo and the rectangle disappears entirely.
+       Restored to hidden the instant a close starts, so the collapse
+       still clips properly, and released only after the expand has
+       finished. A timer rather than transitionend because a missed or
+       unfired event would silently leave the clip in place, which is
+       exactly the bug being fixed; the worst a stale timer can do is
+       nothing, and it is cleared on every toggle either way. */
+    let advOverflowTimer = null;
     advToggle.addEventListener("click", () => {
       const willOpen = !advBody.classList.contains("open");
       advBody.classList.toggle("open", willOpen);
       advToggle.classList.toggle("open", willOpen);
+      if(advOverflowTimer){ clearTimeout(advOverflowTimer); advOverflowTimer = null; }
+      if(willOpen){
+        advOverflowTimer = setTimeout(() => { advBodyInner.style.overflow = "visible"; }, 320);
+      } else {
+        advBodyInner.style.overflow = "";
+      }
       advToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
     dataSect.append(advToggle, advBody);
@@ -28542,7 +28569,7 @@ function showAppearance(){
       resetMissedBtn.type = "button"; resetMissedBtn.className = "restart";
       resetMissedBtn.textContent = "Reset missed-question history";
       resetMissedBtn.disabled = missedCount === 0;
-      armConfirm(resetMissedBtn, "Tap again to reset", () => {
+      armConfirm(resetMissedBtn, "Tap again to reset history", () => {
         store.stats = {};
         saveStore();
         showAppearance();
