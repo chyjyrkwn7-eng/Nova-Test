@@ -17,6 +17,8 @@ disagreed, the repo won and the difference is called out.
   iOS section. `--check` fails if the block in `index.html` is stale.
 - `tools/sim-safe-area.py` — bakes real safe-area insets into a copy for
   local testing. See **Verifying**.
+- `tools/sweep-layout.py` — every main screen on every supported form
+  factor. See **Every device, every way in**. Exits non-zero on a failure.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 
@@ -136,6 +138,53 @@ nothing.
   with the `env()` calls text-substituted for real values — see
   `tools/sim-safe-area.py`. It caught a genuine bottom-edge seam that measured
   zero without it.
+
+---
+
+## Every device, every way in
+
+**This is a requirement, not an aspiration.** Nova has to work properly:
+
+- **Added to the Home Screen**, on iPhone and iPad, in both orientations.
+- **In a browser tab** — Safari and Chrome, on phone, tablet and desktop.
+- **On laptops.** Several classmates use a Dell Latitude. A 768px laptop
+  screen leaves roughly **640px of page** once the browser's own chrome is
+  subtracted, so short-and-wide is a normal way to use this app, not an edge
+  case. Home did not fit that for a long time: the Start Studying button sat
+  hidden behind the bottom tab bar until you scrolled — the primary action on
+  the first screen, invisible by default, on a whole category of device.
+- **Down to 320px wide** (an iPhone SE) and up to a 2560px external display.
+
+`python3 tools/sweep-layout.py` checks all of it — horizontal page scroll,
+anything painting outside the viewport, the primary button colliding with or
+hiding behind the tab bar, the tab bar itself off-screen, and uncaught JS
+errors. Run it before calling any layout change done. It ignores elements in
+a hidden branch or clipped by an ancestor, because an oversized decorative
+glow inside `overflow:hidden` is not a bug and counting it buries the ones
+that are.
+
+Things it has already caught, all of them invisible at 390x844:
+
+- The laptop collision above (measured: fine at 768px tall, 20px of overlap at
+  720, 65px at 640). Fixed with a `@media (max-height:50rem)` tier that
+  tightens Home's hero and text block, plus a second tier under 36rem.
+  **Height-only media queries are the tool for this** — a short laptop window
+  and a small phone hit the identical wall, and width tells you nothing about
+  it.
+- The bottom tab bar was a fixed 344px wide whatever the screen was, running
+  12px off *both* edges of a 320px phone.
+- The Rewards/Profile tab switcher overflowed the page sideways below 384px.
+
+**A fix that stops the overflow by squashing is not a fix.** The first attempt
+at that switcher let the flex items shrink below their own `nowrap` text: the
+page stopped scrolling sideways and the three labels overlapped each other
+instead. It wraps to two rows now. Check a screenshot, not just the numbers.
+
+**Internet Explorer is not supported and cannot be.** The app is built on CSS
+custom properties, `color-mix()`, `clamp()`, container-relative viewport units
+and modern DOM APIs (`replaceChildren`, `IntersectionObserver`), none of which
+IE has. Modern Edge is Chromium and is fine. If someone reports "it doesn't
+work", IE is worth ruling out first, but there is no fix short of a rewrite.
 
 ---
 

@@ -5,7 +5,7 @@
 <!-- Deliberately the first three things in the document after charset.
      Explanation below them, so nothing delays them. -->
 <meta name="color-scheme" id="colorscheme" content="dark">
-<style>html{background:#0A0A0A;color-scheme:dark;}</style>
+<style>:root{--splash-bg:#0A0A0A;}html{background:var(--splash-bg);color-scheme:dark;}</style>
 <!-- Two separate mechanisms, both aimed at the same symptom: a brief
      white flash on launch, reported as landing right before the splash
      appears.
@@ -61,6 +61,43 @@
     var savedBar = localStorage.getItem("class26e.statusbar.v1");
     if(savedBar && /^#[0-9a-fA-F]{6}$/.test(savedBar)){
       document.getElementById("themecolor").content = savedBar;
+    }
+  }catch(e){}
+</script>
+<script>
+  /* Reported from a Safari tab, with a screenshot circling both: a band
+     across the top under the status bar and another behind the toolbar
+     at the bottom, neither matching the splash between them.
+
+     Safari 15+ tints its own top and bottom bars from the page, and what
+     it reads is theme-color - the app's own top-edge colour (#271E23),
+     set by the script directly above so the STANDALONE status bar comes
+     up right. While the splash is up the page is not the app yet, it is
+     flat #0A0A0A, so the bars were being tinted for a screen that had
+     not appeared yet. Same root cause as the original grey status bar,
+     one layer out: the browser was told a colour the screen was not.
+
+     So for the duration of the splash the whole frame is held at the
+     splash colour - theme-color for Safari's bars, and an inline
+     background on html for anything that samples the page instead.
+     Both are handed back the moment the splash starts fading, in the
+     splash script down in <body>.
+
+     NOT in a standalone home-screen app. iOS reads theme-color once, at
+     launch, and never again - so overwriting it here would leave that
+     app permanently wearing the splash colour in its status bar and
+     reinstate the exact grey seam the app colour is there to prevent.
+     A standalone launch does not show browser bars to tint anyway, and
+     its launch image already matches the splash. */
+  try{
+    var splashBg = getComputedStyle(document.documentElement)
+                     .getPropertyValue("--splash-bg").trim() || "#0A0A0A";
+    document.documentElement.style.background = splashBg;
+    var inApp = navigator.standalone === true ||
+                (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    if(!inApp){
+      var tc = document.getElementById("themecolor");
+      if(tc) tc.content = splashBg;
     }
   }catch(e){}
 </script>
@@ -628,7 +665,7 @@
        anything too old for lvh; it resolves to the same screen. */
     position:fixed; inset:0; width:100vw; overflow:hidden;
     height:100vh; height:100lvh;
-    z-index:9999; background:#0A0A0A;
+    z-index:9999; background:var(--splash-bg);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     /* .5s \u2014 short enough to not feel sluggish, but with the sequencing
        fix above (the real content now reveals starting the instant
@@ -3066,7 +3103,14 @@
     background:var(--panel); border:1px solid var(--rule); border-radius:999px;
     padding:.4rem; box-shadow:0 4px 18px rgba(18,26,32,.18);
     padding-bottom:max(.4rem, env(safe-area-inset-bottom));
+    /* Shrink-to-fit with no ceiling meant the bar was a flat 344px wide
+       whatever the screen was, so on a 320px phone (an SE, or a narrow
+       desktop window) it ran 12px off BOTH edges - measured. A ceiling
+       alone is not enough: the tabs have to be allowed to give, hence
+       min-width:0 on the items and the tighter padding below. */
+    max-width:calc(100vw - 1.5rem);
   }
+  .bottomtab{ min-width:0; }
   /* Superseded by an explicit, more specific request: there's a real,
      single Liquid Glass pill already rendering behind both rows — the
      outer .bottomtabs box itself. Its background/blur/box-shadow were
@@ -3100,7 +3144,10 @@
        bottom-anchoring navrow, making it read as shrunken/dropped
        relative to Start. */
     flex-direction:row; align-items:center; justify-content:center;
-    gap:.7rem; left:50%; right:auto; transform:translateX(-50%); width:auto; max-width:none;
+    gap:.7rem; left:50%; right:auto; transform:translateX(-50%); width:auto;
+    /* was max-width:none, which re-opened the overflow this variant is
+       even more prone to - it carries an extra Start pill. */
+    max-width:calc(100vw - 1.5rem);
     padding:.4rem; padding-bottom:max(.4rem, env(safe-area-inset-bottom));
   }
   .bottomtabs-extrarow{
@@ -3369,6 +3416,18 @@
      showing its real colors. */
   .bottomtab-icon:not(.bottomtab-icon-avatar) svg{ width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:1.7; }
   .bottomtab-label{ font-size:.68rem; font-weight:700; white-space:nowrap; }
+  /* Placed AFTER .bottomtab-label's own declaration, not beside the
+     .bottomtabs rule where it logically belongs: a media query adds no
+     specificity, so up there the plain .bottomtab-label rule below it
+     simply won on source order and the font-size never applied. Same
+     trap as the .opt .box border and the .next box-shadow further up.
+     22.5rem = 360px, and 360 is deliberately included: the bar's natural
+     344px does not fit the 336px a 360px screen leaves once the 1.5rem
+     side margin is taken off. 375 and up keep the full size. */
+  @media (max-width:22.5rem){
+    .bottomtab{ padding-left:.6rem; padding-right:.6rem; }
+    .bottomtab-label{ font-size:.66rem; }
+  }
   .bottomtab-icon{ flex-shrink:0; }
   /* Per explicit request: the plain (no merged Start pill) bar --
      Home, Rewards, Profile, Settings -- scales up on larger devices,
@@ -4091,6 +4150,12 @@
   .navsegment.profiletabs{
     margin:0 auto 1.3rem; display:flex !important; width:fit-content;
     padding:.3rem; font-size:1.05rem;
+    /* width:fit-content with three tabs came to 347px, which is wider
+       than a 320 or 360px screen's content column - measured as real
+       horizontal page scroll on Rewards at 360 (scrollWidth 387 vs 360).
+       A ceiling plus room for the labels to tighten, rather than letting
+       the whole page slide sideways. */
+    max-width:100%;
   }
   /* Padding and font-size both reduced from the original 2-tab sizing
      \u2014 measured directly: with 3 tabs (Leaderboard added), the row was
@@ -4098,6 +4163,24 @@
      not just looking a little tight. Re-verified after this change
      that it now fits with room to spare. */
   .profiletabs .iconbtn{ padding:.55rem .8rem; font-size:.82rem; }
+  /* After .profiletabs .iconbtn's own declaration, not beside
+     .navsegment.profiletabs where it reads better: a media query carries
+     no extra specificity, so placed earlier it lost to this rule on
+     source order and did nothing (measured - Rewards still scrolled
+     sideways at 360px). Same trap as .bottomtab-label above.
+     24rem = 384px. The row wraps rather than shrinking. Achievements /
+     Unlocks / Leaderboard cannot fit one line on a 320px screen at any
+     readable size - the first attempt here let the flex items shrink
+     below their own nowrap text, which stopped the page scrolling
+     sideways but left the three labels overlapping each other, which is
+     worse than the bug it fixed. Two rows keeps all three fully legible
+     and all three visible at once, which a sideways-scrolling strip
+     would not. The app already uses a two-row pill for the bottom tabs,
+     so this is the established shape here, not a new idea. */
+  @media (max-width:24rem){
+    .navsegment.profiletabs{ flex-wrap:wrap; justify-content:center; gap:.15rem; }
+    .profiletabs .iconbtn{ padding:.5rem .7rem; font-size:.78rem; flex:0 0 auto; }
+  }
   .iconbtn{
     background:none; border:none; border-radius:999px;
     padding:.35rem .55rem; font:inherit; font-size:.76rem;
@@ -4814,6 +4897,46 @@
     .homegreeting{ font-size:1.12rem; margin:1.15rem 0 .58rem; }
     .hometitle{ font-size:clamp(1.9rem, 7.5vh, 2.75rem); }
     .hometagline{ font-size:1.12rem; }
+  }
+  /* The mirror image of the tall-tablet block above, and the reason it
+     exists: on a SHORT viewport Home does not fit, and the Start
+     Studying button lands underneath the fixed bottom tab bar. Measured
+     on Home at 1366px wide: fine at 768px tall, 20px of overlap at 720,
+     65px at 640, 88px at 600. A 768px laptop screen - a Dell Latitude,
+     which several classmates use - leaves about 640px of page once
+     Chrome's own chrome is subtracted, so this is the default laptop
+     experience, not an edge case. The button is not merely tight there,
+     it is hidden behind the bar until you scroll, which is the primary
+     action on the first screen anyone sees.
+     Height-only, because the problem is entirely vertical - a wide,
+     short laptop window and a small phone hit the identical wall. The
+     46rem (736px) threshold is just above where overlap begins, so
+     nothing taller than that changes at all; an iPhone 14 at 844 is
+     untouched, an iPhone SE at 667 gets this and needs it.
+     The hero already tracks height through max-width:min(23rem, 46vh);
+     this tightens that ratio and closes up the text block around it,
+     which is where the rest of the room comes from. */
+  @media (max-height:50rem){
+    .cosmic-hero-wrap{ max-width:min(23rem, 34vh); margin-bottom:.2rem; }
+    .hometitle-wrap{ margin-bottom:.8rem; }
+    .homegreeting{ font-size:.88rem; margin:.5rem 0 .28rem; }
+    .hometitle{ font-size:clamp(1.45rem, 5vh, 2.1rem); }
+    .hometagline{ font-size:.88rem; }
+  }
+  /* A second tier, for genuinely tiny windows - a half-height browser
+     window on a laptop, or a phone held in landscape. The tier above
+     clears the tab bar down to about 580px; below that the text block
+     alone is taller than what is left, so the tagline goes. It is the
+     one line on Home carrying no information (the greeting names the
+     time of day, the title names the app, the button is the action),
+     which makes it the right thing to drop rather than shrink the
+     button or the hero into uselessness. */
+  @media (max-height:36rem){
+    .cosmic-hero-wrap{ max-width:min(23rem, 26vh); margin-bottom:.1rem; }
+    .hometitle-wrap{ margin-bottom:.45rem; }
+    .homegreeting{ font-size:.8rem; margin:.25rem 0 .15rem; }
+    .hometitle{ font-size:clamp(1.2rem, 4vh, 1.7rem); }
+    .hometagline{ display:none; }
   }
   /* Normal document flow now, not pinned to the panel's bottom edge \u2014
      absolute positioning here meant its distance from the Start button
@@ -6242,6 +6365,26 @@
       } else {
         clearInterval(msgTimer);
         splash.classList.add("splash-hide");
+        /* Handed back as the fade STARTS, not when the element is
+           removed, so Safari's bars cross-fade along with the splash
+           instead of snapping to the app colour half a second late.
+           Clearing the inline background lets the stylesheet's own
+           html rules take over again; syncStatusBarColor() recomputes
+           theme-color from the live theme. Guarded because this script
+           runs from <body> and is only ever reached seconds after the
+           main script has parsed - but a splash that outlives a script
+           error should still hand the frame back rather than strand the
+           app wearing splash colours. */
+        try{
+          document.documentElement.style.background = "";
+          if(typeof syncStatusBarColor === "function"){
+            syncStatusBarColor();
+          } else {
+            var tc = document.getElementById("themecolor");
+            var saved = localStorage.getItem("class26e.statusbar.v1");
+            if(tc && saved && /^#[0-9a-fA-F]{6}$/.test(saved)) tc.content = saved;
+          }
+        }catch(e){}
         setTimeout(function(){ splash.remove(); }, 550);
       }
     }
@@ -20256,12 +20399,41 @@ function appTopEdgeColor(){
   return "#" + ch.join("");
 }
 
+/* True only while the splash is genuinely covering the screen, in a
+   browser tab. Safari 15+ tints its top and bottom bars from theme-color,
+   so during the splash it has to be told the splash's colour or it draws
+   bands in the app's colour above and below a screen that is not the app
+   yet - reported from a Safari tab with a screenshot of exactly that.
+   Excludes .splash-hide so the bars start returning to the app's colour
+   the moment the fade does, rather than after it.
+   Standalone is excluded because iOS reads theme-color once at launch and
+   never again: writing the splash colour there would leave the app wearing
+   it permanently and put the original grey seam back. An installed app has
+   no browser bars to tint anyway. */
+function splashOwnsFrame(){
+  const sp = document.getElementById("splashscreen");
+  if(!sp || sp.classList.contains("splash-hide")) return false;
+  return !(navigator.standalone === true ||
+           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches));
+}
+
 function syncStatusBarColor(){
   const tcMeta = document.getElementById("themecolor");
   if(!tcMeta) return;
   const fallback = document.documentElement.dataset.theme === "light" ? "#E4E9EC" : "#271E23";
   const color = appTopEdgeColor() || fallback;
-  tcMeta.content = color;
+  /* The meta has exactly one owner, and this is it. The early <head>
+     script sets the splash colour before this function exists, and
+     applyTheme() calls this on every theme change - including several
+     times while the splash is still up - so without this the head
+     script's value was simply overwritten seconds before it mattered
+     (measured: theme-color read #271E23 throughout the splash). */
+  const splashBg = getComputedStyle(document.documentElement)
+                     .getPropertyValue("--splash-bg").trim() || "#0A0A0A";
+  tcMeta.content = splashOwnsFrame() ? splashBg : color;
+  /* The cache always holds the APP's colour, never the splash's - it is
+     replayed before first paint on the next launch to get a standalone
+     status bar right, and that is about the app, not the splash. */
   /* Cached for the next launch, which is the one that actually matters on
      iOS: the early inline script up in <head> replays this before first
      paint, so the status bar comes up already matching the saved theme
@@ -27209,7 +27381,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-31";
+const APP_BUILD = "2026-09-20-32";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
