@@ -26764,7 +26764,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-3";
+const APP_BUILD = "2026-09-20-4";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -26894,6 +26894,15 @@ function showUpdateBanner(info){
    action it offers (open in Safari) is where they already are. */
 function maybeShowFrameNotice(info){
   if(frameSnoozed) return;
+  /* iOS only, and phrased as "not Android" rather than a positive iOS
+     test on purpose: iPadOS Safari reports a Mac-like user agent, so
+     /iPad|iPhone/ quietly misses the exact device this whole notice was
+     written for. Chrome on Android re-reads the manifest on its own and
+     updates an installed app's icon, name and theme colour without any
+     help, so there is genuinely nothing for an Android user to re-add -
+     showing them this would be instructing them to fix a problem they do
+     not have. */
+  if(/Android/i.test(navigator.userAgent)) return;
   if(typeof info.frameId !== "string" || !info.frameId) return;
   if(typeof isStandaloneApp === "function" && !isStandaloneApp()) return;
   let acknowledged = null;
