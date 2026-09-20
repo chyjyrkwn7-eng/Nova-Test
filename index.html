@@ -19349,13 +19349,35 @@ const KEYS = QUESTIONS.map((q, i) =>
   (q.topic || "") + "|" + (q.src == null ? i : q.src) + "|" +
   hashOf(String(q.q) + "\u0001" + (q.choices || []).join("\u0001")));
 
+/* How many times a question has to be missed before the opt-in
+   auto-flag picks it up. Counted over the question's whole history, not
+   within one session: five misses spread across weeks is exactly the
+   kind of question worth coming back to. */
+const AUTO_FLAG_MISS_THRESHOLD = 5;
+
 function statFor(i){ return store.stats[KEYS[i]] || { n: 0, m: 0, r: [] }; }
 
 function recordResult(i, missed){
   const s = statFor(i);
   const recent = (s.r || []).slice(-19); // cap: keep at most the last 20 miss timestamps
   if(missed) recent.push(Date.now());
-  store.stats[KEYS[i]] = { n: s.n + 1, m: s.m + (missed ? 1 : 0), r: recent };
+  const misses = s.m + (missed ? 1 : 0);
+  store.stats[KEYS[i]] = { n: s.n + 1, m: misses, r: recent };
+  /* Auto-flag, opt-in. Hooked here because this is the single place a
+     miss is ever recorded, so every mode gets it for free rather than
+     each answer path needing its own copy.
+     Every FIFTH miss, not "five or more". With >=, un-flagging a
+     question by hand was undone by the very next miss, which makes the
+     manual control useless - caught in testing, where a deliberate
+     un-flag came straight back on miss six. Firing on the multiple
+     means clearing one sticks until it has been missed another five
+     times, which is the behaviour the setting's own description
+     promises. The already-flagged guard keeps it from fighting a
+     question that is currently flagged either way. */
+  if(missed && theme.autoFlagMissed && misses > 0 &&
+     misses % AUTO_FLAG_MISS_THRESHOLD === 0 && !store.flagged[KEYS[i]]){
+    store.flagged[KEYS[i]] = true;
+  }
   store.lifetime.answered += 1;
   if(!missed){
     store.lifetime.correct += 1;
@@ -19849,7 +19871,10 @@ function accentLockMessage(name){
 /* autoAdvance defaults false — per explicit request, a brand-new
    account should never start with this on; it's opt-in from Settings. */
 let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true, swipeAdvance: true, autoAdvance: false,
-              hapticTouch: false, reduceMotion: false, keepAwake: false, muteBanners: false };
+              hapticTouch: false, reduceMotion: false, keepAwake: false, muteBanners: false,
+              /* Off by default: silently rewriting someone's flag list is
+                 not something to opt people into without them asking. */
+              autoFlagMissed: false };
 
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
@@ -19873,6 +19898,7 @@ function loadTheme(){
     if(typeof store.theme.reduceMotion === "boolean") theme.reduceMotion = store.theme.reduceMotion;
     if(typeof store.theme.keepAwake === "boolean") theme.keepAwake = store.theme.keepAwake;
     if(typeof store.theme.muteBanners === "boolean") theme.muteBanners = store.theme.muteBanners;
+    if(typeof store.theme.autoFlagMissed === "boolean") theme.autoFlagMissed = store.theme.autoFlagMissed;
   }
 }
 
@@ -20010,7 +20036,8 @@ function saveTheme(){
   store.theme = { mode: theme.mode, accent: theme.accent, layout: theme.layout,
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
                   hapticTouch: theme.hapticTouch, reduceMotion: theme.reduceMotion,
-                  keepAwake: theme.keepAwake, muteBanners: theme.muteBanners };
+                  keepAwake: theme.keepAwake, muteBanners: theme.muteBanners,
+                  autoFlagMissed: theme.autoFlagMissed };
   saveStore();
 }
 
@@ -26931,7 +26958,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-10";
+const APP_BUILD = "2026-09-20-11";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28196,6 +28223,28 @@ function showAppearance(){
   bannerWrap.appendChild(bannerHint);
   bannerRow.append(bannerCb, bannerBox, bannerWrap);
   motionDetails.appendChild(bannerRow);
+
+  const autoFlagRow = document.createElement("label");
+  autoFlagRow.className = "opt";
+  const autoFlagCb = document.createElement("input");
+  autoFlagCb.type = "checkbox"; autoFlagCb.checked = theme.autoFlagMissed;
+  autoFlagCb.addEventListener("change", () => {
+    theme.autoFlagMissed = autoFlagCb.checked;
+    saveTheme();
+    showToast(theme.autoFlagMissed ? "Questions you keep missing will be flagged." : "Auto-flagging off.");
+  });
+  const autoFlagBox = document.createElement("span");
+  autoFlagBox.className = "box"; autoFlagBox.setAttribute("aria-hidden", "true"); autoFlagBox.textContent = "\u2713";
+  const autoFlagWrap = document.createElement("span");
+  autoFlagWrap.className = "otext";
+  autoFlagWrap.appendChild(document.createTextNode("Auto-flag questions you keep missing"));
+  const autoFlagHint = document.createElement("span");
+  autoFlagHint.className = "ohint";
+  autoFlagHint.textContent = "Flags a question automatically once you've missed it " + AUTO_FLAG_MISS_THRESHOLD +
+    " times, so it collects itself for review. Un-flagging one by hand still sticks.";
+  autoFlagWrap.appendChild(autoFlagHint);
+  autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
+  motionDetails.appendChild(autoFlagRow);
 
   extraSect.appendChild(motionDetails);
   panel.appendChild(extraSect);
@@ -30171,14 +30220,12 @@ function showLeaderboard(){
      same as the link it replaces — only its position changed, not
      where it goes, since Leaderboard is reached FROM Settings rather
      than from the bottom tab bar the way Profile/Rewards are. */
-  const doneBar = document.createElement("div");
-  doneBar.className = "startbar settings-done-bar";
-  const doneBtn = document.createElement("button");
-  doneBtn.type = "button"; doneBtn.className = "next settings-done-btn"; doneBtn.id = "nextbtn";
-  doneBtn.textContent = "Done";
-  doneBtn.addEventListener("click", showAppearance);
-  doneBar.appendChild(doneBtn);
-  panel.appendChild(doneBar);
+  /* No Done button. It returned to Settings, and the bottom tab bar -
+     which is visible on this screen - has a Settings tab that does the
+     same thing. Answer Review keeps its own button by contrast: that
+     one says "Finished" and goes to the test Setup screen, which no tab
+     reaches, so it is not redundancy. The end-of-test summary keeps
+     its exit too, since summarize() force-hides the tab bar. */
 
   stage.replaceChildren(panel);
   toTop();

@@ -138,6 +138,12 @@ Details that exist for a reason:
 - Screens mount via `stage.replaceChildren(...)`. Welcome and Home tag their
   root with `dataset.screen`, which is how the update notices know where they
   are — self-clearing, since the next screen's mount removes the node.
+- **No Done/exit button on a screen the bottom tab bar can already leave.**
+  Home, Settings, Profile, Rewards and Leaderboard have none — the tab bar is
+  the way out. Two keep theirs for a reason: Answer Review's button says
+  "Finished" and goes to the test Setup screen, which no tab reaches, and the
+  end-of-test summary force-hides the tab bar (`window.forceHideBottomTabs`),
+  so it has no other exit.
 - **Tabbed screens (Rewards, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
@@ -150,6 +156,16 @@ Details that exist for a reason:
   hardcoded colour.
 - **Tablet styling is `@media (min-width:40rem)`**, added *after* the phone
   rule as an override — never a rewrite of the base rule.
+- **Behaviour toggles live on `theme`**, not `store` — `smoothScroll`,
+  `swipeAdvance`, `autoAdvance`, `hapticTouch`, `reduceMotion`, `keepAwake`,
+  `muteBanners`, `autoFlagMissed` — and each needs three things: a default in
+  the `theme` object, a `typeof ... === "boolean"` line in `loadTheme()`, and a
+  field in `saveTheme()`. Miss any one and it silently stops persisting.
+- **`autoFlagMissed`** flags a question every *fifth* miss
+  (`AUTO_FLAG_MISS_THRESHOLD`), hooked in `recordResult()` — the single place a
+  miss is recorded, so every mode gets it without its own copy. Every-fifth,
+  not five-or-more: with `>=`, un-flagging a question by hand was undone by the
+  very next miss, which makes the manual control useless.
 - New `localStorage` keys follow `class26e.<thing>` and are wrapped in
   `try/catch`. Keys added for the update machinery: `class26e.statusbar.v1`,
   `class26e.frame.ok`, `class26e.update.dismissed`, and session-scoped
@@ -189,6 +205,21 @@ Details that exist for a reason:
   the centred bottom tab bar those sit beside and grows *further* from the
   screen edge as the viewport widens. Use
   `right:max(1.5rem, calc(env(safe-area-inset-right,0px) + 1.2rem))`.
+
+---
+
+## Showing the work
+
+**Every change gets a screenshot at BOTH sizes, sent to Madison, every time
+— phone and tablet.** Not one or the other, and not only when a change "looks
+layout-related": this app is used on both, and a change that reads fine at
+390px can be adrift at 1024px (the Pause button sat 88px from the edge on an
+iPad while looking perfectly normal on a phone). Use 390×844 for phone and
+1024×834 for tablet, or 834×1112 for portrait tablet where the screen is tall.
+
+Fixed-position elements render oddly in Playwright `fullPage` screenshots, so
+screenshot the viewport and scroll, and measure with `getBoundingClientRect()`
+rather than trusting a tall capture.
 
 ---
 
