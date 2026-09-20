@@ -5573,6 +5573,27 @@
     background:rgba(28,33,40,.55);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
   }
+  /* Solid white, deliberately NOT the glass treatment every other
+     control on this screen uses. Reported as blending in, and that is
+     what glass does here: a translucent, blurred surface sitting on a
+     dark, low-contrast background reads as part of the background
+     rather than as something tappable. This is the one control on the
+     screen that has to be findable, so it takes the same solid,
+     high-contrast surface the primary action buttons use. Placed after
+     the dark rule above because they have equal specificity - order is
+     what decides it. */
+  [data-layout="modern"] .more-toggle.adv-toggle,
+  [data-theme="dark"][data-layout="modern"] .more-toggle.adv-toggle{
+    background:#F3F5F7;
+    color:#12161B;
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+    box-shadow:0 2px 10px rgba(0,0,0,.3);
+  }
+  /* The chevron draws itself from var(--ink), which is near-white in
+     dark mode and would disappear entirely against a white button. */
+  .more-toggle.adv-toggle .more-toggle-icon{
+    border-right-color:#12161B; border-bottom-color:#12161B;
+  }
   [data-layout="modern"] .stat-card{ border-radius:14px; }
   [data-layout="modern"] .tick{ border-radius:3px; height:8px; }
   /* Same height as every other tick now — the current question was
@@ -18755,7 +18776,14 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               seenModeSelectTour: false, seenUnitSelectTour: false,
               pendingSupernovaCutscene: false, supernovaAchieved: false,
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
-              seenUnitOptionsTour: false, seenFirstResultsTour: false };
+              seenUnitOptionsTour: false, seenFirstResultsTour: false,
+              /* On by default here as well as in applyLoadedData(): this
+                 object is what a brand-new install starts from, and
+                 applyLoadedData() only ever runs when there is saved data
+                 to apply. Setting it in only one of the two places leaves
+                 exactly one group wrong - caught that way, with a new user
+                 still showing the toggle off. */
+              leaderboardOptIn: true, leaderboardOptInChanged: false };
 
 /* Defensively copies a plain object (parsed JSON, of unknown trustworthiness)
    into `store`, field by field, same shape whether it came from localStorage,
@@ -18770,6 +18798,16 @@ function applyLoadedData(got){
   store.theme        = got.theme && typeof got.theme === "object" ? got.theme : null;
   store.dailyQuestionDate = typeof got.dailyQuestionDate === "string" ? got.dailyQuestionDate : null;
   store.dailyQuestionCorrect = typeof got.dailyQuestionCorrect === "boolean" ? got.dailyQuestionCorrect : false;
+  /* On by default. The leaderboard is the point of a class-wide study
+     app, and an opt-in nobody finds is an empty board.
+     leaderboardOptInChanged is what makes this safe to flip for people
+     who are already using the app: anyone who has ever touched the
+     toggle has their own value stored and it is honoured exactly,
+     whichever way they set it. Only someone who never touched it picks
+     up the new default. Shares username, avatar, points and stars -
+     nothing else - and Settings still turns it off in one tap. */
+  store.leaderboardOptIn = typeof got.leaderboardOptIn === "boolean" ? got.leaderboardOptIn : true;
+  store.leaderboardOptInChanged = got.leaderboardOptInChanged === true;
   store.lifetime     = got.lifetime     && typeof got.lifetime     === "object"
                         ? { answered: got.lifetime.answered || 0, correct: got.lifetime.correct || 0,
                             drillPlays: got.lifetime.drillPlays || 0, examPlays: got.lifetime.examPlays || 0,
@@ -19081,7 +19119,9 @@ function wipeLocalProgressAndSettings(){
      identical, not just similar. */
   store.dailyQuestionDate = null;
   store.dailyQuestionCorrect = false;
-  store.leaderboardOptIn = false;
+  /* true, matching the new default - a factory reset means "back to how
+     a new install behaves", and a new install is on the leaderboard. */
+  store.leaderboardOptIn = true;
   store.leaderboardOptInChanged = false;
   store.pendingSupernovaCutscene = false;
   store.pendingTierCutscene = null;
@@ -26891,7 +26931,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-9";
+const APP_BUILD = "2026-09-20-10";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28412,16 +28452,9 @@ function showAppearance(){
      own. Always shown now, each button disabled on its own specific
      condition instead. */
   {
-    const dataLab = document.createElement("p");
-    /* Given the same pill treatment (.motion-summary) as every other
-       section header on this screen \u2014 explicit report that Advanced
-       was the one left out, still a bare text label while Leaderboard/
-       Sync/Share/Install all got the boxed, wider-than-its-content
-       styling above. This also finally makes the toggle button right
-       under it read as this pill's own content, the same relationship
-       Share/Install already have with their button. */
-    dataLab.className = "slab section-divider motion-summary"; dataLab.textContent = "Advanced";
-    dataSect.appendChild(dataLab);
+    /* No section header. It sat directly above a dropdown button that
+       now reads "Advanced settings", so the one word was duplicated on
+       consecutive lines. The button is the header. */
     /* Reset missed-question history, flagged questions, and analytics
        all moved into a collapsed "Advanced" dropdown, per explicit
        repeated request \u2014 these sat directly above the Done button
@@ -28433,7 +28466,10 @@ function showAppearance(){
        an established app pattern rather than a one-off. */
     const advToggle = document.createElement("button");
     advToggle.type = "button";
-    advToggle.className = "more-toggle";
+    /* adv-toggle, not bare .more-toggle: that class is shared with
+       another collapsible elsewhere in the app, and only this one is
+       meant to be solid white. */
+    advToggle.className = "more-toggle adv-toggle";
     advToggle.setAttribute("aria-expanded", "false");
     const advToggleText = document.createElement("span");
     /* Was "Advanced" here too \u2014 sitting directly under a header that
@@ -28441,7 +28477,10 @@ function showAppearance(){
        right on top of itself. Renamed to describe what's actually
        inside instead of repeating the section's own name: every item
        in this dropdown (below) is a reset/clear action. */
-    advToggleText.textContent = "Reset options";
+    /* "Advanced settings" rather than "Reset options": this dropdown is
+       now the only thing in the section (its own "Advanced" header is
+       gone), so its label has to carry the section's meaning too. */
+    advToggleText.textContent = "Advanced settings";
     const advToggleIcon = document.createElement("span");
     advToggleIcon.className = "more-toggle-icon";
     advToggleIcon.setAttribute("aria-hidden", "true");
@@ -28535,17 +28574,20 @@ function showAppearance(){
     advBodyInner.appendChild(dangerBar);
   }
 
-  panel.appendChild(dataSect);
+  /* Share/Install first, then Advanced. Advanced is the one section
+     nobody needs in normal use and the only one holding destructive
+     actions, so it belongs last rather than above the two ordinary
+     buttons people actually came looking for. */
   panel.appendChild(shareInstallRow);
+  panel.appendChild(dataSect);
 
-  const back = document.createElement("div");
-  back.className = "startbar settings-done-bar";
-  const backBtn = document.createElement("button");
-  backBtn.type = "button"; backBtn.className = "next settings-done-btn"; backBtn.id = "nextbtn";
-  backBtn.textContent = "Done";
-  backBtn.addEventListener("click", showHome);
-  back.appendChild(backBtn);
-  panel.appendChild(back);
+  /* No Done button. This screen is a bottom-tab destination, and the
+     Home tab in the bar below already does exactly what Done did - a
+     second, differently-shaped way out of the same screen is one more
+     thing to read and decide about, for no additional ability. Removed
+     rather than hidden. The sub-screens that are NOT tab destinations
+     (Leaderboard, Answer Review, the end-of-test summary) keep theirs,
+     since those genuinely have no tab of their own to return from. */
 
   const affiliationNote = document.createElement("p");
   affiliationNote.className = "affiliation-note";
@@ -30862,14 +30904,8 @@ function showProfile(defaultTab){
   statsTab.appendChild(reviewBtn);
 
 
-  const bar = document.createElement("div");
-  bar.className = "startbar settings-done-bar";
-  const backBtn = document.createElement("button");
-  backBtn.type = "button"; backBtn.className = "next settings-done-btn"; backBtn.id = "nextbtn";
-  backBtn.textContent = "Done";
-  backBtn.addEventListener("click", showHome);
-  bar.appendChild(backBtn);
-  panel.appendChild(bar);
+  /* No Done button - see the note in showAppearance(). The Home tab
+     below already returns from this screen. */
 
   stage.replaceChildren(panel);
   toTop();
@@ -31448,14 +31484,8 @@ function showRewards(defaultTab){
   });
 
 
-  const bar = document.createElement("div");
-  bar.className = "startbar settings-done-bar";
-  const backBtn = document.createElement("button");
-  backBtn.type = "button"; backBtn.className = "next settings-done-btn"; backBtn.id = "nextbtn";
-  backBtn.textContent = "Done";
-  backBtn.addEventListener("click", showHome);
-  bar.appendChild(backBtn);
-  panel.appendChild(bar);
+  /* No Done button - see the note in showAppearance(). The Home tab
+     below already returns from this screen. */
 
   stage.replaceChildren(panel);
   toTop();
