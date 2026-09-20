@@ -3542,8 +3542,20 @@
   }
   .update-banner.show{ opacity:1; transform:translateY(0); }
   /* Clears the bottom tab bar, exactly as .toast already does - without
-     this it lands on top of the Home/Profile/Rewards/Settings row. */
+     this it lands on top of the Home/Profile/Rewards/Settings row. This
+     is the starting point only: positionNotice() measures the rest of
+     the bottom furniture on the screen the notice is actually on (the
+     primary button, the version label, the daily-question button) and
+     overrides this inline, because no single offset is right for both
+     screens at both sizes. It stays as the fallback for the frame or
+     two before that measurement lands, and for anything it cannot
+     measure - and a shorthand is deliberately not used here, so the
+     inline bottom is the only thing being overridden. */
   body.has-bottomtabs .update-banner{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
+  /* Also transitions the measured offset, so a notice already on screen
+     when the device rotates slides to its new position instead of
+     jumping. */
+  .update-banner{ transition:opacity .2s ease, transform .2s ease, bottom .2s ease; }
   .update-banner-text{ flex:1 1 auto; }
   /* Reported on a real device: the action button renders with glitched
      lines running through it. It is a flat var(--accent) fill on a
@@ -27148,7 +27160,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-29";
+const APP_BUILD = "2026-09-20-30";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -27187,10 +27199,82 @@ function syncNoticeVisibility(){
     if(bar) hideBanner();
     return;
   }
-  if(bar || !pendingNotice) return;
+  if(bar){ positionNotice(); return; }
+  if(!pendingNotice) return;
   if(pendingNotice.kind === "update") showUpdateBanner(pendingNotice.info);
   else showFrameNotice(pendingNotice.info);
 }
+
+/* Everything that already lives along the bottom of the two screens a
+   notice can appear on. The CSS default only knows about the tab bar, so
+   the banner landed in the middle of all of this - overlapping the Start
+   Studying button, with the version label showing through it and the
+   daily-question "?" button beside it, which is exactly the squashed look
+   reported. Rather than add a taller hardcoded offset (there is no single
+   right number: Home and Welcome differ, phone and tablet differ, and
+   .homeversion and .daily-question-fab each move themselves at the
+   tablet breakpoint), this measures whatever is actually on screen.
+   #nextbtn covers Home's Start Studying; .next.playbtn also catches
+   Welcome's own primary button, which carries no id. */
+const NOTICE_OBSTRUCTIONS = ["#nextbtn", ".next.playbtn", ".homeversion",
+                             ".daily-question-fab", ".bottomtabs"];
+
+/* Shared by both notices. The measured offset is applied with transitions
+   suppressed, so the banner is simply already in the right place when it
+   fades in - without this it starts at the CSS fallback and slides up out
+   of the tab bar as it appears, which reads as a glitch rather than as an
+   entrance. Transitions are restored before .show is added, in the same
+   frame, so the fade and lift themselves are unaffected; only rotation
+   afterwards animates the position, which is what the bottom transition
+   is actually for. */
+function showNoticeBar(bar){
+  document.body.appendChild(bar);
+  bar.style.transition = "none";
+  positionNotice();                 /* forces layout, committing the above */
+  requestAnimationFrame(() => {
+    bar.style.transition = "";
+    bar.classList.add("show");
+  });
+}
+
+function positionNotice(){
+  const bar = document.getElementById("updatebanner");
+  if(!bar) return;
+  const vh = window.innerHeight;
+  let top = Infinity;
+  NOTICE_OBSTRUCTIONS.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      if(el === bar || bar.contains(el)) return;
+      const r = el.getBoundingClientRect();
+      /* Zero-sized means hidden (display:none, or not laid out yet), and
+         anything already off the bottom of the screen is not in the way. */
+      if(r.width <= 0 || r.height <= 0 || r.top >= vh) return;
+      if(r.top < top) top = r.top;
+    });
+  });
+  /* Nothing measurable - mid-transition, or a screen with none of this
+     furniture. Clearing the inline value hands it back to the CSS rule
+     rather than freezing whatever the last screen happened to need. */
+  if(top === Infinity){ bar.style.bottom = ""; return; }
+
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  /* Enough to read as a separate surface sitting above the button rather
+     than as something stuck to it - the same gap the button keeps from
+     the tab bar below it. */
+  let bottom = vh - top + rem * 0.85;
+  /* A ceiling, so this can never float up into the middle of the screen
+     if the primary button happens to sit high (a very short landscape
+     window, say). Past that point it stops tracking and just stays put. */
+  const ceiling = vh * 0.55;
+  if(bottom > ceiling) bottom = ceiling;
+  bar.style.bottom = Math.round(bottom) + "px";
+}
+
+/* Rotating an iPad changes every one of those measurements at once, and
+   the notice persists across screen changes, so it has to re-measure
+   rather than keep the position it was first shown at. */
+window.addEventListener("resize", positionNotice);
+window.addEventListener("orientationchange", positionNotice);
 
 async function checkForUpdate(){
   if(document.getElementById("updatebanner")) return;
@@ -27291,8 +27375,7 @@ function showUpdateBanner(info){
   });
 
   bar.append(text, act, close);
-  document.body.appendChild(bar);
-  requestAnimationFrame(() => bar.classList.add("show"));
+  showNoticeBar(bar);
 }
 
 /* Only ever shown inside an installed Home Screen app. Someone reading
@@ -27389,8 +27472,7 @@ function showFrameNotice(info){
   });
 
   bar.append(close, text, row);
-  document.body.appendChild(bar);
-  requestAnimationFrame(() => bar.classList.add("show"));
+  showNoticeBar(bar);
 }
 
 /* Acknowledgement is deliberately tied to actually LEAVING, not to the

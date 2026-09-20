@@ -130,6 +130,16 @@ everyone after an icon or app-name change. `frameNote` overrides the message.
 Ship a **new** deployment (different URL) with `frameId: ""` — that disables
 the notice, which is right when every install is fresh and already correct.
 
+**Where a notice sits is measured, not hardcoded.** `positionNotice()` reads
+the bottom furniture actually on screen — the primary button (`#nextbtn` on
+Home, `.next.playbtn` on Welcome), `.homeversion`, `.daily-question-fab`,
+`.bottomtabs` — and parks the banner above the highest of them. The CSS
+`bottom` is only a fallback for the frame before that lands. A fixed offset
+cannot work here: the two screens differ, and `.homeversion` and
+`.daily-question-fab` both move themselves at the tablet breakpoint. Anything
+new added along the bottom of Home or Welcome needs its selector in
+`NOTICE_OBSTRUCTIONS` or the banner will sit on top of it.
+
 Two notices, both gated to the Welcome and Home screens only, never mid-test:
 
 | | Update banner | Re-add notice |
