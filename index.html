@@ -26764,7 +26764,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-4";
+const APP_BUILD = "2026-09-20-5";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -26925,8 +26925,14 @@ function showFrameNotice(info){
      is out of date" shown to someone whose app looks perfectly fine reads
      as a bug in the app itself. Letting people check their own screen
      costs nothing and is never wrong. */
+  /* Names the Home Screen case out loud rather than assuming the reader
+     knows they are in it. The standalone check above already means a
+     browser tab never sees this, but plenty of people genuinely do not
+     know whether the thing they tapped was "an app" or "a website" - so
+     the sentence leads with the condition, and anyone it does not
+     describe can simply ignore it. */
   text.textContent = info.frameNote ||
-    "If the bar at the very top of your screen looks grey, re-adding Nova to your Home Screen will fix it. Your progress stays.";
+    "Opening Nova from your Home Screen? If the bar at the very top looks grey, remove the Nova icon and add it again to fix it. Your progress stays.";
 
   const row = document.createElement("div");
   row.className = "update-banner-row";
@@ -26941,6 +26947,18 @@ function showFrameNotice(info){
   open.target = "_blank";
   open.rel = "noopener";
   open.textContent = "Open in Safari";
+  /* Acknowledges on the way out. Without this, someone who taps here,
+     re-adds the icon exactly as asked, and opens the fresh install gets
+     the very same notice again - because nothing observable from a web
+     page changes when an icon is re-added, so the new install cannot
+     tell it is the new install. Being asked a second time reads as "it
+     did not work". Tapping this is the action path; treating it as
+     done is the honest reading of it. Anyone who taps it and abandons
+     keeps a grey strip, which is the same place they started. */
+  open.addEventListener("click", () => {
+    try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
+    pendingNotice = null;
+  });
 
   /* Self-reported, because it has to be: nothing readable from a web page
      changes when an icon is re-added, so there is no way to confirm it
