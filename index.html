@@ -3982,6 +3982,37 @@
      is present fixes this for every toast everywhere, since they all
      share this one class. */
   body.has-bottomtabs .toast{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
+  /* The daily-question announcement, and the reason it is not a toast.
+     A toast lands in the bottom corner, and on Home that corner is full:
+     at the toast's own height it painted under the "?" button the message
+     tells you to tap, and lifted clear of the "?" it painted over Start
+     Studying instead. There is no free band down there - measured, the
+     gap between Start Studying and the "?" is 26px.
+     So it goes to the top, where both screens a notice can appear on are
+     empty and where the update notices already moved for exactly the same
+     reason. Same glass recipe as .toast, same drop-in-from-above entrance
+     as .update-banner, and a lower z-index than the update banner so that
+     one always wins if both are up (showDailyAlert measures it and parks
+     below it rather than overlapping). */
+  .daily-alert{
+    position:fixed;
+    left:max(1rem, env(safe-area-inset-left, 0px));
+    right:max(1rem, env(safe-area-inset-right, 0px));
+    top:calc(env(safe-area-inset-top, 0px) + .75rem); z-index:75;
+    max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
+    background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
+    border:1px solid rgba(255,255,255,.09);
+    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
+    font-size:.9rem; line-height:1.4; text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+    opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
+    pointer-events:none;
+  }
+  .daily-alert.show{ opacity:1; transform:translateY(0); }
+  [data-theme="light"] .daily-alert{
+    background:rgba(255,255,255,.55); color:#1A2027; border-color:rgba(255,255,255,.5);
+    box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
   /* Flag confirmations specifically move to the top \u2014 at the bottom
      they were landing right on top of the floating Next-question
      button, covering the one thing someone would tap next. */
@@ -25515,6 +25546,52 @@ function markDailySeen(key){
    rather than stacking a second one on top of it. */
 let dailyResetTimer = null;
 
+/* Parks the alert below the update notice when one is up, and at its own
+   CSS top when one is not. Called from three places because the two can
+   arrive in either order: the notice is fetched asynchronously, so it
+   routinely appears a second or two AFTER the alert did, and positioning
+   once at creation left them overlapping - measured, both at y=74 on a
+   phone. showNoticeBar() is the hook for the late-notice case, the
+   resize listener for rotation, and showDailyAlert() for the case where
+   the notice was already there. */
+function positionDailyAlert(){
+  const el = document.getElementById("dailyalert");
+  if(!el) return;
+  const notice = document.getElementById("updatebanner");
+  const r = notice ? notice.getBoundingClientRect() : null;
+  el.style.top = (r && r.height > 0) ? Math.round(r.bottom + 10) + "px" : "";
+}
+
+/* A short, self-dismissing line at the top of the screen (see
+   .daily-alert). It parks below the update notice when one is already up
+   rather than overlapping it - the same measure-what-is-actually-there
+   approach positionNotice() uses, and for the same reason: no fixed
+   offset is right, since the notice's own height depends on which of the
+   two it is and how its text wraps. */
+function showDailyAlert(msg){
+  const old = document.getElementById("dailyalert");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "dailyalert"; el.className = "daily-alert";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  positionDailyAlert();
+  /* Cleared by a screen change as well as by its own timer. This is
+     appended to <body>, not to #stage (it is position:fixed, and #stage
+     animates - a transform on an ancestor re-parents a fixed element's
+     containing block, which is the documented cause of the daily
+     button's own old positioning glitch). Anything on <body> has to
+     clear itself on navigation or it sits over whatever comes next,
+     which is exactly how showTourSendoff's overlay used to get stuck. */
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
+  onNavigate.observe(stage, { childList: true });
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => { onNavigate.disconnect(); el.remove(); }, 300);
+  }, 4200);
+}
+
 /* Everything the button does when a new period starts, in one place,
    because it happens two ways: on arriving at Home after a reset that
    happened while the app was closed or elsewhere, and live at 5pm with
@@ -25528,7 +25605,7 @@ function announceDailyReset(btn){
      letting the animation sit finished keeps the element clean and lets
      the next reset re-trigger it. */
   setTimeout(() => btn.classList.remove("is-fresh"), 6000);
-  showToast("Today's daily question is out \u2014 tap the ? to take it.");
+  showDailyAlert("Today's daily question is out \u2014 tap the ? to take it.");
 }
 
 function showDailyQuestionLockedPopup(){
@@ -25678,7 +25755,14 @@ function showHome(){
   const seenBefore = dailySeenPeriod();
   if(!doneToday){
     dailyBtn.classList.add("is-ready");
-    if(seenBefore && seenBefore !== dailyPeriod) announceDailyReset(dailyBtn);
+    /* Deferred by a tick on purpose: this runs before the
+       stage.replaceChildren() below, and showDailyAlert() clears itself
+       on the next stage mutation - announcing here directly would create
+       the alert and then have this screen's own mount immediately remove
+       it. A timeout puts it after the mount. */
+    if(seenBefore && seenBefore !== dailyPeriod){
+      setTimeout(() => announceDailyReset(dailyBtn), 0);
+    }
   }
   markDailySeen(dailyPeriod);
 
@@ -28017,7 +28101,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-44";
+const APP_BUILD = "2026-09-20-45";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28116,6 +28200,9 @@ function showNoticeBar(bar){
   requestAnimationFrame(() => {
     bar.style.transition = "";
     bar.classList.add("show");
+    /* A daily alert may already be on screen - the notice is fetched
+       asynchronously and routinely lands after it. */
+    positionDailyAlert();
   });
 }
 
@@ -28156,8 +28243,9 @@ function positionNotice(){
 /* Rotating an iPad changes every one of those measurements at once, and
    the notice persists across screen changes, so it has to re-measure
    rather than keep the position it was first shown at. */
-window.addEventListener("resize", positionNotice);
-window.addEventListener("orientationchange", positionNotice);
+function repositionTopNotices(){ positionNotice(); positionDailyAlert(); }
+window.addEventListener("resize", repositionTopNotices);
+window.addEventListener("orientationchange", repositionTopNotices);
 
 async function checkForUpdate(){
   if(document.getElementById("updatebanner")) return;

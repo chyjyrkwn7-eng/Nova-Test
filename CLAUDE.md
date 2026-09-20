@@ -444,6 +444,16 @@ blocks rather than inside one. Welcome is now plain `justify-content:center`
 on a phone as well; space-between made the remaining three gaps ~50px each,
 which read as three holes rather than a filled screen.
 
+**Anything appended to `<body>` must clear itself on navigation.**
+`.daily-alert` is `position:fixed`, so it cannot live inside `#stage` —
+`#stage` animates, and a transform on an ancestor re-parents a fixed
+element's containing block, which is the documented cause of the daily
+button's own old positioning glitch. So it goes on `<body>` and takes a
+one-shot `MutationObserver` on `#stage` that removes it on the next screen
+change. It also has to be created *after* its own screen mounts: announcing
+from inside `showHome()` before `stage.replaceChildren()` had the mount
+immediately remove it, which a `setTimeout(…, 0)` fixes.
+
 **Dead code that appends to `<body>` is worse than dead.** `showTourSendoff()`
 — the old "You're all set" popup — had not been called in a long time (the
 send-off is the last step of `startMainMenuTour()` now), but it attached its
@@ -665,6 +675,16 @@ re-evaluated on the next check.
   changes size under a finger is worse than no animation. The global
   `[data-reduce-motion="true"] *{animation:none}` rule switches both off
   without naming either.
+  **The announcement is a top banner (`.daily-alert`), not a toast, and
+  that was measured rather than chosen.** A toast lands in the bottom
+  corner and Home's bottom corner is full: at the toast's own height the
+  message painted *under* the "?" it tells you to tap, and lifted clear of
+  the "?" it painted *over* Start Studying — the gap between those two is
+  26px, so there is no third option down there. `positionDailyAlert()`
+  parks it below the update notice when one is up, and is called from
+  three places because the two arrive in either order: the notice is
+  fetched asynchronously and routinely lands a second after the alert, so
+  positioning once at creation left both at y=74.
   `class26e.daily.seen` holds the last period this DEVICE displayed, and is
   deliberately a `localStorage` key rather than a field on `store`: it is
   viewing history, not progress, so syncing it would announce a reset on a
