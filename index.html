@@ -1884,6 +1884,30 @@
   .lb-name-wrap{ display:flex; flex-direction:column; min-width:0; }
   .lb-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lb-stats{ font-size:.78rem; color:var(--soft); }
+  .lb-rows{ display:flex; flex-direction:column; }
+  /* The top three carry their medal colour through the row's own text,
+     not just the rank circle, per explicit request - name and stat line
+     both. Everyone from fourth down keeps the ordinary --ink/--soft
+     pair, which is what makes the top three read as a podium rather
+     than as three rows that happen to be first.
+     Fixed colours, never var(--accent), for the same reason the medal
+     circles above use fixed ones: --accent is the viewer's own
+     unlockable theme colour, so "gold" tied to it would render in
+     whatever colour the person looking happens to have equipped.
+     These are the light ends of each medal gradient, chosen to stay
+     legible as text on a dark background rather than reusing the fill
+     colours, which are meant to sit behind dark text. */
+  .lb-place-1 .lb-name, .lb-place-1 .lb-stats{ color:#B8860B; }
+  .lb-place-2 .lb-name, .lb-place-2 .lb-stats{ color:#6E7A84; }
+  .lb-place-3 .lb-name, .lb-place-3 .lb-stats{ color:#9C5B2E; }
+  [data-theme="dark"] .lb-place-1 .lb-name, [data-theme="dark"] .lb-place-1 .lb-stats{ color:#FFE58A; }
+  /* #C9D6E0, not the #EEF2F5 from the medal gradient. That value is
+     within a few units of the ordinary --ink text colour on dark, so
+     second place rendered indistinguishable from everyone below it -
+     caught in a screenshot, not in the numbers. A cooler, slightly
+     desaturated tone reads as silver precisely because it is NOT white. */
+  [data-theme="dark"] .lb-place-2 .lb-name, [data-theme="dark"] .lb-place-2 .lb-stats{ color:#C9D6E0; }
+  [data-theme="dark"] .lb-place-3 .lb-name, [data-theme="dark"] .lb-place-3 .lb-stats{ color:#E8B583; }
   /* Gold/silver/bronze top-3 styling, per explicit request. Shared by
      BOTH rank markers in the app — .lb-rank here (Virtual Room's
      Results screen) and .lb-board-rank below (the standalone
@@ -19240,8 +19264,13 @@ function pushToCloud(){
         firstName: store.firstName || "Anonymous",
         avatarChar: store.avatarChar || "ninja",
         accent: theme.accent || "ink",
-        points: store.lifetime.points || 0,
-        stars: totalStarsEarned(topicsIn(QUESTIONS)),
+        /* Correct answers is the single ranked metric now. points and
+           stars are deliberately no longer published: the board tracks
+           one thing, so sending two more invites them back onto it.
+           Entries written by an older build still carry points/stars and
+           no "correct" - those read as 0 until that person's app updates
+           and pushes again, which it does on the next save. */
+        correct: (store.lifetime && store.lifetime.correct) || 0,
         lastModified: Date.now()
       }).catch(() => {});
     } catch(e){}
@@ -27007,7 +27036,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-22";
+const APP_BUILD = "2026-09-20-23";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28334,7 +28363,11 @@ function showAppearance(){
      the explanation of WHY that is (seeing it means being on it) and
      the reassurance that it can be turned off later, which a switch
      already implies. */
-  lbHint.textContent = "Shares your name, avatar, points, and stars \u2014 nothing else. Turn this off and the leaderboard is hidden too.";
+  /* "correct answers", because that is what the board now ranks on and
+     the only figure published. Level and badge count are the eventual
+     replacements, per the plan, but neither exists in the app yet -
+     naming them here would describe data nothing collects or shares. */
+  lbHint.textContent = "Shares your name, avatar, and correct answers \u2014 nothing else. Turn this off and the leaderboard is hidden too.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
   lbSect.appendChild(lbRow);
@@ -30160,6 +30193,20 @@ function showVirtualRoomResults(){
    this tab. A single listener covers both boards, since both are
    just different sort orders over the exact same collection. */
 let leaderboardLiveUnsub = null;
+/* Shared by both rank columns in the app - the Leaderboard screen and
+   the Virtual Room results screen - which is why it lives outside
+   either renderer. Top three get a filled medal circle (see
+   .lb-rank-medal / .lb-rank-1/2/3 in the stylesheet); everyone else
+   gets a plain "#N". */
+function renderRankMarker(el, place){
+  if(place <= 3){
+    el.classList.add("lb-rank-medal", "lb-rank-" + place);
+    el.textContent = String(place);
+  } else {
+    el.textContent = "#" + place;
+  }
+}
+
 function renderLeaderboardList(list){
   if(leaderboardLiveUnsub){ leaderboardLiveUnsub(); leaderboardLiveUnsub = null; }
   list.replaceChildren();
@@ -30172,97 +30219,84 @@ function renderLeaderboardList(list){
     return;
   }
 
-  const boardsWrap = document.createElement("div");
-  boardsWrap.className = "lb-boards";
-  const pointsBoard = buildLeaderboardBoard("Points", "points", v => v.toLocaleString());
-  const starsBoard = buildLeaderboardBoard("Stars", "stars", v => v.toLocaleString());
-  boardsWrap.append(pointsBoard.el, starsBoard.el);
-  list.appendChild(boardsWrap);
+  const rows = document.createElement("div");
+  rows.className = "lb-rows";
+  list.appendChild(rows);
 
-  /* The actual bug behind "the leaderboard just wasn't showing up,
-     it gave an error thing" \u2014 confirmed directly: fbDb can exist
-     (pass the !fbDb check above) while still throwing synchronously
-     the moment .collection()/.onSnapshot() actually runs \u2014 a real
-     Firestore client reports things like "client is offline" this
-     way, not just through the async error callback already handled
-     below. That's a genuinely different failure than fbDb being null,
-     and the existing !fbDb guard could never catch it. Wrapped here
-     so a synchronous throw shows the same clear message as an async
-     one, instead of silently leaving the tab blank with nothing in
-     any console a real user would ever see. */
-  try{
-    leaderboardLiveUnsub = fbDb.collection("leaderboard").onSnapshot(snap => {
-      const entries = [];
-      snap.forEach(doc => entries.push(doc.data()));
-      pointsBoard.render(entries);
-      starsBoard.render(entries);
-    }, () => {
-      list.replaceChildren();
-      const p = document.createElement("p");
-      p.className = "info-note";
-      p.textContent = "Couldn't load the leaderboard right now \u2014 try again in a moment.";
-      list.appendChild(p);
-    });
-  } catch(e){
+  const showError = () => {
     list.replaceChildren();
     const p = document.createElement("p");
     p.className = "info-note";
     p.textContent = "Couldn't load the leaderboard right now \u2014 try again in a moment.";
     list.appendChild(p);
+  };
+
+  /* onSnapshotResilient, not a bare .onSnapshot(). This call site was the
+     one place in the app still calling Firestore's listener directly,
+     which is exactly the bug class that wrapper exists to prevent - a
+     listener going silently stale with nothing reattaching it. */
+  try{
+    leaderboardLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+      const entries = [];
+      snap.forEach(doc => entries.push(doc.data()));
+      renderLeaderboardRows(rows, entries);
+    }, { onError: showError });
+  } catch(e){
+    showError();
   }
 }
 
-/* Shared by both leaderboard rank markers \u2014 Virtual Room's Results
-   list and this screen's two boards below \u2014 so the gold/silver/bronze
-   top-3 treatment can't drift out of sync between them. Ranks 4+ keep
-   the plain "#N" text exactly as before; only the top 3 switch to the
-   filled medal-circle look (see .lb-rank-medal / .lb-rank-1/2/3 in the
-   stylesheet). Caller sets the base class (lb-rank or lb-board-rank)
-   first, same as before this existed. */
-function renderRankMarker(el, place){
-  if(place <= 3){
-    el.classList.add("lb-rank-medal", "lb-rank-" + place);
-    el.textContent = String(place);
-  } else {
-    el.textContent = "#" + place;
-  }
-}
+/* One board, ranked on correct answers. Previously two side-by-side
+   boards (Points and Stars) in a cramped two-column layout; a single
+   full-width list is both the requested behaviour and the reason the
+   rows can now afford an avatar and a readable name. */
+function renderLeaderboardRows(rows, entries){
+  const sorted = entries.slice()
+    .sort((a, b) => ((b.correct || 0) - (a.correct || 0)) ||
+                    String(a.firstName || "").localeCompare(String(b.firstName || "")))
+    .slice(0, 50);
 
-function buildLeaderboardBoard(label, sortKey, formatValue){
-  const board = document.createElement("div");
-  board.className = "lb-board";
-  const head = document.createElement("p");
-  head.className = "lb-board-head"; head.textContent = label;
-  const rows = document.createElement("div");
-  rows.className = "lb-board-rows";
-  board.append(head, rows);
-
-  function render(entries){
-    const sorted = entries.slice().sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0)).slice(0, 50);
-    if(sorted.length === 0){
-      rows.replaceChildren();
-      const empty = document.createElement("p");
-      empty.className = "lb-board-empty";
-      empty.textContent = "No one yet \u2014 turn on \"Show me on the leaderboard\" in Settings to be the first.";
-      rows.appendChild(empty);
-      return;
-    }
-    rows.replaceChildren();
-    sorted.forEach((entry, i) => {
-      const row = document.createElement("div");
-      row.className = "lb-board-row" + (entry.firstName === store.firstName && syncCode ? " lb-row-me" : "");
-      const rank = document.createElement("span");
-      rank.className = "lb-board-rank"; renderRankMarker(rank, i + 1);
-      const name = document.createElement("span");
-      name.className = "lb-board-name"; name.textContent = entry.firstName || "Anonymous";
-      const val = document.createElement("span");
-      val.className = "lb-board-val"; val.textContent = formatValue(entry[sortKey] || 0);
-      row.append(rank, name, val);
-      rows.appendChild(row);
-    });
+  rows.replaceChildren();
+  if(sorted.length === 0){
+    const empty = document.createElement("p");
+    empty.className = "lb-board-empty";
+    empty.textContent = "No one yet \u2014 turn on \u201cShow me on the leaderboard\u201d in Settings to be the first.";
+    rows.appendChild(empty);
+    return;
   }
 
-  return { el: board, render };
+  sorted.forEach((entry, i) => {
+    const place = i + 1;
+    const row = document.createElement("div");
+    /* lb-place-N drives the gold/silver/bronze text colour for the top
+       three; everyone below keeps the ordinary --ink/--soft pair. */
+    row.className = "lb-row" + (place <= 3 ? " lb-place-" + place : "");
+    if(syncCode && entry.firstName === store.firstName) row.classList.add("lb-row-me");
+
+    const rank = document.createElement("span");
+    rank.className = "lb-rank";
+    renderRankMarker(rank, place);
+
+    const avatar = document.createElement("span");
+    avatar.className = "lb-avatar";
+    /* Falls back to the default character rather than rendering an empty
+       box for an entry written before avatarChar was published. */
+    avatar.appendChild(buildAvatarCharSVG(entry.avatarChar || "ninja"));
+
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "lb-name-wrap";
+    const name = document.createElement("span");
+    name.className = "lb-name";
+    name.textContent = entry.firstName || "Anonymous";
+    const stats = document.createElement("span");
+    stats.className = "lb-stats";
+    const n = entry.correct || 0;
+    stats.textContent = n.toLocaleString() + (n === 1 ? " correct answer" : " correct answers");
+    nameWrap.append(name, stats);
+
+    row.append(rank, avatar, nameWrap);
+    rows.appendChild(row);
+  });
 }
 
 function showLeaderboard(){
@@ -30278,7 +30312,7 @@ function showLeaderboard(){
 
   const sub = document.createElement("p");
   sub.className = "cal-sub";
-  sub.textContent = "Everyone who's chosen to share their progress, ranked by points.";
+  sub.textContent = "Everyone sharing their progress, ranked by correct answers.";
   panel.appendChild(sub);
 
   const list = document.createElement("div");
