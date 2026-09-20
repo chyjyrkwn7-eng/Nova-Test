@@ -500,7 +500,22 @@
      whole way through instead of fading to black first. */
   #splashscreen:not(.splash-hide) ~ .wrap{ visibility:hidden; }
   #splashscreen{
-    position:fixed; inset:0; z-index:9999; background:#0A0A0A;
+    /* Sized in viewport units as well as inset:0, and clipped.
+       Reported on a real device: on launch the splash content appears in
+       the bottom-right corner and then jumps to the centre. It is
+       centred from the first frame in a desktop browser - measured, the
+       overlay is exactly the viewport size and the group is dead centre
+       - so this is iOS resolving a position:fixed inset:0 box against
+       something larger than the visible screen for the first frame or
+       two of a standalone launch. Content centred inside an oversized
+       box lands low and right of the real centre, which is exactly what
+       was described, and snaps back once the viewport settles.
+       100vw/100dvh resolve against the viewport itself rather than the
+       containing block, so the overlay is the right size even while that
+       block is wrong, and overflow:hidden means anything still
+       mis-measured is clipped instead of drawn off-centre. */
+    position:fixed; inset:0; width:100vw; height:100dvh; overflow:hidden;
+    z-index:9999; background:#0A0A0A;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     /* .5s \u2014 short enough to not feel sluggish, but with the sequencing
        fix above (the real content now reveals starting the instant
@@ -27050,7 +27065,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-25";
+const APP_BUILD = "2026-09-20-26";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
