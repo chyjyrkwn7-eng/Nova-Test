@@ -2889,9 +2889,17 @@
      the has-floatbtn/has-bottomtabs offset rules below already handle
      keeping this clear of the bottom tab bar and any floating action
      button, and this doesn't need to relitigate that math. */
-  @media (min-width:40rem) and (min-height:60rem){
-    .backtotop{ width:3.6rem; height:3.6rem; }
-    .backtotop svg{ width:1.5rem; height:1.5rem; }
+  /* min-height:30rem, not 60rem. The 60rem gate meant a landscape iPad
+     (834px tall = 52rem) never matched, so the enlargement only ever
+     applied in portrait - measured at 44px on a landscape iPad, the
+     untouched phone size. 30rem still excludes a landscape PHONE
+     (390px tall = 24rem), which is what the height gate is actually
+     for.
+     4.5rem (72px) is sized against a real bottom tab button, measured
+     at 90x74 on iPad, per the request to match one. */
+  @media (min-width:40rem) and (min-height:30rem){
+    .backtotop{ width:4.5rem; height:4.5rem; }
+    .backtotop svg{ width:1.9rem; height:1.9rem; }
   }
 
   /* Bottom floating tab bar \u2014 the primary way to reach Home, Profile, and
@@ -3363,14 +3371,29 @@
      the tab bar with no separate floating button at all. Those
      screens were falling all the way back to the 1.25rem default,
      nowhere near enough to clear the tab bar sitting on top of it. */
-  body.has-bottomtabs:not(.has-floatbtn) .backtotop{ bottom:6rem; }
+  /* 6.8rem, not 6rem: the old value left a 5px gap above the bar while
+     the button sits 1.1rem (18px) from the right edge, so it read as
+     jammed against the bar rather than placed in the corner. This
+     matches the vertical gap to the horizontal one. */
+  body.has-bottomtabs:not(.has-floatbtn) .backtotop{ bottom:6.8rem; }
   /* The dual-pill bottom layout (unit selection's Options/Start pill
      sitting beside the main tab bar) reaches slightly higher than a
      single-row bottom bar did \u2014 measured directly: with both classes
      present, this button's own bottom edge overlapped the bar's top
      edge by about 4px. A little extra clearance here specifically
      for that combination fixes it with room to spare. */
-  body.has-floatbtn.has-bottomtabs .backtotop{ bottom:6rem; }
+  body.has-floatbtn.has-bottomtabs .backtotop{ bottom:6.8rem; }
+  /* Tablet clearance, and it has to live HERE rather than up with the
+     tablet size rule. These selectors have identical specificity to the
+     two above, so a media query earlier in the file loses on source
+     order alone - which is exactly what happened: the override was
+     written, changed nothing, and the button still overlapped the bar
+     by 2px. The tab bar is genuinely taller on a tablet (93px measured,
+     against 73px on phone), so it needs more clearance to keep the same
+     1.1rem gap the phone has. */
+  @media (min-width:40rem) and (min-height:30rem){
+    body.has-bottomtabs:not(.has-floatbtn) .backtotop{ bottom:8.1rem; }
+  }
 
   /* Matched to the app's actual standard Liquid Glass recipe (the
      same one the searchbox and other glass surfaces use) rather than
@@ -26984,7 +27007,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-18";
+const APP_BUILD = "2026-09-20-19";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -31670,7 +31693,12 @@ if(backToTopBtn){
   window.addEventListener("scroll", () => {
     backToTopBtn.classList.toggle("show", window.scrollY > 280);
   }, { passive: true });
-  backToTopBtn.addEventListener("click", toTop);
+  /* Wrapped, not passed directly. addEventListener hands the listener
+     the click event, so "toTop" received a PointerEvent as its "instant"
+     argument - and an event object is truthy, so every press took the
+     instant branch and snapped to the top with no glide. The smooth
+     scroll was not removed, it was being suppressed by its own caller. */
+  backToTopBtn.addEventListener("click", () => toTop());
 }
 
 /* Bottom floating tab bar. Its icons are built once here (not per-screen)
