@@ -1096,7 +1096,15 @@
   /* short/landscape screens (rotated phones): trim vertical whitespace so
      more of the question fits without scrolling */
   @media (max-height:480px) and (orientation:landscape){
-    .wrap{ padding-top:.75rem; padding-bottom:2rem; }
+    /* Same trap as the 32rem block below: these two longhands replace the
+       base rule's inset-aware versions, so they have to carry the insets
+       themselves or a rotated phone loses them. A phone on its side has no
+       top inset (the notch moves to the edge, which left/right cover), but
+       it does keep a home indicator. */
+    .wrap{
+      padding-top:max(.75rem, env(safe-area-inset-top));
+      padding-bottom:max(2rem, env(safe-area-inset-bottom));
+    }
     .top{ padding-bottom:.5rem; }
     .panel{ padding:1.1rem 1.25rem 1rem; }
     .qtext{ margin:0 0 .35rem; font-size:1.1rem; }
@@ -3985,7 +3993,22 @@
   @media (max-width:32rem){
     .qtext{ font-size:1.15rem; }
     .panel{ padding:1.25rem 1rem; }
-    .wrap{ padding:1.25rem 1.25rem 3rem; }
+    /* Longhands, NOT the padding shorthand. This was
+       "padding:1.25rem 1.25rem 3rem", and a shorthand sets all four sides -
+       so it silently wiped out every one of the four
+       padding-*:max(..., env(safe-area-inset-*)) declarations in the base
+       .wrap rule, at equal specificity and later in the file. 32rem is
+       512px, so that was EVERY phone: on a notched iPhone added to the
+       Home Screen, the screen title sat at y=20 with a 59px status bar
+       over it - measured, with the Settings heading behind the clock.
+       Nothing caught it because Chromium reports every inset as 0, so the
+       max() and the shorthand look identical locally. */
+    .wrap{
+      padding-top:max(1.25rem, env(safe-area-inset-top));
+      padding-right:max(1.25rem, env(safe-area-inset-right));
+      padding-bottom:max(3rem, env(safe-area-inset-bottom));
+      padding-left:max(1.25rem, env(safe-area-inset-left));
+    }
   }
 
   @media (hover:none) and (pointer:coarse){
@@ -4277,8 +4300,16 @@
        element but still counts against the real viewport \u2014 100dvh
        alone doesn't know about either, which is what let this
        overflow into a scrollable page with content hidden below the
-       fold. 8.75rem covers both reliably with a small safety margin. */
-    min-height:calc(100dvh - 9rem); box-sizing:border-box; display:flex; flex-direction:column;
+       fold. 8.75rem covers both reliably with a small safety margin.
+       The insets have to come off too, and for the same reason: on an
+       iPhone added to the Home Screen .wrap's padding is not the ~9rem
+       this assumed but 59px of status bar plus 154px of bottom clearance,
+       about 13.3rem, so the floor was over-tall by the difference and put
+       Start Studying 10px behind the tab bar. Every inset reads 0 in a
+       desktop browser, so this looked correct everywhere but the device
+       it was for. */
+    min-height:calc(100dvh - 9rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    box-sizing:border-box; display:flex; flex-direction:column;
     align-items:center; justify-content:flex-start; padding:1.75rem 1.5rem 1.5rem;
   }
   /* The hero/greeting/tagline group now anchors naturally at the top
@@ -4399,7 +4430,8 @@
        wrap padding needs to stay under the real viewport, not just
        the min-height target \u2014 min-height is a floor, not a cap, so
        oversized padding here overflows regardless of what it's set to. */
-    min-height:calc(100dvh - 4.25rem); box-sizing:border-box; justify-content:center; gap:.34rem;
+    min-height:calc(100dvh - 4.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    box-sizing:border-box; justify-content:center; gap:.34rem;
   }
   /* clamp() against viewport height, not just width, so this
      actually shrinks on a short screen instead of holding a fixed
@@ -4938,6 +4970,21 @@
     .hometitle{ font-size:clamp(1.2rem, 4vh, 1.7rem); }
     .hometagline{ display:none; }
   }
+  /* Third and last tier: a phone held sideways in a browser tab, which is
+     about 333px of page once Safari's bars are off - measured, Start
+     Studying sat 40px behind the tab bar there even with the tier above.
+     At that height the greeting goes as well. It says "Good evening",
+     which is the least load-bearing thing on the screen, and dropping it
+     buys the row that lets the button clear the bar. The sphere stays,
+     small: it is the app's identity, and a Home screen without it does
+     not read as Nova. */
+  @media (max-height:26rem){
+    .cosmic-hero-wrap{ max-width:min(23rem, 17vh); margin-bottom:0; }
+    .homegreeting{ display:none; }
+    .hometitle-wrap{ margin-bottom:.3rem; }
+    .hometitle{ font-size:clamp(1.05rem, 3.4vh, 1.4rem); }
+    .panel.home{ padding-top:.9rem; padding-bottom:.9rem; }
+  }
   /* Normal document flow now, not pinned to the panel's bottom edge \u2014
      absolute positioning here meant its distance from the Start button
      changed unpredictably as the panel's own height changed across
@@ -5084,7 +5131,8 @@
     .resetwarning-title{ font-size:1.9rem; }
   }
   .resetwarning-panel{
-    text-align:center; min-height:calc(100dvh - 9rem); box-sizing:border-box;
+    text-align:center; box-sizing:border-box;
+    min-height:calc(100dvh - 9rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
   }
   /* Both buttons here get an explicit, matching width instead of each
@@ -5784,8 +5832,15 @@
      look. The rounded/shadowed card styling below stays Modern-only.
      ================================================================ */
 
-  body.has-floatbtn .wrap{ padding-bottom:6.5rem; }
-  body.has-bottomtabs .wrap{ padding-bottom:6.5rem; }
+  /* All three carry env(safe-area-inset-bottom) on top of the rem value,
+     because the thing they are reserving room FOR grows by exactly that:
+     .bottomtabs has padding-bottom:max(.4rem, env(safe-area-inset-bottom)),
+     so on a device with a home indicator the bar is ~28px taller than the
+     flat number here assumes. Caught on an iPhone 14 added to the Home
+     Screen: with real insets applied, Start Studying sat 10px behind the
+     bar - invisible in any desktop browser, where every inset reads 0. */
+  body.has-floatbtn .wrap{ padding-bottom:calc(6.5rem + env(safe-area-inset-bottom)); }
+  body.has-bottomtabs .wrap{ padding-bottom:calc(6.5rem + env(safe-area-inset-bottom)); }
 
   .top{
     position:sticky; top:0; z-index:15; background:var(--paper);
@@ -6119,7 +6174,7 @@
      is what the merged bottom-bar tab forwards to) but visually hidden
      once merged into the bar \u2014 see setupBottomTabs' syncStartAction(). */
   .floatbtn.merged-into-bar{ display:none; }
-  body.has-bottomtabs .wrap{ padding-bottom:7.5rem; }
+  body.has-bottomtabs .wrap{ padding-bottom:calc(7.5rem + env(safe-area-inset-bottom)); }
   [data-theme="dark"][data-layout="modern"] .next{
     box-shadow:0 1px 1px rgba(255,255,255,.18) inset, 0 -1px 2px rgba(0,0,0,.35) inset,
       0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
@@ -27381,7 +27436,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-32";
+const APP_BUILD = "2026-09-20-33";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

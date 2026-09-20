@@ -35,6 +35,9 @@ easy to conclude there is none. Decode it to edit; never hand-patch the base64.
 
 ## Hard rules
 
+- **Every change is verified across the whole device matrix before it
+  ships** — every device, both orientations, installed *and* in a browser.
+  `python3 tools/sweep-layout.py`. See **Every device, every way in**.
 - **Never rename `STORE_KEY` (`"class26e.drill.v1"`) or `"class26e.synccode"`.**
   Either orphans real saved progress on ~40 devices. This includes not
   "fixing" `class26e` to `nova` to match the rebrand — the rename was cosmetic
@@ -143,48 +146,76 @@ nothing.
 
 ## Every device, every way in
 
-**This is a requirement, not an aspiration.** Nova has to work properly:
+**This is the bar for every change, and it is not negotiable.** Nothing ships
+— no fix, no tweak, no audit — until it has been checked across the whole
+matrix: every common device, **both orientations**, and **both ways of
+running the app**.
 
-- **Added to the Home Screen**, on iPhone and iPad, in both orientations.
-- **In a browser tab** — Safari and Chrome, on phone, tablet and desktop.
-- **On laptops.** Several classmates use a Dell Latitude. A 768px laptop
-  screen leaves roughly **640px of page** once the browser's own chrome is
-  subtracted, so short-and-wide is a normal way to use this app, not an edge
-  case. Home did not fit that for a long time: the Start Studying button sat
-  hidden behind the bottom tab bar until you scrolled — the primary action on
-  the first screen, invisible by default, on a whole category of device.
-- **Down to 320px wide** (an iPhone SE) and up to a 2560px external display.
+```
+python3 tools/sweep-layout.py        # the whole matrix, before calling anything done
+python3 tools/sweep-layout.py --quick   # one per family, while iterating
+```
 
-`python3 tools/sweep-layout.py` checks all of it — horizontal page scroll,
-anything painting outside the viewport, the primary button colliding with or
-hiding behind the tab bar, the tab bar itself off-screen, and uncaught JS
-errors. Run it before calling any layout change done. It ignores elements in
-a hidden branch or clipped by an ancestor, because an oversized decorative
-glow inside `overflow:hidden` is not a bug and counting it buries the ones
-that are.
+**Added to the Home Screen and opened in a browser are two different apps.**
+An installed app gets the whole display and real safe-area insets — notch,
+status bar, home indicator. A browser tab gets a shorter viewport, with
+Safari's or Chrome's own bars taking the top and bottom, and essentially no
+insets. The same CSS lands differently in each. Checking one is not checking
+the other.
 
-Things it has already caught, all of them invisible at 390x844:
+The matrix covers iPhones (SE through Pro Max), iPads (mini, 10.2", Air,
+Pro 11", Pro 12.9", Pro 13"), Android phones and tablets, and laptops
+including the Dell Latitude several classmates use — each portrait and
+landscape, each installed and in a browser. Desktops are browser-only.
 
-- The laptop collision above (measured: fine at 768px tall, 20px of overlap at
-  720, 65px at 640). Fixed with a `@media (max-height:50rem)` tier that
-  tightens Home's hero and text block, plus a second tier under 36rem.
-  **Height-only media queries are the tool for this** — a short laptop window
-  and a small phone hit the identical wall, and width tells you nothing about
-  it.
-- The bottom tab bar was a fixed 344px wide whatever the screen was, running
-  12px off *both* edges of a 320px phone.
-- The Rewards/Profile tab switcher overflowed the page sideways below 384px.
+It reports horizontal page scroll, anything painting outside the viewport,
+the primary button colliding with or hidden behind the tab bar, the tab bar
+off-screen, controls colliding with the notch or home indicator, and uncaught
+JS errors.
 
-**A fix that stops the overflow by squashing is not a fix.** The first attempt
-at that switcher let the flex items shrink below their own `nowrap` text: the
-page stopped scrolling sideways and the three labels overlapped each other
-instead. It wraps to two rows now. Check a screenshot, not just the numbers.
+### Why this matrix and not a smaller one
+
+Every bug below was invisible at 390×844 in a desktop browser, which is where
+"looks fine" usually comes from:
+
+- **A `padding` shorthand on `.wrap` under 32rem wiped out all four
+  `env(safe-area-inset-*)` longhands** — so *every phone* lost its insets. On
+  a notched iPhone the screen title sat at y=20 under a 59px status bar,
+  behind the clock. **Never set `padding` shorthand on `.wrap`; use
+  longhands**, or the insets go silently.
+- **Reserved space for the tab bar has to include
+  `env(safe-area-inset-bottom)`**, because the bar itself grows by it. Flat
+  rem values left Start Studying 10px behind the bar on an iPhone.
+- **`min-height:calc(100dvh - Nrem)` has to subtract the insets too.** `dvh`
+  knows nothing about them, so the floor came out over-tall by ~4rem on a
+  real device.
+- The laptop collision: Home did not fit a 768px laptop screen (~640px of
+  page in Chrome) and hid the primary action behind the tab bar.
+- The tab bar was a fixed 344px wide, off both edges of a 320px phone; the
+  Rewards tab switcher overflowed sideways below 384px.
+
+**Height-only media queries are the tool for vertical fits** — a short laptop
+window and a small phone hit the identical wall, and width tells you nothing
+about it. Home has three tiers: 50rem, 36rem, 26rem.
+
+**A fix that stops overflow by squashing is not a fix.** The first attempt at
+the Rewards switcher let the flex items shrink below their own `nowrap` text:
+the page stopped scrolling sideways and the three labels overlapped instead.
+**Look at a screenshot, not just the numbers.**
+
+**Chromium cannot see any of this by itself.** It reports every
+`env(safe-area-inset-*)` as `0` and has no display-mode emulation, so the
+sweep simulates both — insets by substituting real values into the served
+copy, standalone by patching `navigator.standalone` and the display-mode
+media query. The inset figures and browser-chrome heights in `DEVICES` and
+`CHROME_H` are *modelled, not measured from hardware*; correct them there if
+a real device disagrees, rather than guessing again.
 
 **Internet Explorer is not supported and cannot be.** The app is built on CSS
-custom properties, `color-mix()`, `clamp()`, container-relative viewport units
-and modern DOM APIs (`replaceChildren`, `IntersectionObserver`), none of which
-IE has. Modern Edge is Chromium and is fine. If someone reports "it doesn't
-work", IE is worth ruling out first, but there is no fix short of a rewrite.
+custom properties, `color-mix()`, `clamp()`, viewport units and modern DOM
+APIs (`replaceChildren`, `IntersectionObserver`), none of which IE has.
+Modern Edge is Chromium and is fine. Worth ruling out if someone reports "it
+doesn't work", but there is no fix short of a rewrite.
 
 ---
 
@@ -418,7 +449,11 @@ missed real bugs that a thirty-second check caught.
    phantom syntax error on prose.
 2. A targeted Playwright check of the actual change — measure or screenshot it.
    Chromium is at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
-3. A broader pass across the main screens and sizes before calling it done.
+3. `python3 tools/sweep-layout.py` — the full device matrix. Every device,
+   both orientations, installed and in a browser. This is required on every
+   change, not just layout ones; a JS error only thrown on one screen shows
+   up here too. It exits non-zero on any failure.
+4. Screenshots at both sizes for Madison, per **Showing the work**.
 
 Serve over HTTP for anything touching `version.json` — `fetch` fails on a
 `file://` path, and the update check swallows that silently by design.
