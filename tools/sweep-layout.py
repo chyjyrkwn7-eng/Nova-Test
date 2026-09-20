@@ -101,7 +101,6 @@ SCREENS = [
     # onboarding, in the order someone actually meets it
     "showWelcome", "showWelcomeIntro", "showWelcomeNamePrompt",
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
-    "showTourSendoff",
     # the everyday screens
     "showHome", "showAppearance", "showProfile", "showRewards",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",

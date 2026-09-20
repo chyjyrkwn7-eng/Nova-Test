@@ -2363,6 +2363,12 @@
      a real gap before the button, rather than the button and the
      last card's edge sitting right on top of each other. */
   .welcomeintro-row{
+    /* Full width, explicitly. .panel.home is a flex column with
+       align-items:center, so a child sizes to its own content unless told
+       otherwise - and the fourth card's text is short enough that it came
+       out visibly narrower than the other three on an iPad. On a phone all
+       four wrap to the full width anyway, which is why it never showed. */
+    width:100%; box-sizing:border-box;
     margin:0 0 .35rem; padding:.7rem 1rem; border-radius:14px;
     background:var(--panel); border:1px solid var(--rule); text-align:left;
   }
@@ -2378,6 +2384,15 @@
      Phone only; the tablet has a taller panel and different proportions. */
   @media (max-width:32rem){
     .welcomeintro-row{ margin-bottom:.95rem; padding-top:.85rem; padding-bottom:.85rem; }
+  }
+  /* Tablet sizing. Four phone-sized cards in an 834px column left the
+     screen mostly empty; giving them real padding and type fills it and
+     makes them read as panels rather than list rows. */
+  @media (min-width:40rem){
+    .welcomeintro-row{ margin-bottom:1.9rem; padding:2.2rem 1.9rem; border-radius:20px; }
+    .welcomeintro-head{ font-size:1.35rem; margin-bottom:.45rem; }
+    .welcomeintro-body{ font-size:1.12rem; line-height:1.55; }
+    .welcomeintro-title{ font-size:clamp(1.8rem, 5vh, 2.4rem); margin-bottom:1.4rem; }
   }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
@@ -3160,11 +3175,20 @@
      that already toggles it \u2014 see the JS side of this near the bottom of
      the script. */
   .bottomtabs{
-    position:fixed; left:50%; bottom:1.1rem; transform:translateX(-50%);
+    position:fixed; left:50%; transform:translateX(-50%);
     z-index:200; display:flex; gap:.2rem;
     background:var(--panel); border:1px solid var(--rule); border-radius:999px;
     padding:.4rem; box-shadow:0 4px 18px rgba(18,26,32,.18);
-    padding-bottom:max(.4rem, env(safe-area-inset-bottom));
+    /* The home indicator is cleared by LIFTING the bar, not by padding it.
+       padding-bottom:max(.4rem, env(...)) grew the pill downward by the
+       full inset - 34px of empty glass under the icons on an iPhone, which
+       left them sitting high in a pill that looked wrong and unbalanced.
+       An iPad's 20px inset made the same mistake less obvious, which is
+       why that one looked right by comparison. Offsetting the whole bar
+       instead keeps the pill exactly the shape it is designed to be on
+       every device, and the total space it occupies is unchanged, so the
+       7.5rem reserved for it above still fits. */
+    bottom:calc(1.1rem + env(safe-area-inset-bottom, 0px));
     /* Shrink-to-fit with no ceiling meant the bar was a flat 344px wide
        whatever the screen was, so on a 320px phone (an SE, or a narrow
        desktop window) it ran 12px off BOTH edges - measured. A ceiling
@@ -3210,7 +3234,7 @@
     /* was max-width:none, which re-opened the overflow this variant is
        even more prone to - it carries an extra Start pill. */
     max-width:calc(100vw - 1.5rem);
-    padding:.4rem; padding-bottom:max(.4rem, env(safe-area-inset-bottom));
+    padding:.4rem;   /* lifted, not padded - see .bottomtabs above */
   }
   .bottomtabs-extrarow{
     display:none; align-items:center; justify-content:center; gap:.2rem;
@@ -4412,9 +4436,13 @@
      screens specifically (3 classes, so it wins over the plainer
      .panel.home rule above without touching Home or anything else
      that wasn't reported as a problem. */
-  @media (min-width:40rem){
-    .panel.home.welcomeintro-panel{ justify-content:flex-end; }
-  }
+  /* flex-end used to push this group to the bottom of the leftover tablet
+     space, which read better than centring it. It stopped reading better
+     once the panel floor was corrected and the panel got taller: on an
+     iPad it left 570px of nothing above the Back link and dumped the whole
+     screen along the bottom edge. The content fills the space itself now -
+     bigger cards below, and a Continue that centres in whatever is left -
+     so there is nothing to push. */
   /* The earlier override that lived here (forcing this specific
      screen's button to margin-top:1.4rem, right under the input
      field) is removed \u2014 confirmed directly from a screenshot that
@@ -4432,7 +4460,13 @@
      nothing left to actually push against. A real, fixed gap here
      instead guarantees genuine breathing room regardless of how
      close to the viewport edge the content itself happens to land. */
-  .panel.home.welcomeintro-panel .playbtn{ margin-top:.8rem; }
+  /* auto on BOTH sides, so the button sits in the middle of whatever space
+     is left between the last card and the bottom of the panel rather than
+     tucked right under the cards. Reported on a phone: "too close to the
+     bottom box, it needs to be centered between the bottom of the screen
+     and the last box". Two auto margins split the free space evenly, which
+     is exactly that, and it does the right thing on a tablet too. */
+  .panel.home.welcomeintro-panel .playbtn{ margin-top:auto; margin-bottom:auto; }
   /* This screen's four cards run tall enough on a phone to scroll the
      page — per explicit report ("scrollable on my iPhone"). Trimming
      this screen's own top/bottom padding a bit (still comfortable,
@@ -4472,8 +4506,29 @@
      there" - a shared class instead of three separate copies of the
      same two-line override, applied to whichever screens need it. */
   @media (min-width:40rem){
-    .panel.home.onboarding-shortform-panel{ justify-content:flex-start; }
-    .panel.home.onboarding-shortform-panel .playbtn{ margin-top:auto; }
+    /* Centred as a group, not top-aligned with the button driven to the
+       floor. These screens are a title, a line of help and one field -
+       about 230px of content - so margin-top:auto opened an 800px void
+       between the field and Continue on an iPad. Reported as "so much
+       unused space" on the sign-in-with-a-code screen, and it is the
+       same on username entry. Centring puts the group where the eye
+       already is and leaves even margins instead of one huge gap.
+       Pick your class keeps its own bottom-anchored button below - that
+       screen has enough content to earn it. */
+    /* Top-aligned, not centred. Choose a character is a title, one line
+       and a grid of eight faces - centring it on a 1194px-tall iPad
+       floated the whole thing into the middle of the screen with nothing
+       above or below it, reported as "centered to the screen and isn't at
+       the top like it should". */
+    .panel.home.charselect-panel{ justify-content:flex-start; }
+    .panel.home.charselect-panel .hometitle{ font-size:clamp(1.9rem, 5vh, 2.6rem); }
+    .panel.home.charselect-panel .hometagline{ font-size:1.15rem; }
+    .panel.home.charselect-panel .avatarchar-grid{ margin-top:1.4rem; }
+    .panel.home.onboarding-shortform-panel{ justify-content:center; }
+    .panel.home.onboarding-shortform-panel .playbtn{ margin-top:2.2rem; }
+    .panel.home.onboarding-shortform-panel .hometitle{ font-size:clamp(1.9rem, 5vh, 2.6rem); }
+    .panel.home.onboarding-shortform-panel .hometagline{ font-size:1.15rem; }
+    .panel.home.onboarding-shortform-panel .searchbox{ font-size:1.1rem; padding-top:.9rem; padding-bottom:.9rem; }
   }
   /* The full-bleed cosmic welcome screen \u2014 no card border, hero
      graphic sitting directly on the app's own dark background. */
@@ -4555,8 +4610,19 @@
      already-safe size instead. The actual criterion is vertical room,
      not orientation as such; this threshold tracks that directly rather
      than guessing from aspect ratio. */
+  /* A tablet is not a big phone. At 30rem the sphere sat in the middle of
+     an 834x1194 screen with ~370px of empty space under the content and
+     read as a phone layout that had been stretched. It is the one element
+     that can actually take up a tablet's room, so it does: 36rem is 576px,
+     which still clears the 44rem content column comfortably. */
   @media (min-width:40rem) and (min-height:60rem){
-    .cosmic-hero-wrap{ max-width:min(30rem, 54vh); }
+    /* 48vh, not 56. The flat 36rem cap plus a generous vh share fits an
+       834x1194 iPad beautifully and does not fit a 768x1024 one, or any
+       iPad in landscape - measured, it put Start Studying up to 28px
+       behind the tab bar on four of them. Tying the size to the height
+       that is actually available lets the same rule serve a short iPad
+       and a tall one. */
+    .cosmic-hero-wrap{ max-width:min(36rem, 48vh); }
   }
   /* Smaller, sits above the greeting instead of dominating the whole
      screen the way it does on Welcome, since Home already has its own
@@ -4985,10 +5051,17 @@
      into the bottom tab bar on a short/landscape iPad, so it only
      applies where there's actually enough vertical room for it. */
   @media (min-width:40rem) and (min-height:60rem){
-    .hometitle-wrap{ margin-bottom:1.9rem; }
-    .homegreeting{ font-size:1.12rem; margin:1.15rem 0 .58rem; }
-    .hometitle{ font-size:clamp(1.9rem, 7.5vh, 2.75rem); }
-    .hometagline{ font-size:1.12rem; }
+    /* Scaled up alongside the bigger sphere - the greeting and title were
+       phone-sized under a 576px hero, which is what made the whole screen
+       read as stretched rather than designed for the device. */
+    /* Margins in vh as well, for the same reason - fixed rem gaps that
+       look right at 1194 are what tips a 1024-tall iPad over. */
+    .hometitle-wrap{ margin-bottom:min(2.4rem, 3vh); }
+    .homegreeting{ font-size:1.3rem; margin:min(1.6rem, 2vh) 0 .7rem; }
+    .hometitle{ font-size:clamp(2.1rem, 6.5vh, 3.4rem); }
+    .hometagline{ font-size:1.25rem; }
+    .cosmic-welcome-title{ font-size:clamp(2rem, 6vh, 2.8rem); }
+    .cosmic-welcome-sub{ font-size:1.2rem; }
   }
   /* The mirror image of the tall-tablet block above, and the reason it
      exists: on a SHORT viewport Home does not fit, and the Start
@@ -5093,7 +5166,7 @@
        the bar's top edge was at 119px - measured on an iPhone 15, the
        label sat 20px BEHIND the bar. The inset has to be carried here
        too, or this is hidden on exactly the devices it is read on. */
-    bottom:calc(6.2rem + env(safe-area-inset-bottom, 0px));
+    bottom:calc(6.8rem + env(safe-area-inset-bottom, 0px));
   }
   /* "Version 6.0" is a lot of label for a 393px screen sitting beside a
      centred tab bar. The full form is set in JS; this hides the word on a
@@ -5124,6 +5197,15 @@
     .panel.home .cosmic-hero-wrap{ max-width:min(25.5rem, 52vh); }
     .panel.home .homegreeting{ margin-top:2.1rem; }
     .panel.home .hometitle-wrap{ margin-bottom:2.7rem; }
+  }
+  /* Phone: spread the welcome screen's own leftover height into its gaps
+     instead of leaving it in one lump under the last line. The hero is
+     already as wide as the column allows, so there is nothing to grow -
+     but distributing ~40px across five gaps closes the hole and keeps
+     every proportion intact. The tablet is centred and already balanced,
+     so it is left alone. */
+  @media (max-width:32rem){
+    .cosmic-welcome{ justify-content:space-between; }
   }
   .homeversion .homeversion-long{ display:none; }
   .homeversion .homeversion-short{ display:inline; }
@@ -24160,7 +24242,7 @@ function showWelcomeNamePrompt(){
 function showWelcomeCharacterPrompt(){
   setOnboardingHeader();
   const panel = document.createElement("section");
-  panel.className = "panel home";
+  panel.className = "panel home charselect-panel";
   panel.appendChild(buildBackLink("Back", showWelcomeNamePrompt));
   const glow = document.createElement("div");
   glow.className = "homeglow";
@@ -24806,54 +24888,19 @@ function startMainMenuTour(){
 }
 
 
-function showTourSendoff(){
-  const overlay = document.createElement("div");
-  overlay.className = "installguide-overlay";
-  const card = document.createElement("div");
-  card.className = "installguide-card";
-  card.style.textAlign = "center";
+/* showTourSendoff() lived here and has been removed. It was the OLD
+   end-of-onboarding popup - "You're all set" over a dimmed screen - and
+   nothing had called it for a long time: the send-off is the last step of
+   startMainMenuTour() now ("Good luck - tap here whenever you are ready to
+   start studying. You will see a few more tips like these as you explore
+   the rest of the app."), which is the right place for it.
 
-  const title = document.createElement("p");
-  title.className = "installguide-title";
-  title.textContent = "You're all set";
-  card.appendChild(title);
-
-  const body = document.createElement("p");
-  body.style.cssText = "font-size:.9rem; color:var(--soft); margin:0 0 1.2rem; line-height:1.5;";
-  body.textContent = "Good luck \u2014 tap Start Studying whenever you're ready.";
-  card.appendChild(body);
-
-  /* Install guidance used to be its own forced screen in the middle of
-     onboarding. Folded in here instead, as an optional collapsed
-     section rather than a screen someone has to click through \u2014 the
-     main menu tour and this card are the only places it's offered now. */
-  if(isIOSDevice() && !isStandaloneApp()){
-    const installDetails = document.createElement("details");
-    installDetails.style.cssText = "text-align:left; margin:0 0 1.2rem;";
-    const installSummary = document.createElement("summary");
-    installSummary.className = "motion-summary";
-    installSummary.style.justifyContent = "center";
-    installSummary.textContent = "Add this app to your Home Screen";
-    installDetails.appendChild(installSummary);
-    const stepsWrap = document.createElement("div");
-    stepsWrap.style.cssText = "margin-top:.8rem;";
-    stepsWrap.appendChild(buildInstallStepRows());
-    installDetails.appendChild(stepsWrap);
-    card.appendChild(installDetails);
-  }
-
-  const closeBtn = document.createElement("button");
-  closeBtn.type = "button"; closeBtn.className = "next";
-  closeBtn.textContent = "Let's go";
-  closeBtn.addEventListener("click", () => {
-    overlay.remove();
-    awardWelcomeBonus();
-  });
-  card.appendChild(closeBtn);
-
-  overlay.appendChild(card);
-  document.body.appendChild(overlay);
-}
+   Left behind as dead code it was worse than useless. It appends its
+   overlay to <body>, not to #stage, so nothing clears it on a screen
+   change - anything that called it, including a test harness mounting
+   every screen by name, left "You're all set" stuck over whatever came
+   next. That is exactly how it turned up over Settings in a screenshot.
+   Deleted rather than left for the next person to rediscover. */
 
 /* A one-time welcome bonus, shown right after the intro tour finishes \u2014
    genuinely adds to the person's real point total (not just a visual), then
@@ -27596,7 +27643,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-40";
+const APP_BUILD = "2026-09-20-41";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -336,6 +336,40 @@ inset checks measure the CONTENT box, never the border box. `.floatbtn` does
 need `padding-left`/`padding-right` insets though: full-bleed puts its label
 under the notch on a phone held sideways.
 
+**Clear the home indicator by MOVING a fixed element, not by padding it.**
+`.bottomtabs` used `padding-bottom:max(.4rem, env(...))`, which grew the pill
+downward by the whole inset — 34px of empty glass under the icons on an
+iPhone, leaving them sitting high in a bar that looked wrong. An iPad's 20px
+inset made the same mistake less obvious, which is why that one "looked
+perfect" by comparison. `bottom:calc(1.1rem + env(...))` keeps the pill the
+shape it was designed to be on every device, and the total space it occupies
+is unchanged.
+
+**A tablet is not a big phone.** The hero sphere carries these screens and it
+is the one element that can absorb a tablet's height — but **size it in `vh`,
+not a flat `rem` cap.** `min(36rem, 56vh)` fits an 834×1194 iPad beautifully
+and pushed Start Studying behind the tab bar on a 768×1024 one and on every
+iPad in landscape. `min(36rem, 48vh)` serves both. The same applies to the
+margins around it: fixed `rem` gaps that look right at 1194 are what tip a
+1024-tall iPad over, so they are `min(2.4rem, 3vh)` and so on.
+
+**`.panel.home` is `align-items:center`, so a flex child sizes to its own
+content.** The fourth "What This Actually Is" card has the shortest text and
+came out visibly narrower than the other three on an iPad; on a phone all
+four wrap to full width, so it never showed there. Anything meant to be a
+full-width row in that column needs `width:100%` explicitly.
+
+**Two `auto` margins centre an item in the leftover space.** That is the
+right tool when a button should sit *between* the content and the bottom of
+the panel rather than tucked under the content or jammed at the floor.
+
+**Dead code that appends to `<body>` is worse than dead.** `showTourSendoff()`
+— the old "You're all set" popup — had not been called in a long time (the
+send-off is the last step of `startMainMenuTour()` now), but it attached its
+overlay to `<body>` rather than `#stage`, so nothing cleared it on a screen
+change. Anything that called it, including a harness mounting every screen by
+name, left it stuck over whatever came next. Deleted.
+
 **Tap targets: 44px minimum, and check them.** A sweep of every button
 found the Settings controls running at 12.5–13.1px text in 40px boxes while
 the primary button was 16.8px in 48px — `.cal-profile-btn`, `.more-toggle`,
