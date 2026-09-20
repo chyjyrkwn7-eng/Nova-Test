@@ -5620,6 +5620,31 @@
   [data-theme="dark"][data-layout="modern"] .top #restart{
     background:var(--panel); box-shadow:0 2px 10px rgba(0,0,0,.4);
   }
+  /* Tablets only: no tablet-specific rule existed at all, so the Pause
+     button kept its phone size and its phone position in the counter row
+     at every width - small and adrift on an iPad rather than in the
+     corner where a running drill needs it.
+     The `right` value is intentionally a flat, safe-area-relative inset,
+     NOT the right:max(calc(50% - Nrem), Yrem) formula used by
+     .daily-question-fab and .homeversion-btn elsewhere in this file. That
+     formula tracks the edge of the centred, fixed-width bottom tab bar
+     those two sit beside, and it grows FURTHER from the true screen edge
+     as the viewport widens - measured leaving ~190px of dead space past
+     the button on a 1024px landscape iPad. This one has no such sibling
+     to relate to; it just needs the literal corner. */
+  @media (min-width:40rem){
+    [data-layout="modern"] .top #pausebtn:not([hidden]){
+      position:fixed;
+      top:calc(env(safe-area-inset-top, 0px) + 1.1rem);
+      right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
+      z-index:150;
+      padding:.8rem 1.6rem; font-size:1.05rem;
+      /* Overrides the translateY(-3px) nudge above, which exists to sit
+         the button nicely in the phone counter row and is meaningless
+         once it is corner-pinned. */
+      transform:none;
+    }
+  }
   /* Ghost buttons (Sign in with a code, back buttons) previously just
      stripped the glass treatment entirely rather than getting their
      own version of it \u2014 giving them a real dark-glass look, the same
