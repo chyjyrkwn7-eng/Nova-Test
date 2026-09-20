@@ -4738,14 +4738,15 @@
      warning text near the top of the screen instead of settling at
      the same natural resting position every comparable screen already
      reaches, which is exactly the "not in the same position" gap. */
-  /* Danger red, in the tone this app already uses for danger TEXT on a
-     dark background - the same #E8687C as [data-theme="dark"]
-     .restart.danger - rather than the button's own #8B1E1E fill.
-     Measured against the app background: the button fill comes out at
-     about 2:1, which is fine behind white button text and poor as text
-     itself, and worse than the #B0293D (2.8:1) this replaces. #E8687C
-     measures about 5.9:1. Same colour language, legible weight. */
-  .resetwarning-title{ color:#E8687C; font-size:1.5rem; }
+  /* #8B1E1E - the danger button's exact fill, chosen deliberately after
+     seeing both side by side. It measures roughly 2:1 against the app
+     background, which is below the usual bar for text, but it is a
+     large, bold, short serif heading on a screen whose whole job is to
+     be read slowly, and matching the button it sits above matters more
+     here than the number does. The lighter #E8687C that was here first
+     read as the old pinkish colour it replaced rather than as the new
+     red, which defeated the point of the change. */
+  .resetwarning-title{ color:#8B1E1E; font-size:1.5rem; }
   /* Deliberately smaller than .hometitle's own scale - this is a warning
      heading, not the app's hero title - but it still has to grow with
      the screen. Added after the phone rule as an override, per the
@@ -26983,7 +26984,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-17";
+const APP_BUILD = "2026-09-20-18";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
