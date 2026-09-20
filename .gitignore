@@ -1,0 +1,5 @@
+# Python bytecode, produced whenever a tools/ script is imported rather than
+# run directly (the icon generator gets imported by ad-hoc comparison
+# scripts). Nothing in here belongs in the repo.
+__pycache__/
+*.pyc
