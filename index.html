@@ -1426,6 +1426,28 @@
   .section-divider{
     margin-top:2.2rem;
   }
+  /* Settings only. The gap between one section's content and the next
+     section's title was visibly uneven, and the cause is margin collapse
+     rather than specificity: adjacent vertical margins between siblings
+     collapse to the LARGER of the two, never their sum. .section-divider
+     brings margin-top:2.2rem (above) and .sect brings margin-bottom:1.5rem,
+     so each boundary silently rendered whichever of those two won, and one
+     section's trailing note added its own bottom margin on top in a single
+     spot. Both classes are shared by Profile and Rewards, so these are
+     scoped to .screen-settings rather than fixing the bare classes and
+     moving every other screen's spacing by accident. */
+  .screen-settings .section-divider{
+    margin-top:1rem;
+  }
+  /* Only sections that precede ANOTHER section's title, i.e. every one
+     except the last (Advanced). The trailing gap below Advanced was never
+     part of the complaint and is deliberately left as it was. */
+  .screen-settings .sect:has(+ .sect > .section-divider){
+    margin-bottom:1rem;
+  }
+  .screen-settings .info-note.sync-note-plain{
+    margin-bottom:0;
+  }
 
   /* Unconditional now, not gated behind a min-width \u2014 per explicit
      request, extending the same 2-per-row grid tablet already had down
