@@ -3,7 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" id="themecolor" content="#12161B">
+<!-- iOS reads this ONCE, at launch, straight out of the HTML as
+     delivered - before a single line of JS has run. syncStatusBarColor()
+     below keeps it correct for live theme changes and for a Safari tab,
+     but a home-screen app's status bar is already painted by then, so
+     whatever is hardcoded here is what that strip actually shows. It was
+     #12161B (flat --paper) against an app painting #2A1F24 one pixel
+     lower, which is the entire reason that bar read as a grey seam.
+     #271E23 is the computed top-edge color for the default theme, so a
+     first launch is already right; the inline script immediately below
+     upgrades it to the exact value for whatever theme is actually saved,
+     while still beating first paint. -->
+<meta name="theme-color" id="themecolor" content="#271E23">
+<script>
+  /* Deliberately inline, synchronous, and this early: it has to finish
+     before the first paint for iOS to pick the value up, which rules out
+     the main script block (far below, after all the CSS) and anything
+     deferred. Reads a plain cached hex rather than recomputing from the
+     theme tokens because the stylesheet below hasn't been parsed yet -
+     there are no custom properties to read at this point in the document.
+     syncStatusBarColor() writes this key every time it runs, so the cache
+     is always one theme-change behind at worst, and the regex means a
+     corrupted or hand-edited value falls back to the meta default above
+     instead of painting something arbitrary. */
+  try{
+    var savedBar = localStorage.getItem("class26e.statusbar.v1");
+    if(savedBar && /^#[0-9a-fA-F]{6}$/.test(savedBar)){
+      document.getElementById("themecolor").content = savedBar;
+    }
+  }catch(e){}
+</script>
 <meta name="color-scheme" id="colorscheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19728,8 +19757,16 @@ function appTopEdgeColor(){
 function syncStatusBarColor(){
   const tcMeta = document.getElementById("themecolor");
   if(!tcMeta) return;
-  const fallback = document.documentElement.dataset.theme === "light" ? "#E4E9EC" : "#12161B";
-  tcMeta.content = appTopEdgeColor() || fallback;
+  const fallback = document.documentElement.dataset.theme === "light" ? "#E4E9EC" : "#271E23";
+  const color = appTopEdgeColor() || fallback;
+  tcMeta.content = color;
+  /* Cached for the next launch, which is the one that actually matters on
+     iOS: the early inline script up in <head> replays this before first
+     paint, so the status bar comes up already matching the saved theme
+     instead of waiting on a JS update the home-screen app will never
+     read. Wrapped because this runs on every theme change and a storage
+     failure must never take applyTheme() down with it. */
+  try{ localStorage.setItem("class26e.statusbar.v1", color); }catch(e){}
 }
 
 function saveTheme(){
