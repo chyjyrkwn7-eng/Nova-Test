@@ -5838,6 +5838,20 @@
        there's no visible flash of the wrong color first. Same
        "wrapped in try/catch, exactly one localStorage read, nothing
        else" pattern already used just below for isReturningUser. */
+    /* Set here rather than waited for. applyTheme() is what normally puts
+       these on <html>, and it does not run until the main script has
+       finished parsing - tens of thousands of lines later - so until then
+       html[data-layout="modern"], the rule that paints the very top of
+       the screen, matches nothing and that strip renders flat. Visible as
+       a brief mismatched band on load, Safari especially.
+       data-theme is already on the <html> tag itself, so it is only
+       repeated here to keep the pair together: loadTheme() hard-codes
+       both values anyway (light mode and classic layout are retired and
+       any stored preference for them is ignored), so there is nothing to
+       wait for in either case. */
+    document.documentElement.dataset.theme = "dark";
+    document.documentElement.dataset.layout = "modern";
+
     try {
       var raw = window.localStorage.getItem("class26e.drill.v1");
       if(raw){
