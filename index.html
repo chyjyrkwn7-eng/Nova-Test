@@ -26823,9 +26823,77 @@ const LEVEL_CONFETTI = {
 /* A short vibration on answer taps, when enabled — iOS Safari doesn't
    support the Vibration API at all, so this is a no-op there and just
    silently does nothing rather than error. */
+/* Two mechanisms, because the obvious one does not exist on the device
+   this app is mostly used on. WebKit has never shipped the Vibration
+   API, so navigator.vibrate is simply absent on iOS and this was a
+   silent no-op there for every iPhone and iPad using the app.
+
+   The fallback is the switch-checkbox trick: since iOS 17.4 Safari
+   supports <input type="checkbox" switch>, a real native iOS switch,
+   and toggling one fires the system haptic. A hidden one kept purely
+   for that feedback is the only way to reach the Taptic Engine from a
+   web app, and it works inside an installed Home Screen app rather
+   than only in a Safari tab.
+
+   Positioned off-screen rather than display:none or visibility:hidden
+   on purpose - a control that is not being rendered does not produce
+   the native feedback that is the entire point of it. aria-hidden and
+   tabindex=-1 keep it out of the accessibility tree and tab order. */
+/* Feature-DETECTED by measurement, not by asking for a property. The
+   obvious test is "switch" in an <input>, but whether Safari exposes
+   that IDL name is not something this can verify from a Chromium test
+   rig, and a detection that silently answers false would hide the row
+   on the exact devices the fallback exists for.
+   What is verifiable is shape: a supported <input type="checkbox"
+   switch> renders as a real iOS switch, markedly wider than it is tall,
+   where an unsupported one falls back to a square checkbox. Measuring
+   that is true regardless of which properties happen to be exposed.
+   The probe is left in the DOM and reused as the haptic element when it
+   works, and removed when it does not. It keeps its natural size on
+   purpose - forcing it to 1x1 would both break the measurement and
+   likely stop the control producing feedback at all - and is parked
+   off-screen rather than hidden, since a control that is not rendered
+   does not fire the native haptic that is the whole point. */
+let hapticSwitchEl = null;
+let switchHapticSupported = null;
+
+function detectSwitchHaptic(){
+  if(switchHapticSupported !== null) return switchHapticSupported;
+  if(!document.body) return false;          // called before body exists; ask again later
+  let el;
+  try {
+    el = document.createElement("input");
+    el.type = "checkbox";
+    el.setAttribute("switch", "");
+    el.setAttribute("aria-hidden", "true");
+    el.tabIndex = -1;
+    el.style.cssText = "position:fixed; left:-9999px; top:0; opacity:0; pointer-events:none; margin:0;";
+    document.body.appendChild(el);
+  } catch(e){ switchHapticSupported = false; return false; }
+  const r = el.getBoundingClientRect();
+  const rendersAsSwitch = r.width > r.height * 1.4 && r.width > 24;
+  switchHapticSupported = ("switch" in el) || rendersAsSwitch;
+  if(switchHapticSupported) hapticSwitchEl = el;
+  else el.remove();
+  return switchHapticSupported;
+}
+
+function hapticSupportedHere(){
+  return typeof navigator.vibrate === "function" || detectSwitchHaptic();
+}
+
 function triggerHaptic(){
   if(!theme.hapticTouch) return;
-  if(navigator.vibrate) navigator.vibrate(12);
+  if(navigator.vibrate){ navigator.vibrate(12); return; }
+  if(!detectSwitchHaptic() || !hapticSwitchEl) return;
+  const el = hapticSwitchEl;
+  /* click(), not a direct .checked assignment: the haptic comes from the
+     control being actuated, and setting the property alone does not
+     actuate it. Every call site is already inside a real user gesture
+     (answering a question, toggling the setting), which is what iOS
+     requires. Wrapped because this is a nicety - it must never be able
+     to take an answer tap down with it. */
+  try { el.click(); } catch(e){}
 }
 
 /* A small contextual info popup that appears right next to whatever
@@ -26958,7 +27026,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-11";
+const APP_BUILD = "2026-09-20-12";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28180,7 +28248,12 @@ function showAppearance(){
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
   motionDetails.appendChild(autoAdvRow);
 
-  const hapticSupported = typeof navigator.vibrate === "function";
+  /* hapticSupportedHere(), not a bare navigator.vibrate check: that check
+     hid this row on every iPhone and iPad, which is most of the people
+     using the app, even though the switch fallback can reach the
+     Taptic Engine there. Still gated rather than always shown - a
+     toggle that provably cannot do anything is worse than no toggle. */
+  const hapticSupported = hapticSupportedHere();
   if(hapticSupported){
     const hapticRow = document.createElement("label");
     hapticRow.className = "opt";
@@ -28198,7 +28271,7 @@ function showAppearance(){
     hapticWrap.appendChild(document.createTextNode("Haptic touch"));
     const hapticHint = document.createElement("span");
     hapticHint.className = "ohint";
-    hapticHint.textContent = "A short vibration when you pick an answer.";
+    hapticHint.textContent = "A short vibration when you pick an answer. Needs iOS 17.4 or later on iPhone and iPad.";
     hapticWrap.appendChild(hapticHint);
     hapticRow.append(hapticCb, hapticBox, hapticWrap);
     motionDetails.appendChild(hapticRow);
