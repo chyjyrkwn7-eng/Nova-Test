@@ -3422,6 +3422,24 @@
     border:1px solid rgba(255,255,255,.18);
   }
   [data-theme="light"] .update-banner-btn.ghost{ border-color:rgba(18,26,32,.18); }
+  /* Only ever appears if the hand-off to Safari failed outright, so it
+     is allowed to take the room it needs to be followed by hand. */
+  .update-banner-fallback{
+    display:flex; flex-direction:column; gap:.5rem;
+    margin-top:.2rem; padding-top:.7rem;
+    border-top:1px solid rgba(255,255,255,.1);
+    font-size:.82rem; line-height:1.4;
+  }
+  [data-theme="light"] .update-banner-fallback{ border-top-color:rgba(18,26,32,.12); }
+  .update-banner-link{
+    font-family:var(--mono); font-size:.8rem; word-break:break-all;
+    padding:.4rem .55rem; border-radius:8px;
+    background:rgba(255,255,255,.07);
+    /* Selectable on purpose: it is the last resort if the clipboard is
+       refused, so it has to be readable and copyable by hand. */
+    -webkit-user-select:text; user-select:text;
+  }
+  [data-theme="light"] .update-banner-link{ background:rgba(18,26,32,.06); }
   /* Sync code entry: an inline status line under the field itself
      rather than a toast, since the message is specifically about
      that field's contents \u2014 subtle color rather than a loud banner,
@@ -5848,7 +5866,34 @@
        loaded. */
     var isReturningUser = false;
     try { isReturningUser = !!window.localStorage.getItem("class26e.synccode"); } catch(e){}
-    var duration = isReturningUser ? 2500 : 8000;
+    /* Tapping Update reloads the page, which means the ordinary splash
+       runs and cheerfully narrates "loading Drill, Game & Exam modes" at
+       someone who just asked for an update - so the one moment the app is
+       genuinely installing something is the one moment it does not say
+       so. applyUpdate() sets this flag immediately before reloading.
+       sessionStorage rather than localStorage deliberately: it is scoped
+       to this app session, so a crash or a stray refresh can never leave
+       the app permanently convinced it is mid-update. Cleared on read
+       regardless, so it only ever colours the one load it was set for. */
+    var isUpdating = false;
+    try {
+      isUpdating = window.sessionStorage.getItem("class26e.updating") === "1";
+      if(isUpdating) window.sessionStorage.removeItem("class26e.updating");
+    } catch(e){}
+    var updatePool = [
+      "> downloading latest build...",
+      "> clearing cached files...",
+      "> refreshing question bank...",
+      "> applying changes...",
+      "> preserving local profile...",
+      "> rebuilding interface...",
+      "> update complete."
+    ];
+    if(isUpdating) messagePool = updatePool;
+    /* An update is a deliberate, watched action - the person is waiting
+       on it - so it gets the brisk returning-user pace rather than the
+       long first-run one, whichever kind of user triggered it. */
+    var duration = isUpdating ? 2600 : (isReturningUser ? 2500 : 8000);
     /* A random subset of the pool, in random order, so this doesn't
        read the same canned four lines on every single load \u2014 always
        ends on "ready." though, so the sequence still lands somewhere
@@ -5859,7 +5904,7 @@
       var j = Math.floor(Math.random() * (i + 1));
       var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
     }
-    var messageCount = isReturningUser ? 3 : 6;
+    var messageCount = isUpdating ? 4 : (isReturningUser ? 3 : 6);
     var messages = pool.slice(0, Math.min(messageCount, pool.length)).concat([readyMsg]);
     var msgInterval = duration / messages.length;
     var msgIndex = 0;
@@ -26764,7 +26809,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-5";
+const APP_BUILD = "2026-09-20-6";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -26937,28 +26982,17 @@ function showFrameNotice(info){
   const row = document.createElement("div");
   row.className = "update-banner-row";
 
-  /* An anchor with target="_blank", not a button calling window.open:
-     from a standalone Home Screen app this is what actually hands off to
-     Safari, which is the only place the Share sheet - and therefore Add
-     to Home Screen - exists at all. */
-  const open = document.createElement("a");
+  /* target="_blank" does NOT reach Safari from a standalone Home Screen
+     app on current iOS - a same-origin link simply navigates inside the
+     app, which presents as the app reloading and showing its own splash
+     while never leaving. Confirmed on a real device. The x-safari-https
+     scheme is what actually hands a URL to Safari from inside a web app,
+     and openInSafari() below falls back to a copyable link if even that
+     does nothing, so this can never be a button that silently fails. */
+  const open = document.createElement("button");
   open.className = "update-banner-btn";
-  open.href = location.href;
-  open.target = "_blank";
-  open.rel = "noopener";
   open.textContent = "Open in Safari";
-  /* Acknowledges on the way out. Without this, someone who taps here,
-     re-adds the icon exactly as asked, and opens the fresh install gets
-     the very same notice again - because nothing observable from a web
-     page changes when an icon is re-added, so the new install cannot
-     tell it is the new install. Being asked a second time reads as "it
-     did not work". Tapping this is the action path; treating it as
-     done is the honest reading of it. Anyone who taps it and abandons
-     keeps a grey strip, which is the same place they started. */
-  open.addEventListener("click", () => {
-    try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
-    pendingNotice = null;
-  });
+  open.addEventListener("click", () => openInSafari(bar, info));
 
   /* Self-reported, because it has to be: nothing readable from a web page
      changes when an icon is re-added, so there is no way to confirm it
@@ -26997,6 +27031,72 @@ function showFrameNotice(info){
   requestAnimationFrame(() => bar.classList.add("show"));
 }
 
+/* Acknowledgement is deliberately tied to actually LEAVING, not to the
+   tap. The previous version marked it done the moment the button was
+   pressed, which was fine while the button was assumed to work - but it
+   does not reliably work, so that turned a failed hand-off into a
+   permanently silenced notice, i.e. the worst possible outcome. The app
+   going hidden is real evidence Safari took over; nothing else is. */
+function openInSafari(bar, info){
+  const target = "x-safari-https://" + location.host + location.pathname + location.search;
+  let handedOff = false;
+
+  const onHide = () => {
+    if(!document.hidden) return;
+    handedOff = true;
+    try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
+    pendingNotice = null;
+    document.removeEventListener("visibilitychange", onHide);
+  };
+  document.addEventListener("visibilitychange", onHide);
+
+  try{ window.location.href = target; }catch(e){}
+
+  /* If the scheme was not handled, the app is simply still sitting here a
+     moment later, having done nothing visible. That is the case worth
+     catching: a button that appears to do nothing is worse than no
+     button, so it turns into instructions the person can actually
+     follow. */
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", onHide);
+    if(handedOff || document.hidden) return;
+    showSafariFallback(bar);
+  }, 1500);
+}
+
+function showSafariFallback(bar){
+  if(bar.querySelector(".update-banner-fallback")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "update-banner-fallback";
+
+  const msg = document.createElement("span");
+  msg.textContent = "Couldn't open Safari automatically. Copy this link and paste it into Safari:";
+
+  const link = document.createElement("code");
+  link.className = "update-banner-link";
+  /* Host and path only - the visible version is for reading and for
+     typing out if all else fails, so the full URL with any query string
+     would be noise. The copy button still copies the real thing. */
+  link.textContent = location.host + location.pathname;
+
+  const copy = document.createElement("button");
+  copy.className = "update-banner-btn ghost";
+  copy.textContent = "Copy link";
+  copy.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(location.href);
+      copy.textContent = "Copied";
+    }catch(e){
+      /* Clipboard access can be refused outright. The link above is
+         plain selectable text, so there is still a way through. */
+      copy.textContent = "Copy failed \u2014 select it above";
+    }
+  });
+
+  wrap.append(msg, link, copy);
+  bar.appendChild(wrap);
+}
+
 function hideBanner(){
   const bar = document.getElementById("updatebanner");
   if(!bar) return;
@@ -27013,6 +27113,9 @@ async function applyUpdate(){
      Deliberately this URL rather than a cache-busting ?v= query string -
      a query string populates a SEPARATE cache entry, leaving the plain URL
      the Home Screen icon actually launches just as stale as it was. */
+  /* Read by the splash script on the very next load, so the reload this
+     triggers narrates an update instead of an ordinary cold boot. */
+  try{ sessionStorage.setItem("class26e.updating", "1"); }catch(e){}
   try{ await fetch(location.href, { cache: "reload" }); }catch(e){}
   location.reload();
 }
