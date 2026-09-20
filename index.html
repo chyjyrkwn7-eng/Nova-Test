@@ -4738,6 +4738,14 @@
      warning text near the top of the screen instead of settling at
      the same natural resting position every comparable screen already
      reaches, which is exactly the "not in the same position" gap. */
+  /* Danger red, in the tone this app already uses for danger TEXT on a
+     dark background - the same #E8687C as [data-theme="dark"]
+     .restart.danger - rather than the button's own #8B1E1E fill.
+     Measured against the app background: the button fill comes out at
+     about 2:1, which is fine behind white button text and poor as text
+     itself, and worse than the #B0293D (2.8:1) this replaces. #E8687C
+     measures about 5.9:1. Same colour language, legible weight. */
+  .resetwarning-title{ color:#E8687C; }
   .resetwarning-panel{
     text-align:center; min-height:calc(100dvh - 9rem); box-sizing:border-box;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
@@ -4746,15 +4754,14 @@
      sizing to its own text length, which is what was producing two
      visibly different-sized buttons stacked on top of each other. */
   .resetwarning-panel .next{ width:100%; max-width:22rem; }
+  /* Colour and shadow come entirely from .next.danger now; this rule
+     only places the button. The bespoke #B0293D fill and flat shadow
+     that used to live here were a second, slightly different red -
+     exactly the drift that stopped this screen matching the Settings
+     Reset button. */
   .resetwarning-confirm{
     margin-top:auto;
-    background:#B0293D; color:#FFF2F2; border-color:#B0293D;
-    /* The default button sheen (a light inset highlight meant for the
-       glossy look) read as a stray white outline sitting oddly on top
-       of a solid danger-red button \u2014 flattened it here instead. */
-    box-shadow:0 2px 8px rgba(176,41,61,.3);
   }
-  @media (hover:hover){ .resetwarning-confirm:hover{ background:#8E2A1F; border-color:#8E2A1F; } }
   .affiliation-note{
     font-size:.68rem; color:var(--soft); opacity:.55; text-align:center; margin:1.3rem 0 0;
   }
@@ -26969,7 +26976,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-15";
+const APP_BUILD = "2026-09-20-16";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28008,8 +28015,8 @@ function showResetWarning(){
   panel.className = "panel resetwarning-panel";
 
   const title = document.createElement("p");
-  title.className = "hometitle";
-  title.style.cssText = "font-size:1.5rem; color:#B0293D;";
+  title.className = "hometitle resetwarning-title";
+  title.style.cssText = "font-size:1.5rem;";
   title.textContent = "Reset everything?";
   panel.appendChild(title);
 
@@ -28020,7 +28027,12 @@ function showResetWarning(){
 
   let armed = false;
   const confirmBtn = document.createElement("button");
-  confirmBtn.type = "button"; confirmBtn.className = "next resetwarning-confirm";
+  /* "danger", the same class the Settings Reset button carries, rather
+     than a second set of red values. Matching by construction means the
+     two cannot drift apart - changing the danger red once changes both.
+     The armed "Tap again to confirm" state is this same element, so it
+     follows automatically. */
+  confirmBtn.type = "button"; confirmBtn.className = "next danger resetwarning-confirm";
   confirmBtn.textContent = "Yes, reset everything";
   confirmBtn.addEventListener("click", () => {
     if(!armed){
