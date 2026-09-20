@@ -283,6 +283,15 @@ the primary button colliding with or hidden behind the tab bar, the tab bar
 off-screen, controls colliding with the notch or home indicator, and uncaught
 JS errors.
 
+**It must cover every screen it can mount, not a handful.** It began with 6
+of the app's 44 and reported `62/62 clean` while a regression had left
+*every onboarding screen* — Welcome, the intro, username entry, character
+select — bunched at the top with dead space below. None of them was in the
+list. It now runs 26: everything that can be mounted cold. A screen needing
+run state (`showBankProblems`, `showAnswerReview`) or rendering nothing on
+its own (`showGeneratingProfile`) is excluded; **anything else new belongs
+in `SCREENS`.** A green sweep is only worth what it looked at.
+
 ### Why this matrix and not a smaller one
 
 Every bug below was invisible at 390×844 in a desktop browser, which is where
@@ -293,20 +302,39 @@ Every bug below was invisible at 390×844 in a desktop browser, which is where
   a notched iPhone the screen title sat at y=20 under a 59px status bar,
   behind the clock. **Never set `padding` shorthand on `.wrap`; use
   longhands**, or the insets go silently.
-- **Reserved space for the tab bar has to include
-  `env(safe-area-inset-bottom)`**, because the bar itself grows by it. Flat
-  rem values left Start Studying 10px behind the bar on an iPhone.
-- **`min-height:calc(100dvh - Nrem)` has to subtract the insets too.** `dvh`
-  knows nothing about them, so the floor came out over-tall by ~4rem on a
-  real device.
+- **Do NOT add `env(safe-area-inset-bottom)` to the space reserved for the
+  tab bar.** An earlier pass did, reasoning that the bar grows by the inset
+  so the reservation must too. Measured, that is double-counting: the bar's
+  whole footprint on an iPhone 15 is its `1.1rem` offset plus its 101px
+  height — about 7.4rem *with* the home indicator already inside it — so the
+  flat `7.5rem` covers it, and the addition opened a second gap of the same
+  size under the button.
+- **`min-height:calc(100dvh - Nrem)` must subtract only the EXTRA the insets
+  add, not the insets themselves** — `var(--pad-inset-top)` /
+  `var(--pad-inset-bottom)`, which are `max(0px, inset - baseline)`.
+  Subtracting the raw insets double-counts the baseline the rem figure
+  already contains: it took **~93px off every panel** on a notched iPhone
+  and left every screen in the app bunched at the top with dead space under
+  it. Each formula must collapse back to its original value at zero insets —
+  that property is what makes a change here safe to reason about.
 - The laptop collision: Home did not fit a 768px laptop screen (~640px of
   page in Chrome) and hid the primary action behind the tab bar.
 - The tab bar was a fixed 344px wide, off both edges of a 320px phone; the
   Rewards tab switcher overflowed sideways below 384px.
 
-**Height-only media queries are the tool for vertical fits** — a short laptop
-window and a small phone hit the identical wall, and width tells you nothing
-about it. Home has three tiers: 50rem, 36rem, 26rem.
+**Short-viewport tiers must be short AND wide** — `(max-height:Nrem) and
+(min-width:34rem)`. Height-only was the first instinct, on the reasoning that
+the problem is purely vertical, and it was wrong: it also fires on a phone
+held *upright*. An iPhone SE is 667px tall and was fitting comfortably, and
+the tier shrank its hero from 295px to 227px and its title with it, for no
+reason. The `34rem` floor keeps the tiers to what they were written for —
+laptop windows and phones on their side. Home has three: 50rem, 36rem, 26rem.
+
+**A full-bleed bar pinned to the bottom edge is supposed to reach the edge.**
+It clears the home indicator with *padding*, not by stopping short — so
+inset checks measure the CONTENT box, never the border box. `.floatbtn` does
+need `padding-left`/`padding-right` insets though: full-bleed puts its label
+under the notch on a phone held sideways.
 
 **A fix that stops overflow by squashing is not a fix.** The first attempt at
 the Rewards switcher let the flex items shrink below their own `nowrap` text:

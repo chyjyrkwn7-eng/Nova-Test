@@ -67,6 +67,7 @@ CHROME_H = {"ios-phone": (110, 60), "ios-tablet": (90, 90),
 # name, css w, css h (portrait), platform,
 # portrait insets (top,right,bottom,left), landscape insets
 DEVICES = [
+    ("iPhone SE (1st gen)",     320,  568, "ios-phone",  (20, 0, 0, 0),  (0, 0, 0, 0)),
     ("iPhone SE (2nd/3rd gen)", 375,  667, "ios-phone",  (20, 0, 0, 0),  (0, 0, 0, 0)),
     ("iPhone 13 mini",          375,  812, "ios-phone",  (50, 0, 34, 0), (0, 50, 21, 50)),
     ("iPhone 14 / 15 / 16",     393,  852, "ios-phone",  (59, 0, 34, 0), (0, 59, 21, 59)),
@@ -89,8 +90,27 @@ DEVICES = [
 
 QUICK = {"iPhone 14 / 15 / 16", "iPad Pro 11\"", "iPad mini (6th gen)", "Dell Latitude"}
 
-SCREENS = ["showHome", "showAppearance", "showProfile", "showRewards",
-           "showLeaderboard", "showSetup"]
+# Every screen that can be mounted cold, which is 26 of the app's 44 - not
+# the 6 this started with. That gap is why a regression that left EVERY
+# onboarding screen bunched at the top with dead space below it sailed
+# through a sweep reporting 62/62 clean: none of those screens was in it.
+# A screen that needs run state to mount (showBankProblems, showAnswerReview)
+# or renders nothing on its own (showGeneratingProfile) is left out; anything
+# else that can be called with no arguments belongs here.
+SCREENS = [
+    # onboarding, in the order someone actually meets it
+    "showWelcome", "showWelcomeIntro", "showWelcomeNamePrompt",
+    "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
+    "showTourSendoff",
+    # the everyday screens
+    "showHome", "showAppearance", "showProfile", "showRewards",
+    "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
+    "showExamOptions", "showCalendar", "showTestReviewList",
+    # the rest
+    "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
+    "showWhatsNew", "showReleaseHistory",
+    "showVirtualRoomChoice", "showVirtualRoomSetup", "showVirtualRoomJoinEntry",
+]
 
 SEED = """try{
  localStorage.setItem('class26e.synccode','ABCD-2345');
@@ -171,14 +191,25 @@ AUDIT = """(inset) => {
       if (r.bottom <= 0 || r.top >= vh) return;
       if (buried(el) || clipped(el)) return;
       if (!el.textContent.trim() && !el.matches('input,select,textarea')) return;
-      if (inset.top && r.top < inset.top - 0.5)
-        problems.push(`${name(el)} under the status bar / notch (top ${Math.round(r.top)} < ${inset.top})`);
-      if (inset.bottom && pinned(el) && r.bottom > vh - inset.bottom + 0.5)
-        problems.push(`pinned ${name(el)} under the home indicator (bottom ${Math.round(r.bottom)} > ${vh - inset.bottom})`);
-      if (inset.left && r.left < inset.left - 0.5)
-        problems.push(`${name(el)} under the left inset (${Math.round(r.left)} < ${inset.left})`);
-      if (inset.right && r.right > vw - inset.right + 0.5)
-        problems.push(`${name(el)} under the right inset (${Math.round(r.right)} > ${vw - inset.right})`);
+      /* Against the CONTENT box, not the border box. A full-bleed bar
+         pinned to the bottom edge is supposed to reach the edge - that is
+         what makes it full-bleed - and it clears the home indicator with
+         padding, not by stopping short. Measuring the border box called
+         every such bar a bug and would have trained us to ignore this
+         check. What actually matters is where the text and controls land. */
+      const cs = getComputedStyle(el);
+      const padT = parseFloat(cs.paddingTop) || 0;
+      const padB = parseFloat(cs.paddingBottom) || 0;
+      const padL = parseFloat(cs.paddingLeft) || 0;
+      const padR = parseFloat(cs.paddingRight) || 0;
+      if (inset.top && r.top + padT < inset.top - 0.5)
+        problems.push(`${name(el)} under the status bar / notch (content top ${Math.round(r.top + padT)} < ${inset.top})`);
+      if (inset.bottom && pinned(el) && r.bottom - padB > vh - inset.bottom + 0.5)
+        problems.push(`pinned ${name(el)} under the home indicator (content bottom ${Math.round(r.bottom - padB)} > ${vh - inset.bottom})`);
+      if (inset.left && r.left + padL < inset.left - 0.5)
+        problems.push(`${name(el)} under the left inset (content ${Math.round(r.left + padL)} < ${inset.left})`);
+      if (inset.right && r.right - padR > vw - inset.right + 0.5)
+        problems.push(`${name(el)} under the right inset (content ${Math.round(r.right - padR)} > ${vw - inset.right})`);
     });
   }
   return [...new Set(problems)];

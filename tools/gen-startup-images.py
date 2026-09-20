@@ -88,6 +88,17 @@ def build_block():
                 'media="screen and (device-width: {w}px) and (device-height: {h}px) '
                 'and (-webkit-device-pixel-ratio: {d}) and (orientation: {o})" '
                 'href="{u}"><!-- {lab} -->'.format(w=w, h=h, d=dpr, o=orient, u=uri, lab=label))
+    # Catch-all, last and with NO media attribute. iOS matches a startup
+    # image on exact device dimensions and falls back to WHITE on any
+    # mismatch, so a device this list does not name - a phone released after
+    # it was written, most obviously - gets the white flash back with
+    # nothing to explain why. A media-less entry is the only thing that can
+    # cover a device whose size is not known in advance; the specific
+    # entries above still win wherever they match.
+    uri = png_data_uri(1290, 2796)
+    total += len(uri)
+    lines.append('<link rel="apple-touch-startup-image" href="{u}">'
+                 '<!-- catch-all for any device not listed above -->'.format(u=uri))
     lines.append(END)
     return "\n".join(lines), total
 
