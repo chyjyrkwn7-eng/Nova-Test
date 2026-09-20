@@ -133,12 +133,35 @@ anywhere to say so. Run `--check` after touching anything icon-shaped.
 - **One idea, legible at 60pt.** The V from NOVA and nothing else. The old
   icon was an illustration — sphere, starburst, orbiting moon, a small N —
   none of which survives the size it is actually used at.
-- **iOS's own dark greys**: `#2C2C2E` to `#1A1A1C`, systemGray5 to below
-  systemGray6, so it sits among the system icons rather than against them.
-- **A lit surface, not a flat fill**: a faint overhead pool, a hairline along
-  the top edge, a tight contact shadow under the glyph and a soft specular
-  down its upper third. All of it deliberately understated — the first pass
-  used roughly four times the light and read as a gradient wallpaper.
+- **The grey is calibrated against a real iOS icon, not chosen from a
+  palette.** `GREY_TOP`/`GREY_BOTTOM` are `#323232` → `#141414`. They came
+  from photographing Claude's icon next to Nova's on the same Home Screen and
+  sampling both tiles down their edges, clear of the glyphs. Claude's reads
+  `#2E2E2E` at the top falling to `#171718`, **dead neutral** (R=G=B at every
+  point) on a gentle 23-level slope.
+
+  Nova's was wrong in three separate, measurable ways at once: 16 levels too
+  light at the top, a slope half again as steep (35 levels), and a consistent
+  **+2 blue tint** that made the grey read cool next to Claude's neutral. Two
+  levels of blue is invisible in isolation and obvious side by side, which is
+  exactly why guessing at "systemGray5" does not work.
+
+  The method is the reusable part: render the icon at the screenshot's tile
+  size, sample the same fractions down the same columns, and compare. The
+  local render reproduced the screenshot's values exactly, which is what
+  makes the comparison trustworthy. Current match: **within 2 levels at every
+  point, zero tint.**
+- **No overhead highlight on the background.** There used to be a soft
+  elliptical pool, and measured against Claude it was adding ~18 levels at
+  the top and almost nothing at the bottom — precisely the "too light, too
+  steep" above. iOS's dark icons do not have one: the plain top-to-bottom
+  gradient *is* the lighting. The glyph's own banded shading carries the
+  dimensionality.
+- **A lit surface, not a flat fill** — but far less lighting than instinct
+  suggests. A hairline along the top edge, and for the smooth variants a
+  tight contact shadow and a soft specular on the glyph. The first pass used
+  roughly four times the light and read as a gradient wallpaper; the second
+  still measured 16 levels too bright against a real iOS icon.
 - The V keeps Nova's own ramp (`#FFD37A` → `#F5804D` → `#C23B7A`, the
   wordmark's stops). **The ramp is mapped across the glyph's bounding box and
   weighted towards vertical.** Across the whole canvas, and on an even

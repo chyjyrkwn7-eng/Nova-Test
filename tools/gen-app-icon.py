@@ -57,13 +57,25 @@ BRAND = ["#FFD37A", "#F5804D", "#C23B7A"]
 # ramp onto a coarse grid: crisp square cells, the ramp sampled once per
 # cell, a one-cell drop shadow and a one-cell top highlight. "HD 8-bit" -
 # the pixels are deliberate and large, not an artefact of a small render.
+# The greys are CALIBRATED, not chosen. Claude's icon was photographed next
+# to Nova's on the same Home Screen, and its background sampled down the
+# middle of the tile: #2E2E2E at the top falling to #171718 at the bottom,
+# dead neutral (R=G=B at every point) and a gentle 23-level slope.
+#
+# Nova's was wrong in three separate ways at once, all measurable: 16 levels
+# too light at the top, a slope half again as steep (35 levels), and a
+# consistent +2 blue tint that made the grey read cool against Claude's
+# neutral. #323232 -> #141414 is what reproduces Claude's own measured curve
+# once rendered; see tools/ calibration note in CLAUDE.md.
+GREY_TOP, GREY_BOTTOM = "#323232", "#141414"
+
 VARIANTS = {
-    "brand":      ("#2C2C2E", "#1A1A1C", BRAND, None),
-    "white":      ("#2C2C2E", "#1A1A1C", ["#FFFFFF", "#F2F2F7", "#D8D8DE"], None),
-    "noir":       ("#1F1F21", "#0A0A0A", BRAND, None),
-    "pixel":      ("#2C2C2E", "#1A1A1C", BRAND, True),
-    "pixel-noir": ("#1F1F21", "#0A0A0A", BRAND, True),
-    "pixel-white": ("#2C2C2E", "#1A1A1C", ["#FFFFFF", "#E8E8EE", "#BFBFC7"], True),
+    "brand":      (GREY_TOP, GREY_BOTTOM, BRAND, None),
+    "white":      (GREY_TOP, GREY_BOTTOM, ["#FFFFFF", "#F2F2F7", "#D8D8DE"], None),
+    "noir":       ("#1F1F1F", "#090909", BRAND, None),
+    "pixel":      (GREY_TOP, GREY_BOTTOM, BRAND, True),
+    "pixel-noir": ("#1F1F1F", "#090909", BRAND, True),
+    "pixel-white": (GREY_TOP, GREY_BOTTOM, ["#FFFFFF", "#E8E8EE", "#BFBFC7"], True),
 }
 
 # Sizes written into the manifest. 180 is what iOS takes; Android and desktop
@@ -269,18 +281,19 @@ def render(variant, size=BASE):
 
     icon = vertical_gradient(S, top, bottom).convert("RGBA")
 
-    # Overhead light. Deliberately faint - an iOS icon's surface is a dark
-    # grey that happens to be lit, not a grey with a visible gloss band on
-    # it. The first pass here used four times this and turned the top half
-    # to mid-grey, which read as a gradient wallpaper rather than a surface.
-    glow = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(glow).ellipse([-0.40 * S, -0.85 * S, 1.40 * S, 0.52 * S], fill=24)
-    glow = glow.filter(ImageFilter.GaussianBlur(S * 0.13))
-    icon = Image.composite(white, icon, glow)
+    # No overhead pool. There used to be a soft elliptical highlight here,
+    # and measured against Claude it was adding about 18 levels at the top of
+    # the tile and almost nothing at the bottom - which is exactly the "too
+    # light, too steep" the grey was suffering from. iOS's own dark icons do
+    # not have one: the plain top-to-bottom gradient IS the lighting, and
+    # Claude's tile measures as a clean straight falloff with no pool in it.
+    # The glyph's own banded shading carries the dimensionality instead.
 
-    # Hairline of light along the very top edge.
+    # Hairline of light along the very top edge. Kept, and kept subtle: it
+    # sits above the top 1% so it does not touch the calibration, and most of
+    # it disappears under the corner mask anyway.
     rim = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(rim).rectangle([0, 0, S, S * 0.008], fill=30)
+    ImageDraw.Draw(rim).rectangle([0, 0, S, S * 0.008], fill=26)
     rim = rim.filter(ImageFilter.GaussianBlur(S * 0.005))
     icon = Image.composite(white, icon, rim)
 
@@ -332,6 +345,8 @@ def masked(img):
     Approximates the squircle with a large-radius rounded rectangle - close
     enough to judge, not the real superellipse.
     """
+    if img.size[0] != img.size[1]:
+        raise ValueError(f"masked() needs a square icon, got {img.size}")
     n = img.size[0]
     m = Image.new("L", (n * 4, n * 4), 0)
     ImageDraw.Draw(m).rounded_rectangle([0, 0, n * 4 - 1, n * 4 - 1],
