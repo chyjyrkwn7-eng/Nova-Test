@@ -197,6 +197,44 @@ Details that exist for a reason:
 
 ---
 
+## Going live
+
+This repo is a **test** repo. The app ~40 classmates actually use lives in a
+different repo, at a different URL, and has not had any of this work yet.
+Going live means copying the built state across.
+
+**Copy `index.html` AND `version.json`. Both.** They are one comparison split
+across two files. If `version.json` is missing or stale on the live side, the
+check `fetch`es it, fails, and swallows the error by design — so nobody is
+ever told about an update and nobody is ever prompted to re-add. That failure
+is completely silent, which is exactly what makes it worth stating here.
+`tools/` and this file are for whoever maintains it and can come too; nothing
+at runtime reads them.
+
+**The re-add prompt must fire exactly once, and it is armed.** `frameId` is
+`go-live-1`. Everything iOS reads only at install has changed — icon, app
+name, status bar colour, and now the launch image — so every existing install
+genuinely does need re-adding, once.
+
+- **Do not bump `frameId` again**, before or after going live. Bumping it is
+  the *only* thing that re-prompts a device that has already acknowledged.
+- Further install-time changes landing before go-live need **no** bump. No
+  device on the live origin has acknowledged `go-live-1` yet, so it is still
+  pending for all of them however many times the file changes first.
+- `localStorage` is per-origin, so acknowledging on the test URL does not
+  carry to the live URL, and vice versa. Testing here cannot spend the live
+  prompt.
+
+Verified end to end: a device is prompted once and never again after either
+"I've done this" or a successful Safari hand-off; "Not now" (the ×) stores
+nothing and returns next launch, as intended; a device holding an older
+acknowledged `frameId` is prompted exactly once for the new one; Android and
+plain browser tabs are never prompted; and an update and a re-add pending
+together never stack — the update takes the screen and the re-add is
+re-evaluated on the next check.
+
+---
+
 ## Conventions
 
 - **Screen functions are `showX()`** — except **Settings, which is
