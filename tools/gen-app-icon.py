@@ -28,9 +28,11 @@ that makes the icon Nova's rather than any dark app's.
     python3 tools/gen-app-icon.py                  # write into index.html
     python3 tools/gen-app-icon.py --variant white  # see --variant --help
 
-Writes both the apple-touch-icon link and the icons inside the base64
-manifest, which must never drift apart. The manifest is decoded, edited as
-JSON and re-encoded - never hand-patched.
+Writes all three places the icon lives - the apple-touch-icon link, the
+<link rel="icon"> favicon, and the icons inside the base64 manifest - because
+they must never drift apart, and they did: an earlier pass updated two of the
+three and left every browser tab showing the old artwork. The manifest is
+decoded, edited as JSON and re-encoded, never hand-patched.
 """
 import argparse
 import base64
@@ -230,6 +232,19 @@ def write_into_index(variant):
     if not n:
         sys.exit("could not find the apple-touch-icon link in index.html")
 
+    # The browser-tab favicon. A separate <link rel="icon"> that is easy to
+    # forget and was: the first pass of this script updated apple-touch-icon
+    # and the manifest and left this one still serving the OLD artwork, so
+    # every Safari and Chrome tab kept showing the icon that had just been
+    # replaced. Rendered at 64 rather than handed the 180: a tab draws this
+    # at 16-32pt, and downscaling once here with a good filter is sharper
+    # than leaving the browser to do it from four times the size.
+    favicon = data_uri(master.resize((64, 64), Image.LANCZOS))
+    new_src, n = re.subn(r'(<link rel="icon" href=")[^"]+(")',
+                         lambda m: m.group(1) + favicon + m.group(2), new_src, count=1)
+    if not n:
+        sys.exit("could not find the favicon link in index.html")
+
     m = re.search(r'(href="data:application/manifest\+json;base64,)([^"]+)(")', new_src)
     if not m:
         sys.exit("could not find the manifest link in index.html")
@@ -247,9 +262,63 @@ def write_into_index(variant):
     new_src = new_src[:m.start(2)] + encoded + new_src[m.end(2):]
 
     io.open(INDEX, "w", encoding="utf-8").write(new_src)
-    total = len(apple) + sum(len(i["src"]) for i in manifest["icons"])
-    print(f"wrote the {variant} icon: apple-touch-icon at 180, "
+    total = len(apple) + len(favicon) + sum(len(i["src"]) for i in manifest["icons"])
+    print(f"wrote the {variant} icon: apple-touch-icon at 180, favicon at 64, "
           f"manifest at {MANIFEST_SIZES} plus a 512 maskable ({total/1024:.0f} KB of data URIs)")
+
+
+def pixels(img):
+    """getdata() is deprecated in Pillow 11 and gone in 14; the replacement
+    does not exist in older versions. Take whichever is there."""
+    getter = getattr(img, "get_flattened_data", None) or img.getdata
+    return list(getter())
+
+
+def check():
+    """Confirm the icon has not drifted between the three places it lives.
+
+    Exists because it did. The first version of this script wrote the
+    apple-touch-icon and the manifest but not the <link rel="icon">, so every
+    browser tab went on serving the previous artwork while the Home Screen
+    showed the new one - and nothing anywhere would have said so.
+    """
+    src = io.open(INDEX, encoding="utf-8").read()
+    found = {}
+    for label, pattern in (
+            ("apple-touch-icon", r'<link rel="apple-touch-icon" href="data:image/png;base64,([^"]+)"'),
+            ("favicon", r'<link rel="icon" href="data:image/png;base64,([^"]+)"')):
+        m = re.search(pattern, src)
+        if not m:
+            print(f"MISSING: no {label} link in index.html")
+            return 1
+        found[label] = Image.open(io.BytesIO(base64.b64decode(m.group(1)))).convert("RGB")
+    m = re.search(r'href="data:application/manifest\+json;base64,([^"]+)"', src)
+    manifest = json.loads(base64.b64decode(m.group(1)))
+    for i in manifest.get("icons", []):
+        found[f"manifest {i['sizes']} {i['purpose']}"] = Image.open(
+            io.BytesIO(base64.b64decode(i["src"].split(",")[1]))).convert("RGB")
+
+    n = 64
+    ref = None
+    problems = []
+    for label, img in found.items():
+        small = img.resize((n, n), Image.LANCZOS)
+        if img.mode != "RGB":
+            problems.append(f"{label} is {img.mode}, not opaque RGB")
+        if ref is None:
+            ref, ref_label = small, label
+            continue
+        d = sum(abs(a - b) for p, q in zip(pixels(ref), pixels(small))
+                for a, b in zip(p, q)) / (n * n * 3)
+        if d > 1.5:
+            problems.append(f"{label} does not match {ref_label} (mean channel difference {d:.1f})")
+
+    if problems:
+        for p in problems:
+            print("DRIFT:", p)
+        return 1
+    print(f"all {len(found)} icon assets carry the same art, all opaque RGB")
+    return 0
 
 
 def main():
@@ -259,7 +328,12 @@ def main():
                          "white: a monochrome V. noir: the same V on near-black.")
     ap.add_argument("--preview", metavar="DIR",
                     help="render every variant to DIR and leave index.html alone")
+    ap.add_argument("--check", action="store_true",
+                    help="verify all three places carry the same art; exit 1 if not")
     args = ap.parse_args()
+
+    if args.check:
+        sys.exit(check())
 
     if args.preview:
         os.makedirs(args.preview, exist_ok=True)

@@ -15,8 +15,8 @@ disagreed, the repo won and the difference is called out.
 - `tools/check-js.py` — syntax check for the inline scripts. See **Verifying**.
 - `tools/gen-startup-images.py` — regenerates the iOS launch images. See the
   iOS section. `--check` fails if the block in `index.html` is stale.
-- `tools/gen-app-icon.py` — draws the app icon and writes it into both the
-  `apple-touch-icon` link and the manifest. See **The app icon**.
+- `tools/gen-app-icon.py` — draws the app icon and writes it into all three
+  places it lives. `--check` fails if they drift. See **The app icon**.
 - `tools/sim-safe-area.py` — bakes real safe-area insets into a copy for
   local testing. See **Verifying**.
 - `tools/sweep-layout.py` — every main screen on every supported form
@@ -114,9 +114,17 @@ Consequences worth keeping in mind:
 
 ## The app icon
 
-Drawn by `tools/gen-app-icon.py`, never edited by hand. It writes the
-`apple-touch-icon` link *and* the icons inside the base64 manifest in one go,
-because those two must never drift apart.
+Drawn by `tools/gen-app-icon.py`, never edited by hand.
+
+**The icon lives in three places and they must never drift apart:** the
+`apple-touch-icon` link (the Home Screen app), `<link rel="icon">` (the
+browser tab favicon), and the `icons` array inside the base64 manifest
+(Android, desktop installs). The script writes all three in one go, and
+**`--check` fails if any of them disagree** — that check exists because they
+*did* drift: an earlier pass updated the apple-touch-icon and the manifest
+and left the favicon still serving the old artwork, so every Safari and
+Chrome tab went on showing the icon that had just been replaced, with nothing
+anywhere to say so. Run `--check` after touching anything icon-shaped.
 
 - **Full-bleed opaque square. No rounded corners, no transparency.** iOS
   applies its own mask; anything rounded here gets rounded twice. The icon
