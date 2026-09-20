@@ -316,6 +316,24 @@
   @media (min-width:40rem){
     [data-layout="modern"]{ --bg-glow-r1:100%; --bg-glow-r2:100%; }
   }
+  /* Companion tokens to --bg-glow-r1/r2 above: how much of each ambient
+     glow is still in play at the very TOP EDGE of the viewport - the
+     exact strip iOS paints a home-screen app's status bar into.
+     Calibrated against a real-device screenshot rather than guessed:
+     pixel-sampling it showed the strip coming back a dead-flat #12161B
+     across the full width while the app's own paint one pixel below it
+     was #281E23, and solving that 22-unit gap against this theme's own
+     --theme-c2/--theme-c3 lands on ~55% of glow 1's peak and ~50% of
+     glow 2's (both glows are centred near the top, so roughly half of
+     each survives up there). syncStatusBarColor() reads these back
+     through a probe element to compute the status bar color from the
+     live tokens, so all 10 accents and both modes stay matched without
+     a single hardcoded hex. 0% by default means any layout WITHOUT the
+     ambient glow (classic) simply resolves to flat var(--paper),
+     exactly as it should. */
+  :root{ --statusbar-mix2:0%; --statusbar-mix3:0%; }
+  [data-layout="modern"]{ --statusbar-mix2:3.3%; --statusbar-mix3:3%; }
+  [data-theme="dark"][data-layout="modern"]{ --statusbar-mix2:5.5%; --statusbar-mix3:5.5%; }
   [data-layout="modern"] body{ background:transparent; }
   [data-layout="modern"] body::before{
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
@@ -406,6 +424,13 @@
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 3.5%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
   }
+  /* The status bar has to follow the glow down when a question dims it,
+     or the strip would stay tuned to the FULL-glow color and re-open
+     the exact same seam on the single most-used screen in the app.
+     Same 55%/50% top-edge share as above, applied to the dimmed peaks
+     these two rules use instead of the full ones. */
+  [data-layout="modern"] body.has-active-question{ --statusbar-mix2:1.1%; --statusbar-mix3:1%; }
+  [data-theme="dark"][data-layout="modern"] body.has-active-question{ --statusbar-mix2:1.65%; --statusbar-mix3:1.75%; }
   /* A structural guarantee, not just a stacking one: as long as
      #splashscreen still exists anywhere earlier in the document, the
      entire rest of the app stays visibility:hidden, full stop \u2014
@@ -17663,7 +17688,16 @@ new MutationObserver(() => {
      reads as a bit distracting on the single most-used screen in the
      app \u2014 without touching that same glow anywhere else, where it's
      part of the app's established identity. */
-  document.body.classList.toggle("has-active-question", !!stage.querySelector(".choice"));
+  /* Compared against the previous state rather than synced every time:
+     this observer runs on every childList/subtree mutation anywhere in
+     #stage (a live timer's text alone would fire it constantly), and
+     syncStatusBarColor() forces a style recalc via its probe element.
+     Only the actual transitions into and out of a question screen
+     change the glow, so only those need to repaint the strip. */
+  const wasQuestion = document.body.classList.contains("has-active-question");
+  const isQuestion  = !!stage.querySelector(".choice");
+  document.body.classList.toggle("has-active-question", isQuestion);
+  if(isQuestion !== wasQuestion) syncStatusBarColor();
 }).observe(stage, { childList: true, subtree: true });
 const meterEl   = document.getElementById("meter");
 const countEl   = document.getElementById("count");
@@ -19619,8 +19653,83 @@ function applyTheme(){
   document.documentElement.style.colorScheme = nativeScheme;
   const csMeta = document.getElementById("colorscheme");
   if(csMeta) csMeta.content = nativeScheme;
+  syncStatusBarColor();
+}
+
+/* The flat bar across the very top of the screen (the battery/WiFi/clock
+   strip) in a home-screen app, reported repeatedly and never actually
+   cured by any of the page-layer fixes documented up in the CSS.
+   Pixel-sampling a real-device screenshot finally identified the real
+   culprit: that strip came back a dead-flat #12161B edge to edge -
+   exactly this meta tag's old hardcoded value - while the app's own
+   paint one pixel below it was #281E23. So the page was never losing a
+   fight to reach up there; iOS simply fills that strip with theme-color
+   itself, before any CSS this file can write gets a say. Every earlier
+   attempt (background-attachment, the position:fixed ::before layer,
+   the matching gradient on html) was repairing page layers that the
+   status bar never consults, which is why a flat, mismatched bar
+   survived all of them.
+   Matching it from the app's own tokens rather than removing the meta
+   outright is deliberate: dropping theme-color hands the strip back to
+   iOS's own fallback, which also lets content reflow up underneath the
+   clock, and none of that is testable from here. Recomputing the color
+   changes no layout whatsoever - it only makes the one flat color iOS
+   is already painting identical to what the app paints directly beneath
+   it, so no seam can exist regardless of which layer wins. */
+function appTopEdgeColor(){
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none;";
+  /* Composed from the live custom properties, not a hardcoded hex, so
+     every accent (10 of them) and both modes stay matched for free -
+     and so this can never drift out of sync with the glow itself the
+     way a second copy of the same colors inevitably would. */
+  probe.style.backgroundColor =
+    "color-mix(in srgb, var(--theme-c3) var(--statusbar-mix3), color-mix(in srgb, var(--theme-c2) var(--statusbar-mix2), var(--paper)))";
+  if(!probe.style.backgroundColor) return null;
+  document.body.appendChild(probe);
+  const resolved = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  /* Two different serializations have to be handled here, and getting
+     this wrong is silent rather than loud: a color-mix() result comes
+     back from getComputedStyle as CSS Color 4 - "color(srgb 0.15 0.12
+     0.14)", channels on a 0-1 scale - not as the "rgb(18, 22, 27)"
+     0-255 triplet a plain background-color resolves to. Reading the
+     former with the latter's assumptions rounds every channel straight
+     to 0, i.e. a pure black status bar, which is worse than the seam
+     this is here to fix (caught exactly that way in a real headless
+     render before this shipped). The colorspace keyword is stripped
+     before parsing rather than relying on a bare number regex, since
+     identifiers like display-p3 carry a digit of their own. */
+  const isColorFn = /^color\(/i.test(resolved);
+  const parts = resolved
+    .replace(/^[a-z]+\(/i, "").replace(/\)\s*$/, "")
+    .replace(/^[a-z][a-z0-9-]*\s+/i, "")
+    .split(/[\s,\/]+/).filter(Boolean);
+  if(parts.length < 3) return null;
+  /* A browser too old for color-mix() accepts the declaration at parse
+     time anyway (anything containing var() can't be validated until
+     substitution), then throws it out at computed-value time - which
+     surfaces here as fully transparent, not as a parse failure. Caught
+     explicitly so those browsers fall back to the flat theme color
+     below instead of getting a black status bar. Alpha is 0-1 in both
+     serializations, so this one test covers each. */
+  if(parts.length > 3 && parseFloat(parts[3]) === 0) return null;
+  const scale = isColorFn ? 255 : 1;
+  const hex = (n) => {
+    const v = parseFloat(n);
+    if(!isFinite(v)) return null;
+    return Math.max(0, Math.min(255, Math.round(v * scale))).toString(16).padStart(2, "0");
+  };
+  const ch = [hex(parts[0]), hex(parts[1]), hex(parts[2])];
+  if(ch.some((c) => c === null)) return null;
+  return "#" + ch.join("");
+}
+
+function syncStatusBarColor(){
   const tcMeta = document.getElementById("themecolor");
-  if(tcMeta) tcMeta.content = effectiveMode === "light" ? "#E4E9EC" : effectiveMode === "party" ? "#0B0A14" : "#12161B";
+  if(!tcMeta) return;
+  const fallback = document.documentElement.dataset.theme === "light" ? "#E4E9EC" : "#12161B";
+  tcMeta.content = appTopEdgeColor() || fallback;
 }
 
 function saveTheme(){
