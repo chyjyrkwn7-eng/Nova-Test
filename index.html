@@ -3357,6 +3357,44 @@
     background:rgba(255,255,255,.55); color:#1A2027; border-color:rgba(255,255,255,.5);
     box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
+  /* The update notice. Deliberately built on the same glass recipe as
+     .toast directly above rather than as its own visual idea - it should
+     read as the app talking, not as a browser chrome notification.
+     The differences from .toast are all functional: it persists instead
+     of timing out (a missed update notice is the exact problem this
+     exists to solve), it sits a layer higher so a toast can't cover it,
+     and pointer-events stay live because unlike a toast this one is
+     meant to be tapped. */
+  .update-banner{
+    position:fixed; left:1rem; right:1rem; bottom:max(1rem, env(safe-area-inset-bottom)); z-index:80;
+    max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
+    display:flex; align-items:center; gap:.75rem;
+    background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
+    border:1px solid rgba(255,255,255,.09);
+    backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
+    font-size:.9rem; line-height:1.35;
+    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+    opacity:0; transform:translateY(8px); transition:opacity .2s ease, transform .2s ease;
+  }
+  .update-banner.show{ opacity:1; transform:translateY(0); }
+  /* Clears the bottom tab bar, exactly as .toast already does - without
+     this it lands on top of the Home/Profile/Rewards/Settings row. */
+  body.has-bottomtabs .update-banner{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
+  .update-banner-text{ flex:1 1 auto; }
+  .update-banner-btn{
+    flex:0 0 auto; padding:.45rem .85rem; border-radius:999px; border:0;
+    background:var(--accent); color:var(--accent-ink);
+    font:inherit; font-weight:600; font-size:.85rem;
+  }
+  .update-banner-btn[disabled]{ opacity:.6; }
+  .update-banner-close{
+    flex:0 0 auto; width:1.75rem; height:1.75rem; padding:0; border-radius:999px; border:0;
+    background:transparent; color:inherit; opacity:.55; font-size:1.15rem; line-height:1;
+  }
+  [data-theme="light"] .update-banner{
+    background:rgba(255,255,255,.55); color:#1A2027; border-color:rgba(255,255,255,.5);
+    box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
   /* Sync code entry: an inline status line under the field itself
      rather than a toast, since the message is specifically about
      that field's contents \u2014 subtle color rather than a loud banner,
@@ -26659,6 +26697,128 @@ function showToast(msg, tone){
     setTimeout(() => toast.remove(), 300);
   }, 3200);
 }
+
+/* ---------- update checking ---------------------------------------------
+   An installed home-screen app has no address bar and no reload button, so
+   a person running a weeks-old copy has no way to know, and no obvious way
+   to do anything about it. That is a real hazard once classmates are
+   studying from this: a stale install keeps working perfectly while
+   quietly serving outdated questions. This checks a tiny sidecar file and
+   offers a one-tap reload when the deployed build differs from the running
+   one.
+   APP_BUILD MUST BE BUMPED TOGETHER WITH version.json, and to the same
+   value. They are two halves of one comparison: version.json is what the
+   server currently serves, APP_BUILD is baked into whatever copy is
+   actually running. Bump only version.json and every user gets a banner
+   that reloading can never clear; bump only APP_BUILD and nobody is ever
+   told there is an update. */
+const APP_BUILD = "2026-09-20-1";
+const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
+let lastUpdateCheck = 0;
+
+async function checkForUpdate(){
+  if(document.getElementById("updatebanner")) return;
+  /* Never mid-test. The banner is tappable by definition, and tapping it
+     reloads the page - which would throw away an in-progress test with no
+     warning. It keeps until the test is over; the foreground check below
+     picks it up then. Bailing BEFORE the throttle stamp is set matters,
+     otherwise a long test would also burn the next 15 minutes of checks. */
+  if(typeof testInProgress !== "undefined" && testInProgress) return;
+  if(document.getElementById("splashscreen")) return;
+  const now = Date.now();
+  if(now - lastUpdateCheck < UPDATE_CHECK_MIN_GAP_MS) return;
+  lastUpdateCheck = now;
+  let info;
+  try{
+    /* no-store, not no-cache: the whole point is to learn what the server
+       has right now, and this file is a few dozen bytes, so there is
+       nothing to save by caching it. Any failure here - offline, opened
+       from a file:// path, 404 - is silent on purpose: an update check
+       failing is not something to interrupt someone's studying over. */
+    const res = await fetch("version.json", { cache: "no-store" });
+    if(!res.ok) return;
+    info = await res.json();
+  }catch(e){ return; }
+  if(!info || typeof info.build !== "string" || info.build === APP_BUILD) return;
+  let dismissed = null;
+  try{ dismissed = localStorage.getItem("class26e.update.dismissed"); }catch(e){}
+  /* Keyed to the specific build that was dismissed, not a plain flag, so
+     dismissing one update never silences the next one. */
+  if(dismissed === info.build) return;
+  showUpdateBanner(info);
+}
+
+function showUpdateBanner(info){
+  /* Not gated on theme.muteBanners. That setting exists to quiet
+     celebration toasts - level-ups, streaks, unlocks - and someone who
+     turned those off has not asked to be kept off the current version. */
+  const needsReinstall = info.reinstall === true;
+  const bar = document.createElement("div");
+  bar.className = "update-banner";
+  bar.id = "updatebanner";
+
+  const text = document.createElement("span");
+  text.className = "update-banner-text";
+  text.textContent = info.note || (needsReinstall
+    ? "Nova needs a fresh install: delete the Nova icon from your Home Screen, then add it again from Safari."
+    : "A new version of Nova is ready.");
+
+  const act = document.createElement("button");
+  act.className = "update-banner-btn";
+  /* A reload genuinely cannot fix an icon, app name, or launch status bar
+     colour - iOS reads those once, when the app is added to the Home
+     Screen, and never again. So on a reinstall notice the button only
+     acknowledges the message; offering "Update" there would be a button
+     that visibly does nothing. */
+  act.textContent = needsReinstall ? "Got it" : "Update";
+  act.addEventListener("click", () => {
+    if(needsReinstall){ dismissUpdateBanner(info.build); return; }
+    act.disabled = true;
+    act.textContent = "Updating\u2026";
+    applyUpdate();
+  });
+
+  const close = document.createElement("button");
+  close.className = "update-banner-close";
+  close.setAttribute("aria-label", "Dismiss");
+  close.textContent = "\u00D7";
+  close.addEventListener("click", () => dismissUpdateBanner(info.build));
+
+  bar.append(text, act, close);
+  document.body.appendChild(bar);
+  requestAnimationFrame(() => bar.classList.add("show"));
+}
+
+function dismissUpdateBanner(build){
+  try{ localStorage.setItem("class26e.update.dismissed", build); }catch(e){}
+  const bar = document.getElementById("updatebanner");
+  if(!bar) return;
+  bar.classList.remove("show");
+  setTimeout(() => bar.remove(), 300);
+}
+
+async function applyUpdate(){
+  /* A plain location.reload() is not enough: it is free to serve the same
+     cached copy straight back, which would look like tapping Update did
+     nothing at all. Re-fetching with cache:"reload" bypasses the cache for
+     this exact URL and REPLACES the stored entry with the fresh response,
+     so the reload that follows is guaranteed to render the new build.
+     Deliberately this URL rather than a cache-busting ?v= query string -
+     a query string populates a SEPARATE cache entry, leaving the plain URL
+     the Home Screen icon actually launches just as stale as it was. */
+  try{ await fetch(location.href, { cache: "reload" }); }catch(e){}
+  location.reload();
+}
+
+/* Two triggers, covering the two ways a stale copy gets used: opening the
+   app cold, and returning to one that has sat in the background for days -
+   which on iOS is by far the more common of the two, since a Home Screen
+   app is rarely quit outright. The delay keeps the check clear of the
+   splash and the initial render. */
+window.addEventListener("load", () => setTimeout(checkForUpdate, 2500));
+document.addEventListener("visibilitychange", () => {
+  if(!document.hidden) checkForUpdate();
+});
 
 function celebrate(palette){
   if(theme.reduceMotion) return;
