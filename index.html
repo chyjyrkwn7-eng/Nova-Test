@@ -27007,7 +27007,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-19";
+const APP_BUILD = "2026-09-20-20";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28240,7 +28240,7 @@ function showAppearance(){
   autoAdvWrap.appendChild(document.createTextNode("Auto-advance on correct"));
   const autoAdvHint = document.createElement("span");
   autoAdvHint.className = "ohint";
-  autoAdvHint.textContent = "Automatically moves to the next question a moment after you answer \u2014 once you get it right in Drill or Game, or as soon as you pick one in Exam.";
+  autoAdvHint.textContent = "Moves to the next question on its own after you answer.";
   autoAdvWrap.appendChild(autoAdvHint);
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
   motionDetails.appendChild(autoAdvRow);
@@ -28282,8 +28282,11 @@ function showAppearance(){
   autoFlagWrap.appendChild(document.createTextNode("Auto-flag questions you keep missing"));
   const autoFlagHint = document.createElement("span");
   autoFlagHint.className = "ohint";
-  autoFlagHint.textContent = "Flags a question automatically once you've missed it " + AUTO_FLAG_MISS_THRESHOLD +
-    " times, so it collects itself for review. Un-flagging one by hand still sticks.";
+  /* No threshold number and no explanation of the manual-un-flag
+     behaviour. Both are true (see AUTO_FLAG_MISS_THRESHOLD and
+     recordResult), but a settings hint should say what the switch does,
+     not document its rules. */
+  autoFlagHint.textContent = "Flags questions you keep getting wrong, so they're saved for review.";
   autoFlagWrap.appendChild(autoFlagHint);
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
   motionDetails.appendChild(autoFlagRow);
