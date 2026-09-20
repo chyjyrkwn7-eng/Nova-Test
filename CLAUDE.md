@@ -15,6 +15,8 @@ disagreed, the repo won and the difference is called out.
 - `tools/check-js.py` — syntax check for the inline scripts. See **Verifying**.
 - `tools/gen-startup-images.py` — regenerates the iOS launch images. See the
   iOS section. `--check` fails if the block in `index.html` is stale.
+- `tools/gen-app-icon.py` — draws the app icon and writes it into both the
+  `apple-touch-icon` link and the manifest. See **The app icon**.
 - `tools/sim-safe-area.py` — bakes real safe-area insets into a copy for
   local testing. See **Verifying**.
 - `tools/sweep-layout.py` — every main screen on every supported form
@@ -107,6 +109,42 @@ Consequences worth keeping in mind:
   (`color(srgb 0.15 0.12 0.14)`, 0–1 floats), **not** `rgb(18, 22, 27)`.
   Parsing it with 0–255 assumptions rounds every channel to 0 — a black status
   bar. Both serializations are handled; don't "simplify" that.
+
+---
+
+## The app icon
+
+Drawn by `tools/gen-app-icon.py`, never edited by hand. It writes the
+`apple-touch-icon` link *and* the icons inside the base64 manifest in one go,
+because those two must never drift apart.
+
+- **Full-bleed opaque square. No rounded corners, no transparency.** iOS
+  applies its own mask; anything rounded here gets rounded twice. The icon
+  this replaced had corners baked in and transparent gaps behind them —
+  visible as white notches the moment it was composited on anything light.
+- **One idea, legible at 60pt.** The V from NOVA and nothing else. The old
+  icon was an illustration — sphere, starburst, orbiting moon, a small N —
+  none of which survives the size it is actually used at.
+- **iOS's own dark greys**: `#2C2C2E` to `#1A1A1C`, systemGray5 to below
+  systemGray6, so it sits among the system icons rather than against them.
+- **A lit surface, not a flat fill**: a faint overhead pool, a hairline along
+  the top edge, a tight contact shadow under the glyph and a soft specular
+  down its upper third. All of it deliberately understated — the first pass
+  used roughly four times the light and read as a gradient wallpaper.
+- The V keeps Nova's own ramp (`#FFD37A` → `#F5804D` → `#C23B7A`, the
+  wordmark's stops). **The ramp is mapped across the glyph's bounding box and
+  weighted towards vertical.** Across the whole canvas, and on an even
+  diagonal, a V only ever covers the middle of the ramp — it came out
+  uniformly salmon with the gold and magenta both off the edges of the shape.
+
+`--preview DIR` renders every variant plus a `_masked` version approximating
+what iOS will actually show, so the corners can be looked at rather than
+guessed at. `--variant white` and `--variant noir` are the alternatives that
+were considered; switching is one command and a rebuild.
+
+**The icon is install-time metadata.** Changing it does nothing on a device
+that already has the app until that icon is removed and re-added — which is
+what `frameId` and the re-add notice exist for. See **Going live**.
 
 ---
 
