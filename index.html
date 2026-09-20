@@ -27007,7 +27007,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-20";
+const APP_BUILD = "2026-09-20-21";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28240,7 +28240,11 @@ function showAppearance(){
   autoAdvWrap.appendChild(document.createTextNode("Auto-advance on correct"));
   const autoAdvHint = document.createElement("span");
   autoAdvHint.className = "ohint";
-  autoAdvHint.textContent = "Moves to the next question on its own after you answer.";
+  /* "when you're finished with one", not "after you answer": in Drill a
+     wrong answer lets you try again, so answering is not the same as
+     being done with the question. This covers that and Exam's
+     advance-on-any-pick without listing the modes out. */
+  autoAdvHint.textContent = "Moves on by itself when you're finished with a question.";
   autoAdvWrap.appendChild(autoAdvHint);
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
   motionDetails.appendChild(autoAdvRow);
@@ -28261,7 +28265,7 @@ function showAppearance(){
   bannerWrap.appendChild(document.createTextNode("Mute achievement banners"));
   const bannerHint = document.createElement("span");
   bannerHint.className = "ohint";
-  bannerHint.textContent = "Skips the level-up and unlock banners at the end of a test. You'll still see your score and can check Profile any time.";
+  bannerHint.textContent = "Skips the level-up and unlock banners at the end of a test.";
   bannerWrap.appendChild(bannerHint);
   bannerRow.append(bannerCb, bannerBox, bannerWrap);
   motionDetails.appendChild(bannerRow);
