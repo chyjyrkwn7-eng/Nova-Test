@@ -193,6 +193,21 @@ Details that exist for a reason:
   is reachable before assuming your edit was wrong.**
   (The light/classic values in `--statusbar-mix2/3` are inert for the same
   reason — kept as harmless defensive defaults.)
+- **Haptics are not achievable on iOS, and the obvious workaround has
+  already been tried on a real device.** WebKit has never shipped the
+  Vibration API, so `navigator.vibrate` is simply absent on iPhone and iPad.
+  The known workaround — since iOS 17.4, actuating an
+  `<input type="checkbox" switch>` fires the system haptic — was built,
+  shipped and tested on an up-to-date iPad. **Detection succeeded** (the
+  control genuinely renders as a switch there), but **actuation failed**: a
+  script-generated `click()` is not a trusted gesture, and iOS produces the
+  haptic only for a real finger landing on the control. Being inside a
+  user-gesture call stack is not enough. The whole feature was removed
+  afterwards rather than left as a dead toggle. The only route left is
+  layering a real, tappable switch over every answer choice and forwarding
+  the interaction — judged not worth the regression risk on the most-used
+  screen for a nicety, and explicitly declined. Don't quietly retry it; a
+  visual shake is the feedback that cannot fail.
 - **"Flares" ≠ "Secret Flares".** Flares are the orbiting badges on the Mastery
   Ladder. Secret Flares are titan tier's separate mystery-colour hunt
   (`mysteryStars`, `store.mysteryColorsFound`, keys `red`/`orange`/`yellow`).

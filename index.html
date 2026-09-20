@@ -19136,7 +19136,7 @@ function wipeLocalProgressAndSettings(){
      per explicit request, this is opt-in, not something a reset (or a
      fresh sign-up) should turn on for someone who never chose it. */
   theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true, swipeAdvance: true, autoAdvance: false,
-            hapticTouch: false, reduceMotion: false, keepAwake: false, muteBanners: false };
+            reduceMotion: false, keepAwake: false, muteBanners: false };
 }
 
 function resetEverything(){
@@ -19871,7 +19871,7 @@ function accentLockMessage(name){
 /* autoAdvance defaults false — per explicit request, a brand-new
    account should never start with this on; it's opt-in from Settings. */
 let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true, swipeAdvance: true, autoAdvance: false,
-              hapticTouch: false, reduceMotion: false, keepAwake: false, muteBanners: false,
+              reduceMotion: false, keepAwake: false, muteBanners: false,
               /* Off by default: silently rewriting someone's flag list is
                  not something to opt people into without them asking. */
               autoFlagMissed: false };
@@ -19894,7 +19894,6 @@ function loadTheme(){
     if(typeof store.theme.smoothScroll === "boolean") theme.smoothScroll = store.theme.smoothScroll;
     if(typeof store.theme.swipeAdvance === "boolean") theme.swipeAdvance = store.theme.swipeAdvance;
     if(typeof store.theme.autoAdvance === "boolean") theme.autoAdvance = store.theme.autoAdvance;
-    if(typeof store.theme.hapticTouch === "boolean") theme.hapticTouch = store.theme.hapticTouch;
     if(typeof store.theme.reduceMotion === "boolean") theme.reduceMotion = store.theme.reduceMotion;
     if(typeof store.theme.keepAwake === "boolean") theme.keepAwake = store.theme.keepAwake;
     if(typeof store.theme.muteBanners === "boolean") theme.muteBanners = store.theme.muteBanners;
@@ -20035,7 +20034,7 @@ function syncStatusBarColor(){
 function saveTheme(){
   store.theme = { mode: theme.mode, accent: theme.accent, layout: theme.layout,
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
-                  hapticTouch: theme.hapticTouch, reduceMotion: theme.reduceMotion,
+                  reduceMotion: theme.reduceMotion,
                   keepAwake: theme.keepAwake, muteBanners: theme.muteBanners,
                   autoFlagMissed: theme.autoFlagMissed };
   saveStore();
@@ -26593,7 +26592,6 @@ function scheduleAutoAdvance(qi){
 
 function choose(slot){
   const qi = order[pos];
-  triggerHaptic();
 
   if(runMode === "exam"){
     picked[qi] = slot;
@@ -26839,32 +26837,6 @@ const LEVEL_CONFETTI = {
    on purpose - a control that is not being rendered does not produce
    the native feedback that is the entire point of it. aria-hidden and
    tabindex=-1 keep it out of the accessibility tree and tab order. */
-/* A short vibration on answer taps, when enabled. iOS Safari does not
-   support the Vibration API at all, so this is a no-op there and just
-   silently does nothing rather than error.
-
-   DO NOT retry the switch-checkbox trick here. It was tried, shipped,
-   and tested on a real, up-to-date iPad, and it does not work for this
-   purpose. The theory is sound as far as it goes: since iOS 17.4,
-   <input type="checkbox" switch> is a native iOS switch and actuating
-   one fires the system haptic. Detection succeeded on the device -- the
-   Settings row appeared, which it only does when a real switch control
-   renders -- so support is genuinely there. What fails is the
-   actuation: a script-generated click() is not a trusted user gesture,
-   and iOS produces the haptic only for a real finger on the control
-   itself, not for a synthetic event on a hidden one. Being inside a
-   user-gesture call stack is not enough; the gesture has to land on
-   that control.
-
-   The only remaining route would be layering a real, tappable switch
-   over every answer choice so the finger lands on it directly, and then
-   forwarding the interaction to the choice. That is a genuine
-   regression risk on the most-used screen in the app, so it is a
-   deliberate decision to make, not something to quietly try again. */
-function triggerHaptic(){
-  if(!theme.hapticTouch) return;
-  if(navigator.vibrate) navigator.vibrate(12);
-}
 
 
 /* A small contextual info popup that appears right next to whatever
@@ -26997,7 +26969,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-13";
+const APP_BUILD = "2026-09-20-14";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28219,33 +28191,6 @@ function showAppearance(){
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
   motionDetails.appendChild(autoAdvRow);
 
-  /* Back to the plain Vibration API check. This hides the row on iPhone
-     and iPad, which is most people using the app - deliberately, because
-     a toggle that provably cannot do anything is worse than no toggle.
-     See triggerHaptic() for why the iOS fallback was removed. */
-  const hapticSupported = typeof navigator.vibrate === "function";
-  if(hapticSupported){
-    const hapticRow = document.createElement("label");
-    hapticRow.className = "opt";
-    const hapticCb = document.createElement("input");
-    hapticCb.type = "checkbox"; hapticCb.checked = theme.hapticTouch;
-    hapticCb.addEventListener("change", () => {
-      theme.hapticTouch = hapticCb.checked;
-      saveTheme();
-      if(theme.hapticTouch) triggerHaptic();
-    });
-    const hapticBox = document.createElement("span");
-    hapticBox.className = "box"; hapticBox.setAttribute("aria-hidden", "true"); hapticBox.textContent = "\u2713";
-    const hapticWrap = document.createElement("span");
-    hapticWrap.className = "otext";
-    hapticWrap.appendChild(document.createTextNode("Haptic touch"));
-    const hapticHint = document.createElement("span");
-    hapticHint.className = "ohint";
-    hapticHint.textContent = "A short vibration when you pick an answer.";
-    hapticWrap.appendChild(hapticHint);
-    hapticRow.append(hapticCb, hapticBox, hapticWrap);
-    motionDetails.appendChild(hapticRow);
-  }
   const bannerRow = document.createElement("label");
   bannerRow.className = "opt";
   const bannerCb = document.createElement("input");
