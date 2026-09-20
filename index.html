@@ -17792,6 +17792,11 @@ new MutationObserver(() => {
   const isQuestion  = !!stage.querySelector(".choice");
   document.body.classList.toggle("has-active-question", isQuestion);
   if(isQuestion !== wasQuestion) syncStatusBarColor();
+  /* Cheap enough for every stage mutation: one getElementById and a
+     dataset read, no fetch. Piggybacking the observer that already runs
+     here is what lets a held notice appear the instant someone returns to
+     Home, rather than waiting out the next check interval. */
+  syncNoticeVisibility();
 }).observe(stage, { childList: true, subtree: true });
 const meterEl   = document.getElementById("meter");
 const countEl   = document.getElementById("count");
@@ -23092,6 +23097,12 @@ function showWelcome(){
   hint.textContent = "First time here? Choose Get started \u2014 a code is only for signing in on a second device.";
   wrap.appendChild(hint);
 
+  /* Tagged so the update notices can tell which screen is actually on
+     display. Marking the element that goes INTO #stage rather than
+     setting a flag somewhere is what makes this self-clearing: the next
+     screen's own replaceChildren removes this node and its marker with
+     it, so no screen has to remember to clear anyone else's state. */
+  wrap.dataset.screen = "welcome";
   stage.replaceChildren(wrap);
   toTop();
 }
@@ -24468,6 +24479,7 @@ function showHome(){
      never nested inside anything else that animates, so its
      position:fixed now stays resolved against the true viewport at
      all times. */
+  panel.dataset.screen = "home";   /* see showWelcome for why this lives here */
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
   /* Appended to stage as a sibling of the panel now, not a child of
@@ -26752,10 +26764,48 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-2";
+const APP_BUILD = "2026-09-20-3";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
+/* Held rather than shown immediately, because a check can easily land
+   while someone is deep in Settings or part-way through picking a test.
+   The notice waits until they are somewhere it makes sense to interrupt. */
+let pendingNotice = null;
+/* Session-scoped, deliberately not persisted: "Not now" on the re-add
+   notice means not again this sitting, and it is back on the next launch.
+   Without this the 15-minute check would re-raise it every time the app
+   came back to the foreground, which for a purely cosmetic strip of
+   colour is nagging rather than reminding. The only thing that stops it
+   for good is "I've done this". */
+let frameSnoozed = false;
+
+/* Welcome and Home only. Everywhere else in the app is somewhere a person
+   went on purpose - choosing a mode, reading their stats, setting up a
+   test - and a banner sliding in over that is an interruption of
+   something, however politely worded. These two are the resting points,
+   which is exactly where "there's an update" belongs. */
+function noticeAllowedHere(){
+  const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
+  const screen = el && el.dataset ? el.dataset.screen : "";
+  return screen === "home" || screen === "welcome";
+}
+
+/* Called both when a check produces a notice and on every screen change,
+   so a held notice appears the moment someone lands back on Home, and an
+   on-screen one gets out of the way the moment they leave. Navigating
+   away is not a dismissal - pendingNotice survives it, so the banner
+   returns on the way back. */
+function syncNoticeVisibility(){
+  const bar = document.getElementById("updatebanner");
+  if(!noticeAllowedHere()){
+    if(bar) hideBanner();
+    return;
+  }
+  if(bar || !pendingNotice) return;
+  if(pendingNotice.kind === "update") showUpdateBanner(pendingNotice.info);
+  else showFrameNotice(pendingNotice.info);
+}
 
 async function checkForUpdate(){
   if(document.getElementById("updatebanner")) return;
@@ -26792,7 +26842,11 @@ async function checkForUpdate(){
     try{ dismissed = localStorage.getItem("class26e.update.dismissed"); }catch(e){}
     /* Keyed to the specific build that was dismissed, not a plain flag, so
        dismissing one update never silences the next one. */
-    if(dismissed !== info.build){ showUpdateBanner(info); return; }
+    if(dismissed !== info.build){
+      pendingNotice = { kind: "update", info };
+      syncNoticeVisibility();
+      return;
+    }
   }
 
   maybeShowFrameNotice(info);
@@ -26825,6 +26879,7 @@ function showUpdateBanner(info){
   close.textContent = "×";
   close.addEventListener("click", () => {
     try{ localStorage.setItem("class26e.update.dismissed", info.build); }catch(e){}
+    pendingNotice = null;
     hideBanner();
   });
 
@@ -26838,12 +26893,14 @@ function showUpdateBanner(info){
    to fix, so the notice would be pure noise to them - and worse, the one
    action it offers (open in Safari) is where they already are. */
 function maybeShowFrameNotice(info){
+  if(frameSnoozed) return;
   if(typeof info.frameId !== "string" || !info.frameId) return;
   if(typeof isStandaloneApp === "function" && !isStandaloneApp()) return;
   let acknowledged = null;
   try{ acknowledged = localStorage.getItem(FRAME_OK_KEY); }catch(e){}
   if(acknowledged === info.frameId) return;
-  showFrameNotice(info);
+  pendingNotice = { kind: "frame", info };
+  syncNoticeVisibility();
 }
 
 function showFrameNotice(info){
@@ -26886,6 +26943,7 @@ function showFrameNotice(info){
   done.textContent = "I've done this";
   done.addEventListener("click", () => {
     try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
+    pendingNotice = null;
     hideBanner();
   });
 
@@ -26899,7 +26957,13 @@ function showFrameNotice(info){
   close.className = "update-banner-close";
   close.setAttribute("aria-label", "Not now");
   close.textContent = "×";
-  close.addEventListener("click", hideBanner);
+  /* "Not now" stores nothing, so this is a snooze rather than a refusal:
+     gone for this sitting, offered again next launch. */
+  close.addEventListener("click", () => {
+    frameSnoozed = true;
+    pendingNotice = null;
+    hideBanner();
+  });
 
   bar.append(close, text, row);
   document.body.appendChild(bar);
