@@ -2,21 +2,37 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<!-- First rule in the document, deliberately: the only thing ahead of it
-     is the charset declaration, which has to come first. Nothing else in
-     this file gives the canvas a colour until the color-scheme meta on
-     line 49, and html{background:var(--paper)} not until line 300. CSS
-     paints progressively, so a paint landing before either - which is
-     what a cold standalone launch does - renders the browser's default
-     white canvas. That is the brief white flash reported on launch, and
-     it reproduces exactly: cut the document short of line 49 and the
-     first paint is pure white (255,255,255); with this rule present it
-     is #0A0A0A. Declaring it here, inside the first few hundred bytes,
-     means the canvas is already dark before anything else is read.
-     #0A0A0A matches #splashscreen's own background so the handover is
-     invisible, and html{background:var(--paper)} further down overrides
-     it in the normal way, so it changes nothing after first paint. -->
-<style>html{background:#0A0A0A;}</style>
+<!-- Deliberately the first three things in the document after charset.
+     Explanation below them, so nothing delays them. -->
+<meta name="color-scheme" id="colorscheme" content="dark">
+<style>html{background:#0A0A0A;color-scheme:dark;}</style>
+<!-- Two separate mechanisms, both aimed at the same symptom: a brief
+     white flash on launch, reported as landing right before the splash
+     appears.
+
+     The background declaration covers the CSS side. Nothing else in this
+     file gives the canvas a colour until html{background:var(--paper)},
+     ~280 lines down; CSS paints progressively, so a paint landing before
+     that renders the browser's default white canvas. That reproduces
+     exactly - cut the document short and force a paint and it is pure
+     white (255,255,255); with this rule present it is #0A0A0A.
+
+     color-scheme covers the part CSS cannot reach. Before the web view
+     has painted anything at all it fills itself with its own base
+     colour, and that base colour is white unless it knows the page is
+     dark. No stylesheet rule can repaint that - it happens before the
+     document has a rendered frame - which is why the background rule
+     alone did not fully clear the flash. color-scheme is the one signal
+     that changes it, so it is declared twice: as a meta tag (read by the
+     parser immediately) and as a property in the same first rule. It
+     used to sit ~35 lines down, behind a comment block, a meta and a
+     parser-blocking inline script, all of which a first paint can beat.
+
+     Both are overridden in the normal way later - html{background:
+     var(--paper)} for the colour, and applyTheme() setting
+     documentElement.style.colorScheme for the scheme - so neither
+     changes anything after first paint. #0A0A0A matches #splashscreen's
+     own background, so the handover into the splash is invisible. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- iOS reads this ONCE, at launch, straight out of the HTML as
      delivered - before a single line of JS has run. syncStatusBarColor()
@@ -48,7 +64,6 @@
     }
   }catch(e){}
 </script>
-<meta name="color-scheme" id="colorscheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -444,17 +459,37 @@
      every other data-layout rule that actually targets html elsewhere
      in this file (the plain html{background:var(--paper)} rule's
      variants), is what makes this one real. */
+  /* Sized and anchored to one viewport, matching body::before exactly.
+     This rule exists purely as the layer that shows through wherever
+     the fixed body::before glow fails to paint - originally a strip at
+     the top behind the status bar, and now a strip at the bottom,
+     reported app-wide and most obvious on an iPad after rotating.
+     Giving it the same gradient was only half the job: a gradient's
+     percentage stops resolve against the box it paints on, and html's
+     box is the full scrollable height (889px against an 834px viewport
+     on a tablet here, measured), so the same gradient was arriving
+     stretched - close, but not equal, which is precisely what reads as
+     a seam rather than as nothing at all. background-size pins each
+     gradient to one viewport, the same box body::before occupies, and
+     no-repeat stops it tiling below that; var(--paper) from the
+     shorthand still fills everything underneath. The two layers are now
+     pixel-for-pixel identical wherever it matters, so whichever one a
+     given device paints in that strip, there is nothing to see. */
   html[data-layout="modern"]{
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 6%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 6%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
+    background-size:100vw 100lvh;
+    background-repeat:no-repeat;
   }
   html[data-theme="dark"][data-layout="modern"]{
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 10%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 11%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
+    background-size:100vw 100lvh;
+    background-repeat:no-repeat;
   }
   /* Toned down specifically while a question is actively on screen \u2014
      per explicit feedback that the full ambient glow read as a bit
@@ -525,19 +560,25 @@
        two of a standalone launch. Content centred inside an oversized
        box lands low and right of the real centre, which is exactly what
        was described, and snaps back once the viewport settles.
-       100vw/100svh resolve against the viewport itself rather than the
+       100vw/100lvh resolve against the viewport itself rather than the
        containing block, so the overlay is the right size even while that
        block is wrong, and overflow:hidden means anything still
        mis-measured is clipped instead of drawn off-centre.
-       svh, NOT dvh. dvh is the DYNAMIC viewport height: it changes as the
-       viewport settles during launch, and a centred group inside a box
-       that grows moves down with it - which is the slight downward drift
-       reported after dvh was introduced here. svh is the stable small
-       viewport height and never changes, so the box is one size for the
-       whole life of the splash. In a standalone app, with no browser
-       chrome to appear or disappear, svh and dvh describe the same
-       screen anyway; only svh promises not to move. */
-    position:fixed; inset:0; width:100vw; height:100svh; overflow:hidden;
+       lvh, having been through the other two. dvh is the DYNAMIC
+       viewport height: it changes as the viewport settles during launch,
+       and a centred group inside a box that grows moves down with it -
+       the slight downward drift reported while dvh was in use here. svh
+       fixed the drift, being static, but introduced a strip of app
+       background along the very bottom of the splash, exactly the height
+       of the home indicator inset: svh is the SMALL viewport, the screen
+       minus anything the UA may lay over it, and on a standalone launch
+       that measures short by that inset. lvh is the LARGE viewport - the
+       full screen, insets included - and, like svh, never changes. So it
+       is static like svh (no drift) and full-height like dvh (no strip),
+       which is the combination this needs. 100vh first as a fallback for
+       anything too old for lvh; it resolves to the same screen. */
+    position:fixed; inset:0; width:100vw; overflow:hidden;
+    height:100vh; height:100lvh;
     z-index:9999; background:#0A0A0A;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     /* .5s \u2014 short enough to not feel sluggish, but with the sequencing
@@ -3493,6 +3534,7 @@
     display:flex; align-items:center; gap:.75rem;
     background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
     border:1px solid rgba(255,255,255,.09);
+    will-change:backdrop-filter;
     backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     font-size:.9rem; line-height:1.35;
     box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
@@ -3503,10 +3545,28 @@
      this it lands on top of the Home/Profile/Rewards/Settings row. */
   body.has-bottomtabs .update-banner{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
   .update-banner-text{ flex:1 1 auto; }
+  /* Reported on a real device: the action button renders with glitched
+     lines running through it. It is a flat var(--accent) fill on a
+     border-radius:999px box - nothing in it can band on its own - but it
+     sits inside a backdrop-filter surface, and a solid child painted
+     through a live backdrop filter is a known WebKit tearing case,
+     especially while the parent is mid-transition (this banner animates
+     opacity and translateY on the way in, with the filter already
+     active). .toast directly above uses the identical glass recipe and
+     has never been reported as glitching; the difference was
+     will-change:backdrop-filter, now added to .update-banner to match.
+     These three give the button its own compositing layer so it is
+     rasterised once, on its own, instead of being resampled through the
+     parent's filter every frame - translateZ(0) to promote it,
+     backface-visibility to keep WebKit from re-rasterising it at reduced
+     quality mid-animation, and isolation so it composites as a unit. */
   .update-banner-btn{
     flex:0 0 auto; padding:.45rem .85rem; border-radius:999px; border:0;
     background:var(--accent); color:var(--accent-ink);
     font:inherit; font-weight:600; font-size:.85rem;
+    position:relative; z-index:1; isolation:isolate;
+    transform:translateZ(0); -webkit-transform:translateZ(0);
+    -webkit-backface-visibility:hidden; backface-visibility:hidden;
   }
   .update-banner-btn[disabled]{ opacity:.6; }
   .update-banner-close{
@@ -27088,7 +27148,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-28";
+const APP_BUILD = "2026-09-20-29";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

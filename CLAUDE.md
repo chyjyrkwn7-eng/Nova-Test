@@ -82,6 +82,37 @@ Consequences worth keeping in mind:
 
 ---
 
+## Launching: the first frame
+
+Three separate things had to be right before the launch stopped flashing and
+sitting crooked. They fail independently, so a fix for one looks like it did
+nothing.
+
+- **A white flash before the splash is the web view's own base colour, not
+  CSS.** Before the page has a rendered frame the view fills itself white, and
+  no stylesheet rule can repaint that — it happens too early to be styled.
+  `color-scheme: dark` is the only signal that changes it. It is declared
+  twice, both inside the first ~300 bytes: as a `<meta>` and as a property in
+  the first `<style>`. Anything that pushes those later — a comment block, a
+  parser-blocking inline script — can lose the race. There is also a plain
+  `html{background:#0A0A0A}` in that same first rule for the CSS side of the
+  window, since nothing else colours the canvas for ~280 more lines. Both are
+  testable: truncate the document, force a paint, sample the pixel.
+- **Pick the viewport unit deliberately; all three were wrong once.** `dvh` is
+  dynamic and grows as the viewport settles, so centred content drifts down.
+  `svh` is static but is the screen *minus* overlaid insets, so it comes up
+  short by exactly the home-indicator height and leaves a strip of app
+  background below the splash. `lvh` is static *and* full-height — that is the
+  one. `100vh` is declared first purely as a fallback.
+- **Chromium cannot reproduce any of this.** `svh`, `lvh`, `dvh` and `vh` all
+  return the same number here and `env(safe-area-inset-*)` is always `0`. To
+  test a layout that only misbehaves once the insets are real, serve a copy
+  with the `env()` calls text-substituted for real values — see
+  `tools/sim-safe-area.py`. It caught a genuine bottom-edge seam that measured
+  zero without it.
+
+---
+
 ## Shipping a change
 
 `APP_BUILD` in `index.html` and `build` in `version.json` **must be bumped
@@ -211,6 +242,21 @@ Details that exist for a reason:
 - **"Flares" ≠ "Secret Flares".** Flares are the orbiting badges on the Mastery
   Ladder. Secret Flares are titan tier's separate mystery-colour hunt
   (`mysteryStars`, `store.mysteryColorsFound`, keys `red`/`orange`/`yellow`).
+- **A solid-coloured child inside a `backdrop-filter` surface can tear on
+  iOS** — reported as glitched lines running through the update banner's
+  button. The parent needs `will-change:backdrop-filter` (`.toast` has always
+  had it and has never glitched; `.update-banner` did not) and the child needs
+  its own compositing layer (`translateZ(0)` + `backface-visibility:hidden` +
+  `isolation:isolate`) so it is rasterised once instead of resampled through
+  the filter every frame.
+- **The `html` background is a *fallback* for the `body::before` glow, so it
+  has to be pixel-identical, not just the same gradient.** A gradient's
+  percentage stops resolve against the box it paints on, and html's box is the
+  full scroll height — so the same declaration arrived stretched and read as a
+  seam wherever the fixed layer failed to paint. `background-size:100vw 100lvh`
+  plus `no-repeat` pins it to the same box `body::before` occupies. Measured
+  difference went from up to 8 levels (5 of them in the bottom 40px on a
+  tablet) to exactly 0.
 - **Fixed-position elements render oddly in Playwright `fullPage` screenshots.**
   Verify their layout with `getBoundingClientRect()`, not by eyeballing.
 - **Adjacent vertical margins collapse to the larger, they don't add.** A gap
