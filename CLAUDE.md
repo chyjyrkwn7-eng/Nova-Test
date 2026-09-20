@@ -1,6 +1,6 @@
 # Nova — working notes
 
-Study app for Class 26E, used by ~40 classmates. Owner: Madison.
+Study app for Class 26E, used by ~40 classmates.
 
 Most of this is distilled from a handoff written across the sessions that built
 the app, plus what was learned working directly in the repo. Where the two
@@ -43,15 +43,9 @@ easy to conclude there is none. Decode it to edit; never hand-patch the base64.
   `applyLoadedData()`** — defaulted so *existing* users don't see it as new
   (e.g. a `seenXTour` flag defaults to already-seen for anyone past
   onboarding).
-- **Default accent stays `"ink"` (neutral).** Changed to purple once without
-  being asked; had to be reverted.
-- **"Remove" means delete, not hide.** `display:none` or `hidden` was rejected
-  once already (the old top nav bar).
 - **Don't reorder or rename questions' `topic`/`src`.** Question identity is a
   hash of those fields (`KEYS` via `hashOf()`), so changing them scrambles a
   real person's answer history for that question.
-- **No aesthetic or default-setting changes without being asked**, even ones
-  that look like improvements.
 
 ---
 
@@ -180,8 +174,7 @@ Details that exist for a reason:
   theme's CSS that `applyTheme()` can never reach (it maps party → dark).
   Retired accent names `grinder`, `scholar`, `luminary` still have colour
   definitions. **If you change a colour and nothing happens, check the selector
-  is reachable before assuming your edit was wrong.** Don't delete this on your
-  own initiative — it's deliberate cleanup for Madison to decide on.
+  is reachable before assuming your edit was wrong.**
   (The light/classic values in `--statusbar-mix2/3` are inert for the same
   reason — kept as harmless defensive defaults.)
 - **"Flares" ≠ "Secret Flares".** Flares are the orbiting badges on the Mastery
@@ -221,17 +214,3 @@ the splash race is the thing under test. Those two console errors are expected
 and unrelated to any change.
 
 No committed regression suite exists yet. Worth building.
-
----
-
-## Working style
-
-- Work a requested batch **one item at a time**, each fully verified, rather
-  than a wide pass verified once at the end.
-- Say what was found or changed beyond the literal ask — a fix that touched a
-  shared class, an unrelated bug noticed in passing, a judgement call made
-  without asking. Silence about side effects is the problem, not the side
-  effect.
-- Respect scope boundaries precisely. If an area is put on hold, or an
-  exception is carved out of one, track that boundary exactly rather than
-  rounding it off in either direction.
