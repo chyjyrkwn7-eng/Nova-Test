@@ -2,6 +2,21 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
+<!-- First rule in the document, deliberately: the only thing ahead of it
+     is the charset declaration, which has to come first. Nothing else in
+     this file gives the canvas a colour until the color-scheme meta on
+     line 49, and html{background:var(--paper)} not until line 300. CSS
+     paints progressively, so a paint landing before either - which is
+     what a cold standalone launch does - renders the browser's default
+     white canvas. That is the brief white flash reported on launch, and
+     it reproduces exactly: cut the document short of line 49 and the
+     first paint is pure white (255,255,255); with this rule present it
+     is #0A0A0A. Declaring it here, inside the first few hundred bytes,
+     means the canvas is already dark before anything else is read.
+     #0A0A0A matches #splashscreen's own background so the handover is
+     invisible, and html{background:var(--paper)} further down overrides
+     it in the normal way, so it changes nothing after first paint. -->
+<style>html{background:#0A0A0A;}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- iOS reads this ONCE, at launch, straight out of the HTML as
      delivered - before a single line of JS has run. syncStatusBarColor()
@@ -510,11 +525,19 @@
        two of a standalone launch. Content centred inside an oversized
        box lands low and right of the real centre, which is exactly what
        was described, and snaps back once the viewport settles.
-       100vw/100dvh resolve against the viewport itself rather than the
+       100vw/100svh resolve against the viewport itself rather than the
        containing block, so the overlay is the right size even while that
        block is wrong, and overflow:hidden means anything still
-       mis-measured is clipped instead of drawn off-centre. */
-    position:fixed; inset:0; width:100vw; height:100dvh; overflow:hidden;
+       mis-measured is clipped instead of drawn off-centre.
+       svh, NOT dvh. dvh is the DYNAMIC viewport height: it changes as the
+       viewport settles during launch, and a centred group inside a box
+       that grows moves down with it - which is the slight downward drift
+       reported after dvh was introduced here. svh is the stable small
+       viewport height and never changes, so the box is one size for the
+       whole life of the splash. In a standalone app, with no browser
+       chrome to appear or disappear, svh and dvh describe the same
+       screen anyway; only svh promises not to move. */
+    position:fixed; inset:0; width:100vw; height:100svh; overflow:hidden;
     z-index:9999; background:#0A0A0A;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     /* .5s \u2014 short enough to not feel sluggish, but with the sequencing
@@ -27065,7 +27088,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-27";
+const APP_BUILD = "2026-09-20-28";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
