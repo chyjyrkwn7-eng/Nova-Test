@@ -318,8 +318,8 @@ Every bug below was invisible at 390×844 in a desktop browser, which is where
 - **Do NOT add `env(safe-area-inset-bottom)` to the space reserved for the
   tab bar.** An earlier pass did, reasoning that the bar grows by the inset
   so the reservation must too. Measured, that is double-counting: the bar's
-  whole footprint on an iPhone 15 is its `1.1rem` offset plus its 101px
-  height — about 7.4rem *with* the home indicator already inside it — so the
+  whole footprint on an iPhone 15 is its offset (`0.6rem`) plus its 101px
+  height — under 7rem *with* the home indicator already inside it — so the
   flat `7.5rem` covers it, and the addition opened a second gap of the same
   size under the button.
 - **`min-height:calc(100dvh - Nrem)` must subtract only the EXTRA the insets
@@ -354,9 +354,13 @@ under the notch on a phone held sideways.
 downward by the whole inset — 34px of empty glass under the icons on an
 iPhone, leaving them sitting high in a bar that looked wrong. An iPad's 20px
 inset made the same mistake less obvious, which is why that one "looked
-perfect" by comparison. `bottom:calc(1.1rem + env(...))` keeps the pill the
+perfect" by comparison. `bottom:calc(.6rem + env(...))` keeps the pill the
 shape it was designed to be on every device, and the total space it occupies
-is unchanged.
+is unchanged. The offset itself is how low the bar sits — it was `1.1rem`
+until it was reported as sitting too high; at `0.6rem` the pill clears the
+home indicator's inset by 10px on both an iPhone and an iPad. Only ever
+lower it toward the edge, never past it: the `7.5rem` reservation above
+assumes the bar's whole footprint still fits inside it.
 
 **A tablet is not a big phone.** The hero sphere carries these screens and it
 is the one element that can absorb a tablet's height — but **size it in `vh`,
@@ -375,6 +379,33 @@ full-width row in that column needs `width:100%` explicitly.
 **Two `auto` margins centre an item in the leftover space.** That is the
 right tool when a button should sit *between* the content and the bottom of
 the panel rather than tucked under the content or jammed at the floor.
+
+**An `auto` margin in the main axis beats `justify-content` outright.** Free
+space is handed to auto margins first and `justify-content` only ever sees
+what is left, which is nothing. So `justify-content:center` plus
+`margin-bottom:auto` on the last child is not "centred, a bit lower" — it is
+the whole group jammed against the top. Home's phone rule
+(`.panel.home.screen-home-actual .playbtn{margin-bottom:auto}`) has to be
+explicitly reset to `0` inside the tablet block for exactly this reason.
+
+**The same rule used deliberately is how four screens share one button
+position.** `::before{content:"";margin-top:auto}` on the panel plus
+`margin-top:auto` on the button gives two auto margins with the content
+between them: the group floats mid-screen and the button lands on the panel
+floor — the *same* floor on every screen using it, whatever its content
+height. That is what puts Continue in one spot across username, character
+select, Pick your class, the code screens and "You're all set", which
+centring each screen separately cannot do (it left a 125px spread on an
+iPad).
+
+**`justify-content:space-between` spreads the leftover height into EVERY
+gap, including ones that belong together.** Welcome's two buttons are styled
+11px apart and measured 41px apart on an iPhone because each of the five gaps
+in that column got an equal share. Grouping the pair (and the line explaining
+them) into one flex child is the fix — the free space then lands *between*
+blocks rather than inside one. Welcome is now plain `justify-content:center`
+on a phone as well; space-between made the remaining three gaps ~50px each,
+which read as three holes rather than a filled screen.
 
 **Dead code that appends to `<body>` is worse than dead.** `showTourSendoff()`
 — the old "You're all set" popup — had not been called in a long time (the
@@ -442,15 +473,21 @@ everyone after an icon or app-name change. `frameNote` overrides the message.
 Ship a **new** deployment (different URL) with `frameId: ""` — that disables
 the notice, which is right when every install is fresh and already correct.
 
-**Where a notice sits is measured, not hardcoded.** `positionNotice()` reads
-the bottom furniture actually on screen — the primary button (`#nextbtn` on
-Home, `.next.playbtn` on Welcome), `.homeversion`, `.daily-question-fab`,
-`.bottomtabs` — and parks the banner above the highest of them. The CSS
-`bottom` is only a fallback for the frame before that lands. A fixed offset
-cannot work here: the two screens differ, and `.homeversion` and
-`.daily-question-fab` both move themselves at the tablet breakpoint. Anything
-new added along the bottom of Home or Welcome needs its selector in
-`NOTICE_OBSTRUCTIONS` or the banner will sit on top of it.
+**A notice sits at the TOP of the screen, and where exactly is measured.**
+It used to sit at the bottom, above the primary button — which meant
+`positionNotice()` had to measure its way around four pieces of furniture
+(`#nextbtn`, `.homeversion`, `.daily-question-fab`, `.bottomtabs`) that all
+live down there and all move at the tablet breakpoint. Per explicit request
+it now pins to the top instead, where both screens it can appear on are
+empty: `top:calc(env(safe-area-inset-top) + .75rem)` in CSS, and
+`positionNotice()` measures the *bottom* edge of whatever the current screen
+puts up there (`NOTICE_OBSTRUCTIONS`, now `.wrap > .top`, `.wrap > .count`,
+`.back-link`) and parks the banner below the lowest of them. On Welcome and
+Home none of those is showing, so the CSS value is what you get. Anything
+new added along the TOP of Home or Welcome needs its selector in
+`NOTICE_OBSTRUCTIONS` or the banner will sit on top of it. The entrance
+animation is `translateY(-8px)` for the same reason — it drops in from
+above now rather than rising from an edge it no longer sits on.
 
 Two notices, both gated to the Welcome and Home screens only, never mid-test:
 
@@ -551,6 +588,14 @@ re-evaluated on the next check.
   hardcoded colour.
 - **Tablet styling is `@media (min-width:40rem)`**, added *after* the phone
   rule as an override — never a rewrite of the base rule.
+- **Settings' behaviour toggles are two sections, not one.** "Motion &
+  interaction" (smooth scrolling, reduce motion, swipe to advance) and
+  "While you study" (keep screen awake, auto-advance, mute banners,
+  auto-flag) — seven under one header had visibly piled up. Both headers
+  are `.slab.motion-summary` so they read as a matched pair; the second
+  also carries `.section-divider` for the gap above it. A new toggle goes
+  into whichever group it belongs to, and into that group's own
+  `motionDetails`/`studyDetails` container in `showAppearance()`.
 - **Behaviour toggles live on `theme`**, not `store` — `smoothScroll`,
   `swipeAdvance`, `autoAdvance`, `hapticTouch`, `reduceMotion`, `keepAwake`,
   `muteBanners`, `autoFlagMissed` — and each needs three things: a default in
@@ -621,6 +666,31 @@ re-evaluated on the next check.
   plus `no-repeat` pins it to the same box `body::before` occupies. Measured
   difference went from up to 8 levels (5 of them in the bottom 40px on a
   tablet) to exactly 0.
+- **Three things move together when the ambient glow changes.** The glow is
+  declared twice (the `body::before` stack and the `html` fallback, which
+  must stay pixel-identical) and its strength is modelled a third time in
+  `--statusbar-mix2/3`, which are the share of glow 1 and glow 2 still in
+  play at the very top edge — calibrated at 55% and 50% of their peaks. Dark
+  currently runs `--theme-c2` at 13.5% and `--theme-c3` at 14.5% (up from
+  10%/11%, which was reported as dull), so the tokens are 7.4%/7.25%. There
+  is a third, gold `--theme-c1` glow now as well, deliberately anchored at
+  `50% 104%` — along the BOTTOM edge, where it contributes nothing up in the
+  status bar strip and therefore needs no token of its own. Add a glow near
+  the top and that stops being true. The dimmed `has-active-question`
+  variant is a fourth copy of the same numbers (4%/4.7%, tokens
+  2.2%/2.35%) and has to be re-scaled with them, or the status bar stays
+  tuned to the full glow on the single most-used screen in the app.
+  **Scale the tokens with the peaks; do not re-sample in Chromium.** The
+  55%/50% share was measured against real hardware. Chromium's own top
+  strip runs ~6 levels darker than the model on a phone and ~8 lighter on
+  a tablet — the glow radius doubles at `min-width:40rem` and one flat
+  token has to serve both — so tuning to either reading walks the
+  calibration away from the device it came from.
+- **The halo round the hero sphere is `.homeglow.homeglow-hero`, not the
+  background.** Its base is a single `var(--accent)` ellipse, and on the
+  default accent `--accent` is `var(--ink)` — which is exactly why it read as
+  "a faint white glow". The dark override paints it in `--theme-c1`/`--theme-c3`
+  instead, so it re-themes with every accent rather than going grey.
 - **Fixed-position elements render oddly in Playwright `fullPage` screenshots.**
   Verify their layout with `getBoundingClientRect()`, not by eyeballing.
 - **Adjacent vertical margins collapse to the larger, they don't add.** A gap
