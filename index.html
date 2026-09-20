@@ -164,6 +164,13 @@
   .dot.tier-ranger{ background-image:linear-gradient(135deg, #4ADE80, #16A34A); }
   .dot.tier-veteran{ background-image:linear-gradient(135deg, #7CA6FF, #2563EB); }
   .dot.tier-vanguard{ background-image:linear-gradient(135deg, #D19CFF, #9333EA, #D19CFF); background-size:220% 220%; }
+  /* Was simply absent, while every other tier from rookie to titan had
+     one. The swatch builder relies on CSS to supply a tier-* dot's colour
+     and has no inline fallback, so a missing rule rendered a genuinely
+     colourless circle rather than a subtly wrong one. These are adept's
+     own existing accent shades, the same ones it uses on the Mastery
+     Ladder - not a new colour. */
+  .dot.tier-adept{ background-image:linear-gradient(135deg, #F0ABFC, #D946EF, #F0ABFC); background-size:220% 220%; }
   .dot.tier-elite{ background-image:linear-gradient(135deg, #FF9457, #EA580C, #FF9457); background-size:220% 220%; }
   .dot.tier-titan{
     background-image:linear-gradient(135deg, #FF6B6B, #DC2626, #FF6B6B); background-size:220% 220%;
@@ -182,7 +189,7 @@
     box-shadow:0 0 9px rgba(245,197,24,.7);
   }
   @media (prefers-reduced-motion:no-preference){
-    .dot.tier-vanguard, .dot.tier-elite, .dot.tier-titan,
+    .dot.tier-vanguard, .dot.tier-adept, .dot.tier-elite, .dot.tier-titan,
     .dot.tier-grinder, .dot.tier-scholar, .dot.tier-luminary{ animation:legend-swirl 3s ease-in-out infinite; }
   }
   .mystery-dot{
