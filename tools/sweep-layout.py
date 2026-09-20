@@ -156,8 +156,21 @@ AUDIT = """(inset) => {
     const a = btn.getBoundingClientRect(), b = tabs.getBoundingClientRect();
     if (a.bottom > b.top + 1 && a.right > b.left && a.left < b.right)
       problems.push(`primary button is behind the tab bar by ${Math.round(a.bottom-b.top)}px`);
-    if (a.bottom > vh + 1)
-      problems.push(`primary button is below the fold by ${Math.round(a.bottom-vh)}px`);
+  }
+  /* Outside the tab-bar branch, which is where this check used to live -
+     and that was a real hole: every onboarding screen hides the tab bar,
+     so none of them was ever checked for its button being off the bottom
+     of the screen at all. Unreachable is the defect, not below the fold:
+     a long screen that scrolls to its button is working as intended, so
+     this only fires when the page CANNOT scroll far enough to bring it
+     into view. */
+  if (btn && !buried(btn)) {
+    const a = btn.getBoundingClientRect();
+    const canScroll = document.documentElement.scrollHeight > vh + 1;
+    const reachable = canScroll
+      && a.bottom + window.scrollY <= document.documentElement.scrollHeight + 1;
+    if (a.bottom > vh + 1 && !reachable)
+      problems.push(`primary button is below the fold by ${Math.round(a.bottom-vh)}px and the page cannot scroll to it`);
   }
   if (tabs && !buried(tabs)) {
     const b = tabs.getBoundingClientRect();

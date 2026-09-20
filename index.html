@@ -4547,34 +4547,30 @@
      nothing left to actually push against. A real, fixed gap here
      instead guarantees genuine breathing room regardless of how
      close to the viewport edge the content itself happens to land. */
-  /* auto on BOTH sides, so the button sits in the middle of whatever space
-     is left between the last card and the bottom of the panel rather than
-     tucked right under the cards. Reported on a phone: "too close to the
-     bottom box, it needs to be centered between the bottom of the screen
-     and the last box". Two auto margins split the free space evenly, which
-     is exactly that, and it does the right thing on a tablet too. */
-  .panel.home.welcomeintro-panel .playbtn{ margin-top:auto; margin-bottom:auto; }
-  /* Reported again after the two-auto-margins fix above: still too close
-     to the last card. Two auto margins centre the button inside the
-     PANEL, whose content box ends 24px above the panel's own edge and
-     ~90px above the bottom of the screen - so "centred in the panel" is
-     visibly higher than "centred between the last card and the bottom of
-     the page", which is what was actually asked for. Replacing the lower
-     auto with a fixed 2.25rem spends that difference and lands it there.
-     Phone only, and with a height floor: on a screen short enough that
-     there is less than 2.25rem of slack, a fixed bottom margin would
-     grow the panel and start the page scrolling instead. 46rem is the
-     same floor Home's own phone block uses, and for the same reason. */
-  @media (max-width:32rem) and (min-height:46rem){
-    .panel.home.welcomeintro-panel .playbtn{ margin-bottom:2.25rem; }
-  }
+  /* Two rounds of trying to find this button its own special position
+     (auto on both sides, then auto plus a fixed 2.25rem) are gone. The
+     answer was never a position of its own: it was reported as "slightly
+     higher than the other continue buttons", and it was - 29px on a
+     phone, 120px on an iPad - because every OTHER onboarding screen
+     lands its button on the panel floor and this one was floating
+     somewhere above it. It uses the same floor as the rest now, which is
+     what "the same location as the other continue buttons" means. The
+     only thing needed to make the numbers line up exactly is this
+     screen's own padding-bottom, which had been trimmed to 1.1rem and
+     is back to the shared 1.5rem below. */
   /* This screen's four cards run tall enough on a phone to scroll the
      page — per explicit report ("scrollable on my iPhone"). Trimming
      this screen's own top/bottom padding a bit (still comfortable,
      just not the same generous padding every other, shorter
      .panel.home screen gets) recovers a little more vertical room
      without touching the shared base rule other screens rely on. */
-  .panel.home.welcomeintro-panel{ padding-top:1.25rem; padding-bottom:1.1rem; }
+  /* padding-bottom back to the 1.5rem every other .panel.home screen
+     uses: the button sits on the panel's content floor now, so anything
+     unique here would put it at a different height from the rest. The
+     top stays trimmed - that is the half of this that was actually
+     buying vertical room. Measured after the change: the tallest phone
+     in the matrix still does not scroll this screen. */
+  .panel.home.welcomeintro-panel{ padding-top:1.25rem; padding-bottom:1.5rem; }
   /* "Pick your class" needs a different treatment than welcomeintro,
      not the same one - per direct follow-up report, flex-end here
      read as "everything at the bottom" with a big empty gap up top.
@@ -4671,7 +4667,15 @@
     .panel.home.classselect-panel::before{ content:""; margin-top:auto; }
     .panel.home.onboarding-shortform-panel .playbtn,
     .panel.home.charselect-panel .playbtn,
-    .panel.home.classselect-panel .playbtn{ margin-top:auto; }
+    .panel.home.classselect-panel .playbtn,
+    .panel.home.welcomeintro-panel .playbtn{ margin-top:auto; }
+    /* welcomeintro takes the button rule but NOT the ::before spacer the
+       three above it get. Those are short screens that would otherwise
+       strand their content at the top of a 1194px iPad; this one is four
+       full-height cards plus a title and has no spare height to float
+       into. Floating it anyway pushed the back link 137px down the
+       screen for nothing. Same floor for the button, content left where
+       it is. */
     .panel.home.onboarding-shortform-panel .hometitle{ font-size:clamp(1.9rem, 5vh, 2.6rem); }
     .panel.home.onboarding-shortform-panel .hometagline{ font-size:1.15rem; }
     .panel.home.onboarding-shortform-panel .searchbox{ font-size:1.1rem; padding-top:.9rem; padding-bottom:.9rem; }
@@ -5243,6 +5247,19 @@
        sphere lifts by the other half, which is exactly the "just
        slightly" separation that was asked for rather than a shove. */
     .cosmic-welcome-title{ margin-top:2.4rem; }
+    /* And the group itself is spaced out, per the follow-up that
+       everything under the sphere "seems very much bunched together".
+       It was: the flex gap here is the base .34rem (5px) and the title,
+       the sub and the two buttons were stacked at phone spacing on a
+       1194px screen. The gap does the work - it applies between all four
+       children at once, and it spends the 155px this screen was holding
+       as empty margin above and below the group instead. The actions
+       block gets its own, looser internal gap for the same reason. */
+    .cosmic-welcome{ gap:1.5rem; }
+    .cosmic-welcome-actions{ gap:1rem; }
+    /* .78rem is a phone size and read as fine print on a 1194px screen,
+       the same complaint the intro cards and Pick your class got. */
+    .cosmic-welcome-hint{ margin-top:.6rem; font-size:1rem; max-width:28rem; }
   }
   /* The mirror image of the tall-tablet block above, and the reason it
      exists: on a SHORT viewport Home does not fit, and the Start
@@ -5399,7 +5416,29 @@
      sits in the middle with even margins above and below it, and every
      gap inside it is one that was designed. */
   @media (max-width:32rem){
-    .cosmic-welcome{ justify-content:center; gap:1.1rem; }
+    /* Three auto margins rather than justify-content, per explicit
+       follow-up: "everything underneath the planet system could be
+       lowered", with the hint line "pretty close to the bottom of the
+       screen". Centring split the leftover 141px into 76 above the hero
+       and 65 below the hint, which held the whole group up in the middle.
+       Auto margins on the hero, the title and the actions block spend it
+       in three places instead: the hero keeps roughly the spot it already
+       had (the first margin replaces the top half of the centring), and
+       everything below it drops - the title and sub by ~30px, the buttons
+       and the hint by ~42px. The actions block is the last child, so all
+       of the free space ends up above it however it is divided; splitting
+       it three ways is what keeps the sphere from sliding up to the notch
+       while the buttons go down. */
+    .cosmic-welcome{ justify-content:flex-start; gap:1.1rem; }
+    .cosmic-welcome .cosmic-hero-wrap,
+    .cosmic-welcome-actions{ margin-top:auto; }
+    /* A real gap under the sphere, not an auto one. A third auto margin
+       here divided the free space evenly and opened a 100px hole between
+       the sphere and the title - looked at, and it read as a gap in the
+       screen rather than as spacing. A fixed 1.6rem is spacing; it also
+       comes off the pool the two autos divide, so the title lands ~19px
+       lower than it did and the hero barely moves. */
+    .cosmic-welcome-title{ margin-top:1.6rem; }
   }
   .homeversion .homeversion-long{ display:none; }
   .homeversion .homeversion-short{ display:inline; }
@@ -5443,13 +5482,60 @@
     right:max(1.8rem, calc(50% - 22rem + 1.8rem)); z-index:150;
     /* 2.6rem is 41.6px - under the 44px minimum tap target, on a control
        that sits alone in a corner with nothing to aim at but itself. The
-       tablet override below already uses 4rem. */
-    width:2.9rem; height:2.9rem; border-radius:999px; font-size:1.3rem; font-weight:800;
+       tablet override below already uses 4rem. Raised again to 3.4rem
+       (54px) per explicit follow-up that it still reads small; it is a
+       daily action worth noticing, not an afterthought. */
+    width:3.4rem; height:3.4rem; border-radius:999px; font-size:1.5rem; font-weight:800;
     color:#F3F5F7; background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.14);
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer;
   }
   .daily-question-fab.is-done{ opacity:.4; color:var(--soft); cursor:default; }
+  /* Two states, per explicit request: a quiet "this is here and you have
+     not done it" and a louder "it just reset in front of you".
+
+     is-ready is the quiet one - a single ring that grows out of the
+     button and fades, once every few seconds. It is a ::after rather
+     than an animation on the button itself so nothing about the
+     button's own size, blur or hit area moves: a pulsing tap target
+     that changes size under a finger is worse than no animation at all.
+     pointer-events:none for the same reason.
+
+     is-fresh is the loud one, and it is deliberately finite - five
+     cycles, about six seconds, then it stops on its own and leaves
+     is-ready running. A light-up that never ends stops being news and
+     starts being a distraction on the screen people look at most.
+
+     Both are covered by the global [data-reduce-motion="true"] *
+     {animation:none} rule near the top of this file, so the Reduce
+     motion toggle switches them off without either being named. */
+  .daily-question-fab.is-ready::after{
+    content:""; position:absolute; inset:-3px; border-radius:999px;
+    border:1.5px solid var(--theme-c1); opacity:0; pointer-events:none;
+    animation:daily-ready 3.6s ease-out infinite;
+  }
+  @keyframes daily-ready{
+    0%{ transform:scale(.9); opacity:0; }
+    12%{ opacity:.5; }
+    55%{ transform:scale(1.35); opacity:0; }
+    100%{ transform:scale(1.35); opacity:0; }
+  }
+  .daily-question-fab.is-fresh{ animation:daily-fresh 1.2s ease-in-out 5; }
+  @keyframes daily-fresh{
+    0%, 100%{
+      border-color:rgba(255,255,255,.14); color:#F3F5F7;
+      box-shadow:0 4px 14px rgba(0,0,0,.3);
+    }
+    50%{
+      border-color:var(--theme-c1); color:var(--theme-c1);
+      box-shadow:0 4px 14px rgba(0,0,0,.3),
+                 0 0 0 5px color-mix(in srgb, var(--theme-c1) 16%, transparent),
+                 0 0 26px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+    }
+  }
+  /* A reset is news whether or not the button itself is animating, so
+     the ring runs faster and brighter for those few seconds too. */
+  .daily-question-fab.is-fresh.is-ready::after{ animation-duration:1.2s; border-width:2px; }
   /* Genuinely bigger on a tablet-width screen, not just repositioned \u2014
      per explicit report that it renders "way too small" on an iPad.
      Phone keeps its existing 2.6rem size untouched. */
@@ -5466,7 +5552,7 @@
          of a lone button floating above the tab bar with nothing to
          visually relate it to. Sized up again too now that it has
          real room in an actual corner to grow into. */
-      width:4rem; height:4rem; font-size:1.8rem;
+      width:4.6rem; height:4.6rem; font-size:2rem;
       /* Positioned beside the bottom tab bar itself now, not floating
          alone in the far corner - per explicit report that an earlier
          screenshot showing it "to the right of the bottom tab" looked
@@ -24322,11 +24408,12 @@ function showClassSelection(){
      "No other classes available yet." right next to it, per explicit
      request for something a bit more than a bare two-word fragment. */
   const classDesc = document.createElement("span");
-  /* Names the class AND what it is, per explicit request - "For police
-     academy cadets" described the audience without ever saying which
-     class this card actually is, which left the title doing all the
-     identifying on its own. */
-  classDesc.className = "modecarddesc"; classDesc.textContent = "The Class 26E police academy class.";
+  /* Names what it is without repeating what the title already says.
+     "The Class 26E police academy class" used the word twice in six
+     words, right under a title that is itself "Class 26E", and was
+     reported as redundant. The card title identifies it; this line only
+     has to say what kind of thing it is. */
+  classDesc.className = "modecarddesc"; classDesc.textContent = "The police academy class this app was built for.";
   classCard.append(classTitle, classDesc);
   cards.appendChild(classCard);
 
@@ -25040,6 +25127,9 @@ function startSimpleTour(steps, onComplete){
     tooltip.remove();
     line.remove();
     lineDot.remove();
+    /* Before onComplete, which on the main-menu tour is the send-off and
+       can itself change the screen. */
+    if(typeof holdNoticesAfterTour === "function") holdNoticesAfterTour();
     if(typeof onComplete === "function") onComplete();
   }
 
@@ -25406,6 +25496,41 @@ function startDailyQuestion(){
   cfg.source = "all";
   beginRun([qi], "Daily question");
 }
+/* The last daily period this device was actually SHOWN on Home. Compared
+   against dailyPeriodKey() to tell "a new question is out since you last
+   looked" apart from "you are looking at the same one again", which is
+   the whole basis of the reset announcement below. A localStorage key,
+   not a field on store: it describes this device's own viewing history,
+   not the account's progress, so it must not sync to a second device and
+   announce a reset there that already happened here. Per the convention,
+   class26e.<thing> and wrapped in try/catch. */
+const DAILY_SEEN_KEY = "class26e.daily.seen";
+function dailySeenPeriod(){
+  try{ return localStorage.getItem(DAILY_SEEN_KEY); }catch(e){ return null; }
+}
+function markDailySeen(key){
+  try{ localStorage.setItem(DAILY_SEEN_KEY, key); }catch(e){}
+}
+/* Lives outside showHome so a rebuild of Home replaces the pending timer
+   rather than stacking a second one on top of it. */
+let dailyResetTimer = null;
+
+/* Everything the button does when a new period starts, in one place,
+   because it happens two ways: on arriving at Home after a reset that
+   happened while the app was closed or elsewhere, and live at 5pm with
+   Home already on screen. Both should look the same. */
+function announceDailyReset(btn){
+  if(!btn) return;
+  btn.classList.remove("is-done");
+  btn.classList.add("is-ready", "is-fresh");
+  btn.title = "Today's daily question \u2014 one quick question, no retakes.";
+  /* 6s covers the five animation cycles; removing the class rather than
+     letting the animation sit finished keeps the element clean and lets
+     the next reset re-trigger it. */
+  setTimeout(() => btn.classList.remove("is-fresh"), 6000);
+  showToast("Today's daily question is out \u2014 tap the ? to take it.");
+}
+
 function showDailyQuestionLockedPopup(){
   const ms = nextDailyResetMs();
   const h = Math.floor(ms / 3600000);
@@ -25533,6 +25658,36 @@ function showHome(){
     ? "Daily question \u2014 " + (store.dailyQuestionCorrect ? "correct today" : "done for today") + ". Resets at 5pm."
     : "Today's daily question \u2014 one quick question, no retakes.";
   dailyBtn.addEventListener("click", startDailyQuestion);
+
+  /* Three separate things, in the order they can happen:
+
+     1. Not done yet -> the quiet ready ring runs the whole time Home is
+        up, so there is something to notice rather than a grey circle
+        that looks the same whether or not it has been used.
+     2. The period changed since this device last saw Home, and it has
+        seen Home at least once before -> the reset announcement. The
+        seenBefore guard is what stops a brand-new install from being
+        told a question it has never seen has just "reset"; a first run
+        records the period silently and announces from then on.
+     3. Home is still up when 5pm arrives -> the same announcement, live,
+        without re-rendering the screen underneath it. The timer is
+        cleared on every rebuild of Home and checks that this exact
+        button is still in the document before firing, so navigating away
+        simply lets it expire harmlessly. */
+  const dailyPeriod = dailyPeriodKey();
+  const seenBefore = dailySeenPeriod();
+  if(!doneToday){
+    dailyBtn.classList.add("is-ready");
+    if(seenBefore && seenBefore !== dailyPeriod) announceDailyReset(dailyBtn);
+  }
+  markDailySeen(dailyPeriod);
+
+  clearTimeout(dailyResetTimer);
+  dailyResetTimer = setTimeout(() => {
+    if(!document.body.contains(dailyBtn)) return;
+    announceDailyReset(dailyBtn);
+    markDailySeen(dailyPeriodKey());
+  }, nextDailyResetMs() + 1500);
 
   /* NOT panel.appendChild \u2014 the actual, confirmed cause of the
      reported glitch/jump every time Home re-renders (most noticeable
@@ -27862,7 +28017,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-43";
+const APP_BUILD = "2026-09-20-44";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -27884,10 +28039,37 @@ let frameSnoozed = false;
    test - and a banner sliding in over that is an interruption of
    something, however politely worded. These two are the resting points,
    which is exactly where "there's an update" belongs. */
+/* Set when any tour finishes, so a notice cannot land on the frame after
+   the last "Got it" is tapped. Per explicit request: neither banner may
+   appear while the main-menu tooltips are running, and there has to be a
+   pause afterwards rather than the banner arriving the instant the tour
+   clears. */
+const TOUR_NOTICE_QUIET_MS = 3500;
+let tourQuietUntil = 0;
+
+/* Both notices are gated to Welcome and Home and nowhere else - that is
+   what dataset.screen is for, and only those two screens set it (see
+   showWelcome/showHome), so every other screen in the app fails this
+   test by construction rather than by being listed. A tour on screen
+   also blocks: #tour-overlay is the full-screen dim every tour puts up,
+   so testing for it covers the main-menu tour and every other one
+   without each of them having to say so. */
 function noticeAllowedHere(){
   const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
   const screen = el && el.dataset ? el.dataset.screen : "";
-  return screen === "home" || screen === "welcome";
+  if(screen !== "home" && screen !== "welcome") return false;
+  if(document.getElementById("tour-overlay")) return false;
+  if(Date.now() < tourQuietUntil) return false;
+  return true;
+}
+
+/* Called by every tour's cleanup. Nothing else re-checks after a tour
+   ends - a tour is not a screen change, so syncNoticeVisibility() would
+   never run again on its own and a held notice would simply stay held
+   until the next navigation. */
+function holdNoticesAfterTour(){
+  tourQuietUntil = Date.now() + TOUR_NOTICE_QUIET_MS;
+  setTimeout(syncNoticeVisibility, TOUR_NOTICE_QUIET_MS + 80);
 }
 
 /* Called both when a check produces a notice and on every screen change,
@@ -29048,7 +29230,7 @@ function showAppearance(){
      needing a section header to break them apart. They split cleanly
      along what they actually change: how the app MOVES and how you
      drive it (scrolling, animation, swiping), versus what it does for
-     you WHILE you are answering questions (staying awake, advancing,
+     you during a study session or a test (staying awake, advancing,
      flagging, banners). Same .slab.motion-summary header treatment as
      the first group, so the two read as a matched pair rather than one
      real header and one afterthought. Built up here, appended after the
@@ -29058,7 +29240,13 @@ function showAppearance(){
   studyDetails.className = "motion-details";
   const studyLab = document.createElement("p");
   studyLab.className = "slab motion-summary section-divider";
-  studyLab.textContent = "While you study";
+  /* "While you study" was reported as not reading official enough.
+     "Studying & tests" is built the same way as "Motion & interaction"
+     above it - two nouns, an ampersand, no second person - so the two
+     headers read as a set, and it covers all four toggles under it
+     (keeping the screen awake and auto-advance are mid-question, muting
+     the achievement banners is end-of-test). */
+  studyLab.textContent = "Studying & tests";
   studyDetails.appendChild(studyLab);
 
   const smoothRow = document.createElement("label");
