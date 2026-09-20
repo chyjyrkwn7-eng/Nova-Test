@@ -30500,7 +30500,10 @@ function showAnswerReview(units){
   toTop();
 }
 
-function showProfile(){
+/* defaultTab exists so a future link can drop someone straight onto
+   Stats; every current call site passes nothing and lands on Profile. */
+function showProfile(defaultTab){
+  const initialTab = defaultTab || "profile";
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
      to the cutscene no matter which tab was actually tapped from
@@ -30517,6 +30520,41 @@ function showProfile(){
 
   const panel = document.createElement("section");
   panel.className = "panel screen-profile";
+
+  /* Same .navsegment.profiletabs / .iconbtn / hidden-panel shape
+     showRewards() already established, rather than a second way of doing
+     tabs. Profile was one long scroll mixing identity (name, class,
+     avatar, theme colour) with personal stats (study time, testing
+     stats, test review); this splits those without changing how any of
+     the sections themselves are built. */
+  const profileTabSeg = document.createElement("div");
+  profileTabSeg.className = "navsegment profiletabs";
+  const identityTabBtn = document.createElement("button");
+  identityTabBtn.type = "button"; identityTabBtn.className = "iconbtn" + (initialTab === "profile" ? " active" : "");
+  identityTabBtn.textContent = "Profile";
+  /* .profile-stats-tab-btn is not decorative - the Profile tour points at
+     it. See the tour's third step at the end of this function. */
+  const statsTabBtn = document.createElement("button");
+  statsTabBtn.type = "button"; statsTabBtn.className = "iconbtn profile-stats-tab-btn" + (initialTab === "stats" ? " active" : "");
+  statsTabBtn.textContent = "Stats";
+  profileTabSeg.append(identityTabBtn, statsTabBtn);
+  panel.appendChild(profileTabSeg);
+
+  const identityTab = document.createElement("div");
+  identityTab.hidden = initialTab !== "profile";
+  const statsTab = document.createElement("div");
+  statsTab.className = "profile-stats-tab";
+  statsTab.hidden = initialTab !== "stats";
+  panel.append(identityTab, statsTab);
+
+  function selectProfileTab(which){
+    identityTab.hidden = which !== "profile";
+    statsTab.hidden = which !== "stats";
+    identityTabBtn.classList.toggle("active", which === "profile");
+    statsTabBtn.classList.toggle("active", which === "stats");
+  }
+  identityTabBtn.addEventListener("click", () => selectProfileTab("profile"));
+  statsTabBtn.addEventListener("click", () => selectProfileTab("stats"));
 
   /* The avatar and name used to live in a persistent top bar on every
      screen \u2014 now that the bar itself is gone (redundant once the same
@@ -30614,7 +30652,7 @@ function showProfile(){
 
   nameWrap.append(nameDisplayRow, nameInput, nameSaveBtn);
   nameSect.appendChild(nameWrap);
-  panel.appendChild(nameSect);
+  identityTab.appendChild(nameSect);
 
   /* The "Enrolled in Class 26E" line that used to sit here is gone \u2014
      explicit report that it was redundant directly above a section
@@ -30651,7 +30689,7 @@ function showProfile(){
   calBtn.addEventListener("click", showCalendar);
   calRow.append(daysBtn, calBtn);
   classSect.appendChild(calRow);
-  panel.appendChild(classSect);
+  identityTab.appendChild(classSect);
 
   const avatarSect = document.createElement("div");
   avatarSect.className = "sect";
@@ -30684,7 +30722,7 @@ function showProfile(){
     avatarGrid.appendChild(opt);
   });
   avatarSect.appendChild(avatarGrid);
-  panel.appendChild(avatarSect);
+  identityTab.appendChild(avatarSect);
 
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
@@ -30726,7 +30764,7 @@ function showProfile(){
     swatches.appendChild(b);
   });
   accentSect.appendChild(swatches);
-  panel.appendChild(accentSect);
+  identityTab.appendChild(accentSect);
 
   function paintAccents(){
     [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {
@@ -30739,9 +30777,9 @@ function showProfile(){
      unlocks live in their own separate Rewards screen, since this used
      to be one shared function and the two ended up bleeding into each
      other no matter which bottom tab was actually tapped. */
-  const statsTab = document.createElement("div");
-  statsTab.className = "profile-stats-tab";
-  panel.appendChild(statsTab);
+  /* statsTab itself is declared up in the tab scaffold now, so that it
+     and identityTab can be created together; only its contents are built
+     from here down. */
 
 
   /* Removed entirely per explicit request \u2014 this duplicated the same
@@ -30855,8 +30893,13 @@ function showProfile(){
          nowhere on this screen any more. Retargeted to the shared
          .profile-stats-tab wrapper (both sections together) with text
          that actually describes what's there now. */
-      { target: ".profile-stats-tab", align: "left", vplacement: "above",
-        text: "Your study time and testing stats, all in one place." }
+      /* Points at the tab BUTTON, not .profile-stats-tab itself. That
+         wrapper is now hidden by default (every current call lands on
+         the Profile tab), and a hidden element's getBoundingClientRect()
+         is all zeros, which breaks the tour's connector-line positioning
+         outright. */
+      { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
+        text: "Tap Stats to see your study time, testing stats, and test review \u2014 all in one place." }
     ]);
   }
 }
