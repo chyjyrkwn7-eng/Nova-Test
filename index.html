@@ -510,7 +510,15 @@
   :root{
     --pad-inset-top: max(0px, env(safe-area-inset-top, 0px) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
+    /* What .wrap's padding costs a panel, top and bottom together. 9rem
+       was a single constant covering the bottom-tab-bar case (1.25rem top
+       + 7.5rem bottom) - but an onboarding screen has no tab bar and only
+       4rem of bottom padding, so on those the floor came out 3.5rem short
+       and the panel stopped well above the space it had. That is the
+       remaining "unused space at the bottom" on Welcome and the intro. */
+    --panel-reserve: 5.5rem;
   }
+  body.has-bottomtabs, body.has-floatbtn{ --panel-reserve: 9rem; }
   :root{ --statusbar-mix2:0%; --statusbar-mix3:0%; }
   [data-layout="modern"]{ --statusbar-mix2:3.3%; --statusbar-mix3:3%; }
   [data-theme="dark"][data-layout="modern"]{ --statusbar-mix2:5.5%; --statusbar-mix3:5.5%; }
@@ -1296,8 +1304,13 @@
     .banktitle-btn:active{ transform:scale(.97); }
   }
 
+  /* Padding, not size: these stay text links by design, but padding:0 made
+     them 22px tall - half the 44px minimum, and the hardest things in
+     Settings to hit. The vertical padding is pulled back out with a
+     negative margin so the visual rhythm of the list is unchanged. */
   .restart{
-    background:none; border:none; padding:0; font:inherit; font-size:.9rem;
+    background:none; border:none; padding:.8rem 0; margin:-.8rem 0;
+    font:inherit; font-size:.9rem;
     color:var(--soft); text-decoration:underline; text-underline-offset:3px; cursor:pointer;
   }
   @media (hover:hover){ .restart:hover{ color:var(--ink); } }
@@ -2290,10 +2303,23 @@
   .vroom-autostart-note{ font-size:.85rem; color:var(--soft); text-align:center; margin:1rem 0 0; }
   .vroom-autostart-note.all-ready{ color:#3DD68C; font-weight:700; }
   .cal-profile-row{ display:flex; flex-wrap:wrap; gap:.6rem; margin:0 0 1.4rem; }
+  /* Sized like a button someone is meant to press, not like a caption.
+     Measured against the rest of the app: the primary .next.playbtn runs
+     48px tall at 16.8px, while these were 13.1px in a 40px box - and on a
+     phone "Share this app" wrapped to two lines inside a 152px pill.
+     44px is the minimum tap target on iOS and these were under it. */
   .cal-profile-btn{
-    flex:1; min-width:9rem; font:inherit; font-size:.82rem; font-weight:700;
+    flex:1; min-width:9rem; font:inherit; font-size:.95rem; font-weight:700;
     color:var(--ink); background:var(--panel); border:1px solid var(--rule);
-    border-radius:999px; padding:.65rem 1rem; cursor:pointer; text-align:center;
+    border-radius:999px; padding:.8rem 1rem; cursor:pointer; text-align:center;
+    min-height:2.75rem;
+  }
+  /* Stacked on a phone. Side by side there is ~170px each, which is not
+     enough for "Add to Home Screen" at a readable size without wrapping;
+     full width each is both legible and a bigger target. */
+  @media (max-width:32rem){
+    .cal-profile-row{ flex-direction:column; }
+    .cal-profile-btn{ width:100%; }
   }
   /* Solid black now, not a translucent glass pill — explicit report
      that these (and, since Share/Install reuse this same class now,
@@ -2344,6 +2370,14 @@
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  /* The four cards sat 5px apart with ~50px of nothing under the Continue
+     button on a phone - the space existed, it just was not being used.
+     Spreading it into the gaps fills the screen and gives the cards room
+     to read as separate things, rather than pooling it at the bottom.
+     Phone only; the tablet has a taller panel and different proportions. */
+  @media (max-width:32rem){
+    .welcomeintro-row{ margin-bottom:.95rem; padding-top:.85rem; padding-bottom:.85rem; }
   }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
@@ -4334,7 +4368,7 @@
        ~9rem this assumes, by exactly the extra the insets add - which is
        what --pad-inset-* carry. Subtracting the raw insets here instead
        double-counted the baseline and cost every panel ~93px. */
-    min-height:calc(100dvh - 9rem - var(--pad-inset-top) - var(--pad-inset-bottom));
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
     box-sizing:border-box; display:flex; flex-direction:column;
     align-items:center; justify-content:flex-start; padding:1.75rem 1.5rem 1.5rem;
   }
@@ -4456,7 +4490,7 @@
        wrap padding needs to stay under the real viewport, not just
        the min-height target \u2014 min-height is a floor, not a cap, so
        oversized padding here overflows regardless of what it's set to. */
-    min-height:calc(100dvh - 4.25rem - var(--pad-inset-top) - var(--pad-inset-bottom));
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
     box-sizing:border-box; justify-content:center; gap:.34rem;
   }
   /* clamp() against viewport height, not just width, so this
@@ -5014,7 +5048,9 @@
     .homegreeting{ display:none; }
     .hometitle-wrap{ margin-bottom:.3rem; }
     .hometitle{ font-size:clamp(1.05rem, 3.4vh, 1.4rem); }
-    .panel.home{ padding-top:.9rem; padding-bottom:.9rem; }
+    /* Same specificity problem as the block above - the modern-layout
+       .panel padding rule further down would otherwise win. */
+    [data-layout="modern"] .panel.home{ padding-top:.9rem; padding-bottom:.9rem; }
   }
   /* Normal document flow now, not pinned to the panel's bottom edge \u2014
      absolute positioning here meant its distance from the Start button
@@ -5049,8 +5085,51 @@
      unanchored gap rather than a corner label. Identical result on
      phone, where the content column already runs edge-to-edge. */
   .homeversion{
-    position:fixed; left:max(1.75rem, env(safe-area-inset-left)); bottom:6.2rem; z-index:1;
+    position:fixed; left:max(1.75rem, env(safe-area-inset-left)); z-index:1;
     font-size:.68rem; color:var(--soft); opacity:.55; text-align:left;
+    /* Has to clear the bottom tab bar, and the bar is TALLER on a device
+       with a home indicator because its own padding-bottom absorbs the
+       inset. A flat 6.2rem put this label at 99px from the bottom while
+       the bar's top edge was at 119px - measured on an iPhone 15, the
+       label sat 20px BEHIND the bar. The inset has to be carried here
+       too, or this is hidden on exactly the devices it is read on. */
+    bottom:calc(6.2rem + env(safe-area-inset-bottom, 0px));
+  }
+  /* "Version 6.0" is a lot of label for a 393px screen sitting beside a
+     centred tab bar. The full form is set in JS; this hides the word on a
+     phone via the shortened copy the markup also carries, leaving "v6.0".
+     Tablets and desktops keep the full wording - there is room for it. */
+  /* Home on a phone was 123px of nothing between the tagline and Start
+     Studying - measured - because the button is pushed down by
+     margin-top:auto and the content above simply is not tall enough to
+     meet it. The hero cannot grow vertically on its own (it is a circle,
+     bounded by the column width), so the column is widened slightly and
+     the text block given room to breathe: the gap closes to 88px and the
+     space reads as air rather than as a hole. Phone only - the iPad has
+     its own proportions and was not the thing being complained about. */
+  /* AND a height floor. The widened column and the extra breathing room
+     below are only affordable on a phone that has the height to spare -
+     applied at every phone height they pushed Start Studying behind the
+     tab bar on an SE (375x667) by 27px, and worse in a browser tab. 46rem
+     is 736px: comfortably under an iPhone 13 mini at 812, comfortably
+     over an SE at 667. */
+  @media (max-width:32rem) and (min-height:46rem){
+    /* [data-layout="modern"] on the padding rule, because
+       [data-layout="modern"] .panel{padding:1.5rem 1.25rem} sits ~900 lines
+       further down at equal specificity and wins on source order - the same
+       trap this file documents for .opt .box, .next's box-shadow and
+       .bottomtab-label. Without it the column never widened and the hero
+       stayed exactly the size it was. */
+    [data-layout="modern"] .panel.home{ padding-left:.7rem; padding-right:.7rem; }
+    .panel.home .cosmic-hero-wrap{ max-width:min(25.5rem, 52vh); }
+    .panel.home .homegreeting{ margin-top:2.1rem; }
+    .panel.home .hometitle-wrap{ margin-bottom:2.7rem; }
+  }
+  .homeversion .homeversion-long{ display:none; }
+  .homeversion .homeversion-short{ display:inline; }
+  @media (min-width:40rem){
+    .homeversion .homeversion-long{ display:inline; }
+    .homeversion .homeversion-short{ display:none; }
   }
   /* Lower still on a tablet, per explicit follow-up — 6.2rem (tuned
      for a phone, where it needs real clearance above the tab bar to
@@ -5062,7 +5141,7 @@
      that open corner margin instead of well above it — genuinely in
      the bottom-left corner rather than just closer to it. */
   @media (min-width:40rem){
-    .homeversion{ bottom:2.6rem; }
+    .homeversion{ bottom:calc(2.6rem + env(safe-area-inset-bottom, 0px)); }
   }
   .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
   /* The daily-question circle itself \u2014 a small offset FAB, not a
@@ -5086,7 +5165,10 @@
        exist. */
     position:fixed; bottom:calc(env(safe-area-inset-bottom, 0px) + 6.6rem);
     right:max(1.8rem, calc(50% - 22rem + 1.8rem)); z-index:150;
-    width:2.6rem; height:2.6rem; border-radius:999px; font-size:1.2rem; font-weight:800;
+    /* 2.6rem is 41.6px - under the 44px minimum tap target, on a control
+       that sits alone in a corner with nothing to aim at but itself. The
+       tablet override below already uses 4rem. */
+    width:2.9rem; height:2.9rem; border-radius:999px; font-size:1.3rem; font-weight:800;
     color:#F3F5F7; background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.14);
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer;
@@ -5163,7 +5245,7 @@
   }
   .resetwarning-panel{
     text-align:center; box-sizing:border-box;
-    min-height:calc(100dvh - 9rem - var(--pad-inset-top) - var(--pad-inset-bottom));
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
   }
   /* Both buttons here get an explicit, matching width instead of each
@@ -6002,7 +6084,12 @@
   [data-layout="modern"] .more-toggle{
     border-radius:999px; border:none;
     background:rgba(255,255,255,.55);
-    padding:.8rem 1.4rem; font-size:.78rem; letter-spacing:.06em; text-transform:uppercase;
+    /* .78rem was the smallest interactive text anywhere in the app - 12.5px
+       on a control the width of the screen, against 16.8px on the primary
+       button. Uppercase makes it read smaller still. .88rem with a 2.75rem
+       floor brings it to a real tap target without losing the style. */
+    padding:.85rem 1.4rem; font-size:.88rem; letter-spacing:.06em; text-transform:uppercase;
+    min-height:2.75rem; box-sizing:border-box;
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
@@ -25224,7 +25311,16 @@ function showHome(){
      after the 5.0 entry was added: the two were never actually
      linked. Tying them together means the footer can never again go
      stale the moment a new version note is added at the top. */
-  versionTag.textContent = "Version " + RELEASE_NOTES[0].version;
+  /* Both forms ship; CSS picks one by screen size. Two spans rather than a
+     media-query-aware string because the right answer changes when the
+     device is rotated, and textContent set once cannot follow that. */
+  const verLong = document.createElement("span");
+  verLong.className = "homeversion-long";
+  verLong.textContent = "Version " + RELEASE_NOTES[0].version;
+  const verShort = document.createElement("span");
+  verShort.className = "homeversion-short";
+  verShort.textContent = "v" + RELEASE_NOTES[0].version;
+  versionTag.append(verLong, verShort);
   versionTag.addEventListener("click", showReleaseHistory);
   stage.appendChild(versionTag);
 
@@ -27500,7 +27596,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-39";
+const APP_BUILD = "2026-09-20-40";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

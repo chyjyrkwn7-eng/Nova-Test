@@ -336,6 +336,27 @@ inset checks measure the CONTENT box, never the border box. `.floatbtn` does
 need `padding-left`/`padding-right` insets though: full-bleed puts its label
 under the notch on a phone held sideways.
 
+**Tap targets: 44px minimum, and check them.** A sweep of every button
+found the Settings controls running at 12.5–13.1px text in 40px boxes while
+the primary button was 16.8px in 48px — `.cal-profile-btn`, `.more-toggle`,
+`.restart` (22px tall) and `.daily-question-fab` (41.6px) were all under it.
+Secondary does not mean small. Where a text link has to stay a text link,
+give it padding and pull the padding back out with a negative margin, so the
+target grows without disturbing the layout.
+
+**A phone-only refinement needs a height floor as well as a width ceiling.**
+Widening Home's column and opening up its text block is affordable at 852px
+and pushes Start Studying behind the tab bar at 667px. `(max-width:32rem)`
+alone is not "phones like mine", it is *every* phone, including an SE and
+every phone in a browser tab. Pair it with `(min-height:46rem)`.
+
+**`[data-layout="modern"] .panel{padding:1.5rem 1.25rem}` sits ~900 lines
+below the phone rules and wins on source order.** Any phone override of
+panel padding needs the `[data-layout="modern"]` prefix or it silently does
+nothing — the same trap as `.opt .box`, `.next`'s box-shadow and
+`.bottomtab-label`. The symptom is subtle: everything else in the block
+applies and only the padding is ignored.
+
 **A fix that stops overflow by squashing is not a fix.** The first attempt at
 the Rewards switcher let the flex items shrink below their own `nowrap` text:
 the page stopped scrolling sideways and the three labels overlapped instead.
