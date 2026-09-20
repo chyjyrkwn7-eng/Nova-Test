@@ -51,11 +51,19 @@ SS = 4                      # supersampling factor; drawn at 4x then reduced
 BASE = 1024                 # master size
 BRAND = ["#FFD37A", "#F5804D", "#C23B7A"]
 
+# background top, background bottom, glyph stops, and the pixel grid - None
+# for a smooth vector-style glyph, or (columns, rows, arm thickness) in cells
+# for a pixel-art one. The pixel variants quantise the same V and the same
+# ramp onto a coarse grid: crisp square cells, the ramp sampled once per
+# cell, a one-cell drop shadow and a one-cell top highlight. "HD 8-bit" -
+# the pixels are deliberate and large, not an artefact of a small render.
 VARIANTS = {
-    # name: (background top, background bottom, glyph stops)
-    "brand": ("#2C2C2E", "#1A1A1C", BRAND),
-    "white": ("#2C2C2E", "#1A1A1C", ["#FFFFFF", "#F2F2F7", "#D8D8DE"]),
-    "noir":  ("#1F1F21", "#0A0A0A", BRAND),
+    "brand":      ("#2C2C2E", "#1A1A1C", BRAND, None),
+    "white":      ("#2C2C2E", "#1A1A1C", ["#FFFFFF", "#F2F2F7", "#D8D8DE"], None),
+    "noir":       ("#1F1F21", "#0A0A0A", BRAND, None),
+    "pixel":      ("#2C2C2E", "#1A1A1C", BRAND, (16, 15, 0)),
+    "pixel-fine": ("#2C2C2E", "#1A1A1C", BRAND, (24, 22, 0)),
+    "pixel-noir": ("#1F1F21", "#0A0A0A", BRAND, (16, 15, 0)),
 }
 
 # Sizes written into the manifest. 180 is what iOS takes; Android and desktop
@@ -136,8 +144,87 @@ def glyph_mask(size):
     return m
 
 
+def pixel_cells(cols, rows, thick):
+    """Which cells of a cols x rows grid are part of the V.
+
+    Quantised from the SAME polygon the smooth variants use, rather than
+    stepped by hand. The hand-stepped version built each arm at a constant
+    thickness and let the two overlap at the bottom, which gave the V a wide
+    flat base instead of a point - it read as a cup, not a V. Rasterising the
+    real shape and sampling coverage keeps the taper, so the arms narrow into
+    a proper apex the way a drawn pixel V does.
+
+    thick scales the arm's weight by nudging the polygon's thickness; the
+    shape is otherwise the icon's own V.
+    """
+    ss = 8
+    w, h = cols * ss, rows * ss
+    poly = Image.new("L", (w, h), 0)
+    n = max(w, h)
+    pts = v_polygon(n)
+    x0 = min(p[0] for p in pts)
+    x1 = max(p[0] for p in pts)
+    y0 = min(p[1] for p in pts)
+    y1 = max(p[1] for p in pts)
+    scaled = [((px - x0) / (x1 - x0) * (w - 1), (py - y0) / (y1 - y0) * (h - 1))
+              for (px, py) in pts]
+    ImageDraw.Draw(poly).polygon(scaled, fill=255)
+    small = poly.resize((cols, rows), Image.BOX)
+    # A cell belongs to the glyph if the shape covers most of it. Half would
+    # fatten every diagonal by a cell on both sides and lose the taper again.
+    return {(c, r) for r in range(rows) for c in range(cols)
+            if small.getpixel((c, r)) >= 140}
+
+
+def draw_pixel_glyph(icon, size, cols, rows, thick, stops):
+    """Draw the V as crisp cells at the FINAL size.
+
+    Not supersampled and reduced like the smooth glyph: that is what softens
+    edges, and soft edges are the one thing a pixel glyph cannot have. Cell
+    bounds are snapped to whole pixels so every block is square and sharp at
+    whatever size is being written, rather than crisp at 1024 and mush at 64.
+    """
+    cells = pixel_cells(cols, rows, thick)
+    span = 0.545 * size                       # glyph width on the canvas
+    cell = span / cols
+    x0 = (size - span) / 2.0
+    y0 = (size - cell * rows) / 2.0 + size * 0.012   # optically centred
+
+    def box(c, r, dx=0, dy=0):
+        left = int(round(x0 + (c + dx) * cell))
+        topy = int(round(y0 + (r + dy) * cell))
+        right = int(round(x0 + (c + dx + 1) * cell)) - 1
+        bot = int(round(y0 + (r + dy + 1) * cell)) - 1
+        # Below roughly 1px per cell the rounding can collapse a box to
+        # negative width and ImageDraw raises. Clamp to a single pixel: the
+        # pixel look is long gone at that size anyway, but it must still
+        # render rather than crash.
+        return [left, topy, max(right, left), max(bot, topy)]
+
+    # Pixelated drop shadow, one cell down - keeps the aesthetic instead of
+    # putting a soft blur under a deliberately hard-edged shape.
+    shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    for (c, r) in cells:
+        sd.rectangle(box(c, r, 1, 1), fill=(0, 0, 0, 42))
+    icon.alpha_composite(shadow)
+
+    d = ImageDraw.Draw(icon)
+    for (c, r) in sorted(cells):
+        t = (0.26 * (c / max(1, cols - 1)) + 0.74 * (r / max(1, rows - 1)))
+        col = multi_stop(stops, min(1.0, t))
+        d.rectangle(box(c, r), fill=col + (255,))
+        # Classic pixel-art lighting: any cell with nothing above it catches
+        # the light on its top edge. One row of cells, not a gradient.
+        if (c, r - 1) not in cells:
+            l, tp, rt, bt = box(c, r)
+            d.rectangle([l, tp, rt, tp + max(1, int(cell * 0.22))],
+                        fill=lerp(col, (255, 255, 255), 0.34) + (255,))
+    return icon
+
+
 def render(variant, size=BASE):
-    top, bottom, stops = VARIANTS[variant]
+    top, bottom, stops, grid = VARIANTS[variant]
     S = size * SS
     white = Image.new("RGBA", (S, S), (255, 255, 255, 255))
     black = Image.new("RGBA", (S, S), (0, 0, 0, 255))
@@ -158,6 +245,11 @@ def render(variant, size=BASE):
     ImageDraw.Draw(rim).rectangle([0, 0, S, S * 0.008], fill=30)
     rim = rim.filter(ImageFilter.GaussianBlur(S * 0.005))
     icon = Image.composite(white, icon, rim)
+
+    if grid:
+        # Background only, reduced to the final size, then crisp cells on top.
+        base = icon.convert("RGB").resize((size, size), Image.LANCZOS).convert("RGBA")
+        return draw_pixel_glyph(base, size, *grid, stops).convert("RGB")
 
     mask = glyph_mask(S)
 

@@ -144,11 +144,26 @@ anywhere to say so. Run `--check` after touching anything icon-shaped.
   weighted towards vertical.** Across the whole canvas, and on an even
   diagonal, a V only ever covers the middle of the ramp — it came out
   uniformly salmon with the gold and magenta both off the edges of the shape.
+- **The shipped V is pixel art** (`pixel-fine`, a 24×22 cell grid), for the
+  game-ish personality the app's points/stars/tiers earn. The cells are
+  quantised from the *same* polygon the smooth variants use — hand-stepping
+  each arm at constant thickness let the two overlap at the bottom and gave
+  the V a flat base, so it read as a cup rather than a V.
+- **A pixel glyph is drawn at the final size, never supersampled and
+  reduced.** Reducing is exactly what softens edges, and soft edges are the
+  one thing pixel art cannot have. Cell bounds are snapped to whole pixels at
+  whatever size is being written. A useful consequence, measured rather than
+  assumed: it is *crisper than the smooth V at small sizes* — at 16px the
+  smooth one is mush and the pixel one still reads.
+- Below about 1px per cell the rounding can collapse a cell to negative
+  width and `ImageDraw` raises. Boxes are clamped to a single pixel; the
+  pixel look is long gone at that size, but it has to render, not crash.
 
 `--preview DIR` renders every variant plus a `_masked` version approximating
 what iOS will actually show, so the corners can be looked at rather than
-guessed at. `--variant white` and `--variant noir` are the alternatives that
-were considered; switching is one command and a rebuild.
+guessed at. The alternatives all still build: `brand` (the smooth V),
+`white`, `noir`, `pixel` (chunkier 16×15 grid) and `pixel-noir`. Switching is
+one command and a rebuild.
 
 **The icon is install-time metadata.** Changing it does nothing on a device
 that already has the app until that icon is removed and re-added — which is
