@@ -4745,7 +4745,14 @@
      about 2:1, which is fine behind white button text and poor as text
      itself, and worse than the #B0293D (2.8:1) this replaces. #E8687C
      measures about 5.9:1. Same colour language, legible weight. */
-  .resetwarning-title{ color:#E8687C; }
+  .resetwarning-title{ color:#E8687C; font-size:1.5rem; }
+  /* Deliberately smaller than .hometitle's own scale - this is a warning
+     heading, not the app's hero title - but it still has to grow with
+     the screen. Added after the phone rule as an override, per the
+     tablet convention used everywhere else in this file. */
+  @media (min-width:40rem){
+    .resetwarning-title{ font-size:1.9rem; }
+  }
   .resetwarning-panel{
     text-align:center; min-height:calc(100dvh - 9rem); box-sizing:border-box;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
@@ -26976,7 +26983,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-16";
+const APP_BUILD = "2026-09-20-17";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28015,8 +28022,12 @@ function showResetWarning(){
   panel.className = "panel resetwarning-panel";
 
   const title = document.createElement("p");
+  /* Size lives in .resetwarning-title now, not inline. An inline
+     font-size beats every stylesheet rule including media queries, so
+     this title stayed locked at 1.5rem while .hometitle scaled up on
+     larger screens - it read as small and unchanged on an iPad even
+     though its colour had updated correctly. */
   title.className = "hometitle resetwarning-title";
-  title.style.cssText = "font-size:1.5rem;";
   title.textContent = "Reset everything?";
   panel.appendChild(title);
 
