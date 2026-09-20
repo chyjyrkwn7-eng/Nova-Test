@@ -27065,7 +27065,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-26";
+const APP_BUILD = "2026-09-20-27";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -28396,7 +28396,11 @@ function showAppearance(){
      the only figure published. Level and badge count are the eventual
      replacements, per the plan, but neither exists in the app yet -
      naming them here would describe data nothing collects or shares. */
-  lbHint.textContent = "Shares your name, avatar, and correct answers \u2014 nothing else. With this off, you can't see the leaderboard either.";
+  /* Leads with what the board IS, not with what gets uploaded. "Shares
+     your correct answers" read as though a list of answers was being
+     published, rather than a class ranking on how many questions each
+     person has answered correctly. */
+  lbHint.textContent = "Ranks the class by questions answered correctly. Shares your name, avatar, and that number \u2014 nothing else. With this off, you can't see the leaderboard either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
   lbSect.appendChild(lbRow);
