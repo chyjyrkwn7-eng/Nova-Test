@@ -61,9 +61,9 @@ VARIANTS = {
     "brand":      ("#2C2C2E", "#1A1A1C", BRAND, None),
     "white":      ("#2C2C2E", "#1A1A1C", ["#FFFFFF", "#F2F2F7", "#D8D8DE"], None),
     "noir":       ("#1F1F21", "#0A0A0A", BRAND, None),
-    "pixel":      ("#2C2C2E", "#1A1A1C", BRAND, (16, 15, 0)),
-    "pixel-fine": ("#2C2C2E", "#1A1A1C", BRAND, (24, 22, 0)),
-    "pixel-noir": ("#1F1F21", "#0A0A0A", BRAND, (16, 15, 0)),
+    "pixel":      ("#2C2C2E", "#1A1A1C", BRAND, True),
+    "pixel-noir": ("#1F1F21", "#0A0A0A", BRAND, True),
+    "pixel-white": ("#2C2C2E", "#1A1A1C", ["#FFFFFF", "#E8E8EE", "#BFBFC7"], True),
 }
 
 # Sizes written into the manifest. 180 is what iOS takes; Android and desktop
@@ -144,82 +144,120 @@ def glyph_mask(size):
     return m
 
 
-def pixel_cells(cols, rows, thick):
-    """Which cells of a cols x rows grid are part of the V.
+# The V, built from one rule rather than typed out.
+#
+# Two earlier attempts failed in ways worth recording. Quantising the smooth
+# polygon gave steps of uneven length - two cells here, three there - which
+# is what a low-resolution RENDER looks like, not sprite work; real sprite
+# work has rhythm, the same step and the same run all the way down. Typing
+# the grid by hand then fixed the rhythm but put the taper off-centre by a
+# cell, and the apex came out looking like a drip.
+#
+# Generating it guarantees both: every arm steps one cell across every two
+# rows, and every row is symmetric about the centre column by construction.
+# The arms run until their inner edges meet, then the outer edges carry on
+# at the same slope into a single-cell point - which is exactly how the
+# smooth V's mitred apex works, so the two variants are the same letter.
+V_COLS, V_THICK, V_ROWS_PER_STEP = 19, 4, 2
 
-    Quantised from the SAME polygon the smooth variants use, rather than
-    stepped by hand. The hand-stepped version built each arm at a constant
-    thickness and let the two overlap at the bottom, which gave the V a wide
-    flat base instead of a point - it read as a cup, not a V. Rasterising the
-    real shape and sampling coverage keeps the taper, so the arms narrow into
-    a proper apex the way a drawn pixel V does.
 
-    thick scales the arm's weight by nudging the polygon's thickness; the
-    shape is otherwise the icon's own V.
+def build_v_sprite(cols=V_COLS, thick=V_THICK, per_step=V_ROWS_PER_STEP):
+    rows, k, mid = [], 0, (cols - 1) // 2
+    while k <= mid:
+        left_out, left_in = k, k + thick - 1
+        right_in, right_out = cols - k - thick, cols - 1 - k
+        line = ["."] * cols
+        if left_in + 1 >= right_in:          # the arms have met
+            for c in range(left_out, right_out + 1):
+                line[c] = "X"
+        else:
+            for c in range(left_out, left_in + 1):
+                line[c] = "X"
+            for c in range(right_in, right_out + 1):
+                line[c] = "X"
+        for _ in range(per_step):
+            rows.append("".join(line))
+        k += 1
+    # The apex is one cell; the doubled last step would make it a stub.
+    return rows[:-(per_step - 1)] if per_step > 1 else rows
+
+
+V_SPRITE = build_v_sprite()
+
+# How many colours the ramp is reduced to. A continuous gradient across the
+# cells is the other thing that stopped this reading as 8-bit: banding it is
+# the whole look. Six is enough to keep gold-through-magenta legible and few
+# enough that the bands are obvious on purpose.
+PALETTE_STEPS = 6
+
+
+def sprite_cells(sprite):
+    return {(c, r) for r, line in enumerate(sprite)
+            for c, ch in enumerate(line) if ch == "X"}
+
+
+def draw_pixel_glyph(icon, size, stops, sprite=V_SPRITE):
+    """Draw the V as crisp, uniform cells at the FINAL size.
+
+    Not supersampled and reduced like the smooth glyph: reducing is what
+    softens edges, and soft edges are the one thing pixel art cannot have.
+
+    The cell size is a whole number of pixels, and the sprite is centred on
+    whole pixels too. Deriving each cell's bounds by rounding instead let
+    them come out 6px and 7px wide in the same icon, so the "grid" was
+    visibly uneven - the single clearest tell that it was not real sprite
+    work. A little empty margin is a fair price for every cell being square.
     """
-    ss = 8
-    w, h = cols * ss, rows * ss
-    poly = Image.new("L", (w, h), 0)
-    n = max(w, h)
-    pts = v_polygon(n)
-    x0 = min(p[0] for p in pts)
-    x1 = max(p[0] for p in pts)
-    y0 = min(p[1] for p in pts)
-    y1 = max(p[1] for p in pts)
-    scaled = [((px - x0) / (x1 - x0) * (w - 1), (py - y0) / (y1 - y0) * (h - 1))
-              for (px, py) in pts]
-    ImageDraw.Draw(poly).polygon(scaled, fill=255)
-    small = poly.resize((cols, rows), Image.BOX)
-    # A cell belongs to the glyph if the shape covers most of it. Half would
-    # fatten every diagonal by a cell on both sides and lose the taper again.
-    return {(c, r) for r in range(rows) for c in range(cols)
-            if small.getpixel((c, r)) >= 140}
+    cols, rows = len(sprite[0]), len(sprite)
+    cells = sprite_cells(sprite)
 
-
-def draw_pixel_glyph(icon, size, cols, rows, thick, stops):
-    """Draw the V as crisp cells at the FINAL size.
-
-    Not supersampled and reduced like the smooth glyph: that is what softens
-    edges, and soft edges are the one thing a pixel glyph cannot have. Cell
-    bounds are snapped to whole pixels so every block is square and sharp at
-    whatever size is being written, rather than crisp at 1024 and mush at 64.
-    """
-    cells = pixel_cells(cols, rows, thick)
-    span = 0.545 * size                       # glyph width on the canvas
-    cell = span / cols
-    x0 = (size - span) / 2.0
-    y0 = (size - cell * rows) / 2.0 + size * 0.012   # optically centred
+    cell = max(1, int(round(size * 0.60 / cols)))
+    x0 = int(round((size - cell * cols) / 2.0))
+    y0 = int(round((size - cell * rows) / 2.0 + size * 0.008))
 
     def box(c, r, dx=0, dy=0):
-        left = int(round(x0 + (c + dx) * cell))
-        topy = int(round(y0 + (r + dy) * cell))
-        right = int(round(x0 + (c + dx + 1) * cell)) - 1
-        bot = int(round(y0 + (r + dy + 1) * cell)) - 1
-        # Below roughly 1px per cell the rounding can collapse a box to
-        # negative width and ImageDraw raises. Clamp to a single pixel: the
-        # pixel look is long gone at that size anyway, but it must still
-        # render rather than crash.
-        return [left, topy, max(right, left), max(bot, topy)]
+        left = x0 + (c + dx) * cell
+        topy = y0 + (r + dy) * cell
+        return [left, topy, left + cell - 1, topy + cell - 1]
 
-    # Pixelated drop shadow, one cell down - keeps the aesthetic instead of
-    # putting a soft blur under a deliberately hard-edged shape.
-    shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(shadow)
-    for (c, r) in cells:
-        sd.rectangle(box(c, r, 1, 1), fill=(0, 0, 0, 42))
-    icon.alpha_composite(shadow)
+    palette = [multi_stop(stops, i / (PALETTE_STEPS - 1)) for i in range(PALETTE_STEPS)]
+
+    # No drop shadow. A one-cell offset put a dark block in every notch of
+    # the staircase - inside the silhouette, technically correct for a
+    # shadow and visually ruinous, because it broke each arm into a string
+    # of separate beads instead of one stroke. The banded palette and the
+    # run-edge shading below carry the form on their own.
+
+    # Shading follows each ROW'S RUNS, not each cell's neighbours. Testing
+    # "is there a cell above / below me" lights or darkens nearly every cell
+    # on a staircase - every step has both - and the glyph came out speckled,
+    # busier than the version it was meant to improve on. A run has exactly
+    # one left edge and one right edge, so lighting the left of each and
+    # shading the right gives a single consistent light direction and leaves
+    # the middle of each arm flat, which is what makes it read as a surface.
+    def runs_in(r):
+        out, run = [], []
+        for c in range(cols):
+            if (c, r) in cells:
+                run.append(c)
+            elif run:
+                out.append(run); run = []
+        if run:
+            out.append(run)
+        return out
 
     d = ImageDraw.Draw(icon)
-    for (c, r) in sorted(cells):
-        t = (0.26 * (c / max(1, cols - 1)) + 0.74 * (r / max(1, rows - 1)))
-        col = multi_stop(stops, min(1.0, t))
-        d.rectangle(box(c, r), fill=col + (255,))
-        # Classic pixel-art lighting: any cell with nothing above it catches
-        # the light on its top edge. One row of cells, not a gradient.
-        if (c, r - 1) not in cells:
-            l, tp, rt, bt = box(c, r)
-            d.rectangle([l, tp, rt, tp + max(1, int(cell * 0.22))],
-                        fill=lerp(col, (255, 255, 255), 0.34) + (255,))
+    for r in range(rows):
+        band = min(PALETTE_STEPS - 1, int(r / rows * PALETTE_STEPS))
+        base = palette[band]
+        for run in runs_in(r):
+            for c in run:
+                col = base
+                if len(run) > 1 and c == run[0]:
+                    col = lerp(base, (255, 255, 255), 0.20)
+                elif len(run) > 1 and c == run[-1]:
+                    col = lerp(base, (0, 0, 0), 0.20)
+                d.rectangle(box(c, r), fill=col + (255,))
     return icon
 
 
@@ -249,7 +287,7 @@ def render(variant, size=BASE):
     if grid:
         # Background only, reduced to the final size, then crisp cells on top.
         base = icon.convert("RGB").resize((size, size), Image.LANCZOS).convert("RGBA")
-        return draw_pixel_glyph(base, size, *grid, stops).convert("RGB")
+        return draw_pixel_glyph(base, size, stops).convert("RGB")
 
     mask = glyph_mask(S)
 

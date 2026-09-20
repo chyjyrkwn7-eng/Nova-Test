@@ -144,17 +144,41 @@ anywhere to say so. Run `--check` after touching anything icon-shaped.
   weighted towards vertical.** Across the whole canvas, and on an even
   diagonal, a V only ever covers the middle of the ramp — it came out
   uniformly salmon with the gold and magenta both off the edges of the shape.
-- **The shipped V is pixel art** (`pixel-fine`, a 24×22 cell grid), for the
-  game-ish personality the app's points/stars/tiers earn. The cells are
-  quantised from the *same* polygon the smooth variants use — hand-stepping
-  each arm at constant thickness let the two overlap at the bottom and gave
-  the V a flat base, so it read as a cup rather than a V.
+- **The shipped V is pixel art**, for the game-ish personality the app's
+  points/stars/tiers earn. **The sprite is generated from one rule**
+  (`build_v_sprite`), not typed out and not traced from the curve — three
+  attempts, and only the third looked designed:
+  - *Quantising the smooth polygon* gave steps of uneven length, two cells
+    here and three there. That is what a low-resolution **render** looks
+    like; sprite work has rhythm — the same step, the same run, all the way
+    down.
+  - *Typing the grid by hand* fixed the rhythm but put the taper off-centre
+    by one cell, and the apex came out looking like a drip.
+  - *Generating it* guarantees both: one cell across every two rows, and
+    every row symmetric about the centre column by construction. There is an
+    assertion's worth of truth in `all(line == line[::-1])`.
+- **Band the ramp, don't gradient it.** A continuous gradient across the
+  cells is the other thing that stops pixel art reading as pixel art; the
+  palette is reduced to six steps and the bands are meant to be obvious.
+- **Shade by each row's runs, not by each cell's neighbours.** Testing "is
+  anything above/below me" lights or darkens nearly every cell on a
+  staircase — every step has both — and the glyph came out speckled, busier
+  than the version it was replacing. A run has exactly one left edge and one
+  right edge, so lighting one and shading the other gives a single light
+  direction and leaves the middle of each arm flat.
+- **No drop shadow on the pixel glyph.** A one-cell offset drops a dark
+  block into every notch of the staircase — correct for a shadow, ruinous to
+  look at, because it breaks each arm into a string of beads.
 - **A pixel glyph is drawn at the final size, never supersampled and
   reduced.** Reducing is exactly what softens edges, and soft edges are the
-  one thing pixel art cannot have. Cell bounds are snapped to whole pixels at
-  whatever size is being written. A useful consequence, measured rather than
+  one thing pixel art cannot have. A useful consequence, measured rather than
   assumed: it is *crisper than the smooth V at small sizes* — at 16px the
   smooth one is mush and the pixel one still reads.
+- **The cell size is a whole number of pixels and the sprite is centred on
+  whole pixels.** Deriving each cell's bounds by rounding instead let them
+  come out 6px and 7px wide in the same icon, so the grid was visibly uneven
+  — the clearest tell that it was not real sprite work. A little empty margin
+  is a fair price for every cell being square.
 - Below about 1px per cell the rounding can collapse a cell to negative
   width and `ImageDraw` raises. Boxes are clamped to a single pixel; the
   pixel look is long gone at that size, but it has to render, not crash.
@@ -162,8 +186,10 @@ anywhere to say so. Run `--check` after touching anything icon-shaped.
 `--preview DIR` renders every variant plus a `_masked` version approximating
 what iOS will actually show, so the corners can be looked at rather than
 guessed at. The alternatives all still build: `brand` (the smooth V),
-`white`, `noir`, `pixel` (chunkier 16×15 grid) and `pixel-noir`. Switching is
-one command and a rebuild.
+`white`, `noir`, `pixel-noir` and `pixel-white`. Switching is one command and
+a rebuild. The sprite's own proportions are `V_COLS`, `V_THICK` and
+`V_ROWS_PER_STEP` — 3-thick arms read too thin to hold together across the
+steps, which is why it is 4.
 
 **The icon is install-time metadata.** Changing it does nothing on a device
 that already has the app until that icon is removed and re-added — which is
