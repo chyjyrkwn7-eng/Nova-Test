@@ -304,9 +304,18 @@ insets. The same CSS lands differently in each. Checking one is not checking
 the other.
 
 The matrix covers iPhones (SE through Pro Max), iPads (mini, 10.2", Air,
-Pro 11", Pro 12.9", Pro 13"), Android phones and tablets, and laptops
-including the Dell Latitude several classmates use — each portrait and
-landscape, each installed and in a browser. Desktops are browser-only.
+Pro 11", Pro 12.9", Pro 13"), Android phones and tablets, and laptops from
+a Dell Latitude up through a MacBook Pro 16" and a 1440p display — each
+portrait and landscape, each installed and in a browser. Desktops are
+browser-only. 21 devices, 70 combinations.
+
+**The seed is a USED account, and that is deliberate.** With empty stats
+Profile, Rewards, the Leaderboard, the calendar, the review list and test
+history all render their *empty* states, so half the app was being checked
+as "nothing here yet". The seed carries real points, a streak, nine test
+results and three weeks of study log so those screens lay out the content
+people actually see. It also carries `onboardingComplete`, without which
+the tab bar never appears anywhere (see below).
 
 It reports horizontal page scroll, anything painting outside the viewport,
 the primary button colliding with or hidden behind the tab bar, the tab bar
@@ -401,6 +410,19 @@ until it was reported as sitting too high; at `0.6rem` the pill clears the
 home indicator's inset by 10px on both an iPhone and an iPad. Only ever
 lower it toward the edge, never past it: the `7.5rem` reservation above
 assumes the bar's whole footprint still fits inside it.
+
+**A laptop is not a tall tablet either, and gating the enlargement on
+height alone missed them all.** The `(min-width:40rem) and
+(min-height:60rem)` block that scales Home's sphere and type up for a
+tablet needs 960px of height — which an iPad in portrait clears and a
+laptop browser window does not. A MacBook Pro 14" leaves 852px once
+Chrome's chrome is gone, so it was falling all the way through to the
+*phone* sizing: measured, a 368px sphere and a 15.2px tagline centred in a
+1512px viewport. The fix is a second condition, `(min-width:64rem) and
+(min-height:46rem)`: width is the safe way in, because the thing the
+height gate protects is a short iPad in landscape, and those are 834px
+tall at 40–52rem *wide*. Requiring 64rem of width excludes every one of
+them and takes in every laptop.
 
 **A tablet is not a big phone.** The hero sphere carries these screens and it
 is the one element that can absorb a tablet's height — but **size it in `vh`,

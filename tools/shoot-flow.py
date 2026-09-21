@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 ROOT = "/home/user/Nova-Test"
-OUT = os.path.dirname(os.path.abspath(__file__)) + "/walk"
+OUT = os.environ.get("SHOOT_OUT", os.path.dirname(os.path.abspath(__file__)) + "/walk")
 INSET_RE = re.compile(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]*)?\)")
 STANDALONE = """
 Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
@@ -20,6 +20,31 @@ Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
        addEventListener(){}, removeEventListener(){}, onchange:null, dispatchEvent(){return false;}}
     : mm(q); })();"""
 
+# A screenshot with no status bar drawn is a screenshot with an unexplained
+# band of empty pixels at the top, and it has now been misread twice - once
+# as a bug in the bottom tab bar, once as the update banner "not aligned to
+# the top". The app genuinely paints under the status bar (viewport-fit=
+# cover), so this draws what iOS draws over it: the inset's own height, a
+# clock and an indicator blob. Purely a screenshot aid - it is injected by
+# this tool and exists nowhere in the app.
+STATUS_BAR = """
+addEventListener('DOMContentLoaded', function(){
+  var s = document.createElement('style');
+  s.textContent = '#__statusbar{position:fixed;top:0;left:0;right:0;height:__H__px;z-index:9999;'
+    + 'pointer-events:none;display:flex;align-items:center;justify-content:space-between;'
+    + 'padding:0 max(22px, env(safe-area-inset-left,0px));font:600 15px/1 ui-sans-serif,system-ui,sans-serif;'
+    + 'color:#F3F5F7;text-shadow:0 1px 2px rgba(0,0,0,.45)}'
+    + '#__statusbar i{display:block;width:26px;height:12px;border:1.5px solid rgba(243,245,247,.85);'
+    + 'border-radius:3px;position:relative}'
+    + '#__statusbar i::after{content:"";position:absolute;inset:1.5px;right:7px;background:#F3F5F7;border-radius:1px}';
+  document.head.appendChild(s);
+  var b = document.createElement('div');
+  b.id = '__statusbar';
+  b.innerHTML = '<span>9:41</span><i></i>';
+  var put = function(){ if(!document.getElementById('__statusbar')) document.body.appendChild(b); };
+  put(); setInterval(put, 400);
+});"""
+
 # label, w, h, insets, installed
 DEVICES = [
     ("iphone-17-pro-max", 440,  956, (62, 0, 34, 0), True),
@@ -28,6 +53,7 @@ DEVICES = [
     ("ipad-mini",         744, 1133, (24, 0, 20, 0), True),
     ("ipad-pro-12-9",    1024, 1366, (24, 0, 20, 0), True),
     ("dell-latitude",    1366,  638, (0, 0, 0, 0),  False),
+    ("macbook-pro-14",   1512,  852, (0, 0, 0, 0),  False),
 ]
 
 def patched(insets):
@@ -59,6 +85,8 @@ def main():
                     status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
                 errs = []
                 page.on("pageerror", lambda e: errs.append(str(e)[:160]))
+                if ins[0]:
+                    page.add_init_script(STATUS_BAR.replace("__H__", str(ins[0])))
                 page.goto(url); page.wait_for_timeout(3200)
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
                 page.wait_for_timeout(400)

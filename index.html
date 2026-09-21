@@ -3895,7 +3895,14 @@
     position:fixed;
     left:max(1rem, env(safe-area-inset-left, 0px));
     right:max(1rem, env(safe-area-inset-right, 0px));
-    top:calc(env(safe-area-inset-top, 0px) + .75rem); z-index:80;
+    /* .5rem, not .75: what sits above this is the status bar, and the
+       banner should read as hanging off the bottom of it rather than
+       floating below it. Reported as "not aligned to the top of screen"
+       from a screenshot, where the inset renders as plain empty space
+       because no status bar is drawn - the gap was real, just smaller
+       than it looked. tools/shoot-flow.py draws the inset now so the
+       next judgement call is made against what the device shows. */
+    top:calc(env(safe-area-inset-top, 0px) + .5rem); z-index:80;
     max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
     display:flex; align-items:center; gap:.75rem;
     background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
@@ -4106,7 +4113,7 @@
     position:fixed;
     left:max(1rem, env(safe-area-inset-left, 0px));
     right:max(1rem, env(safe-area-inset-right, 0px));
-    top:calc(env(safe-area-inset-top, 0px) + .75rem); z-index:75;
+    top:calc(env(safe-area-inset-top, 0px) + .5rem); z-index:75;
     max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
     background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
     border:1px solid rgba(255,255,255,.09);
@@ -4910,7 +4917,20 @@
      read as a phone layout that had been stretched. It is the one element
      that can actually take up a tablet's room, so it does: 36rem is 576px,
      which still clears the 44rem content column comfortably. */
-  @media (min-width:40rem) and (min-height:60rem){
+  /* The second condition is for laptops. 60rem of height is 960px, which
+     a tablet in portrait clears easily and a laptop browser window
+     usually does not - a MacBook Pro 14" leaves 852px once Chrome's own
+     chrome is gone, so it was falling through to the PHONE sizing:
+     measured, a 368px sphere and a 15.2px tagline centred in a 1512px
+     viewport, which is exactly the "stretched phone layout" this block
+     exists to stop. Width is the safe way to let it in - the height gate
+     protects short iPads in landscape, which are 834px tall at 40-52rem
+     WIDE, so requiring 64rem (1024px) of width excludes every one of
+     them while taking in every laptop. 46rem of height is still required,
+     because the thing being protected against is a hero and a type ramp
+     that grow into the bottom tab bar. */
+  @media (min-width:40rem) and (min-height:60rem),
+         (min-width:64rem) and (min-height:46rem){
     /* 48vh, not 56. The flat 36rem cap plus a generous vh share fits an
        834x1194 iPad beautifully and does not fit a 768x1024 one, or any
        iPad in landscape - measured, it put Start Studying up to 28px
@@ -5374,7 +5394,8 @@
      staying at its original size) was enough to push Start Studying
      into the bottom tab bar on a short/landscape iPad, so it only
      applies where there's actually enough vertical room for it. */
-  @media (min-width:40rem) and (min-height:60rem){
+  @media (min-width:40rem) and (min-height:60rem),
+         (min-width:64rem) and (min-height:46rem){
     /* Scaled up alongside the bigger sphere - the greeting and title were
        phone-sized under a 576px hero, which is what made the whole screen
        read as stretched rather than designed for the device. */
@@ -28255,7 +28276,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-48";
+const APP_BUILD = "2026-09-21-49";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
