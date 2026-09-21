@@ -520,6 +520,26 @@
     --panel-reserve: 5.5rem;
   }
   body.has-bottomtabs, body.has-floatbtn{ --panel-reserve: 9rem; }
+  /* Welcome has no tab bar, no floating button and nothing else along the
+     bottom, so the 4rem of .wrap padding under it is reserved for
+     furniture that is not there - and it is the entire reason the hint
+     line sat 82px off the bottom edge on every device with room to spare.
+     Reported as needing to be "much closer to the bottom of the screen".
+     The three values move together and have to: --panel-reserve is
+     .wrap's top padding plus its bottom padding, and --pad-inset-bottom
+     is whatever the inset adds OVER that new bottom baseline. Each one
+     collapses back to the shared value at zero insets, which is the
+     property that makes a change here safe to reason about (see the note
+     on --pad-inset-bottom itself). The +.9rem keeps the hint off an
+     iPhone's home indicator: the inset is 34px and this lands the text
+     28px above it. */
+  body.on-welcome{
+    --panel-reserve: 3.5rem;
+    --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 1.35rem);
+  }
+  body.on-welcome .wrap{
+    padding-bottom: max(2.25rem, calc(env(safe-area-inset-bottom, 0px) + .9rem));
+  }
   :root{ --statusbar-mix2:0%; --statusbar-mix3:0%; }
   [data-layout="modern"]{ --statusbar-mix2:3.3%; --statusbar-mix3:3%; }
   [data-theme="dark"][data-layout="modern"]{ --statusbar-mix2:7.4%; --statusbar-mix3:7.25%; }
@@ -753,8 +773,13 @@
     to{ opacity:1; }
   }
 
+  /* z-index 400, not 200. At 200 it tied with .bottomtabs, so the tab bar
+     painted alongside a full-screen loading state and stayed tappable
+     through it - which is how a Settings tour ended up running on top of
+     "GENERATING PROFILE". Above the tour overlay (205) and tooltip (210)
+     as well, so nothing can ever sit over a loading screen. */
   #genprofile-overlay{
-    position:fixed; inset:0; z-index:200; background:#050505;
+    position:fixed; inset:0; z-index:400; background:#050505;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:1.2rem; transition:opacity .3s ease;
   }
@@ -3902,7 +3927,7 @@
        because no status bar is drawn - the gap was real, just smaller
        than it looked. tools/shoot-flow.py draws the inset now so the
        next judgement call is made against what the device shows. */
-    top:calc(env(safe-area-inset-top, 0px) + .5rem); z-index:80;
+    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:80;
     max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
     display:flex; align-items:center; gap:.75rem;
     background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
@@ -4038,7 +4063,17 @@
      (measured content width ~5.5rem at this font) with room to spare,
      on both phone and iPad; the shared rule above still governs the
      username field, which is unaffected. */
-  .synccode-entry-panel .onboarding-input-wrap{ max-width:10rem; }
+  .synccode-entry-panel .onboarding-input-wrap{ max-width:11rem; }
+  /* The text was left-aligned in a box sized for the code, so "XXXX-XXXX"
+     sat against the left edge with the slack pooled on the right and the
+     field read as a text box that happened to be short. Centred, spaced
+     and in the mono face the sync code is shown in everywhere else, it
+     reads as a code slot. Symmetric padding so "centred" is centred
+     against the border box and not just the content box. */
+  .synccode-entry-panel .searchbox{
+    text-align:center; font-family:var(--mono); letter-spacing:.14em;
+    padding-left:.75rem; padding-right:.75rem;
+  }
   .synccode-status{
     font-size:.85rem; margin:.5rem 0 0; min-height:1.2em; opacity:0; transition:opacity .15s ease;
   }
@@ -4113,7 +4148,7 @@
     position:fixed;
     left:max(1rem, env(safe-area-inset-left, 0px));
     right:max(1rem, env(safe-area-inset-right, 0px));
-    top:calc(env(safe-area-inset-top, 0px) + .5rem); z-index:75;
+    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:75;
     max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
     background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
     border:1px solid rgba(255,255,255,.09);
@@ -4615,6 +4650,24 @@
      version tag simply following right after it near the bottom
      rather than being separately pushed even further down on its own. */
   .panel.home .playbtn{ margin-top:auto; }
+  /* A Continue that is not armed yet still holds its slot. Three screens
+     hide their button until something is chosen, and [hidden] means
+     display:none - which also takes away the margin-top:auto above that
+     was holding the layout together, so on a tablet ALL the free space
+     went to the panel's own ::before spacer and the content sank to the
+     bottom of the screen. That is the "everything got pushed to the
+     bottom" on Pick your class, Enter a username and Choose a character,
+     and why "You're all set" - whose button is never hidden - looked
+     right next to them.
+     visibility:hidden is the tool: the box and its auto margin stay, and
+     unlike display:none-plus-an-override it is still out of the
+     accessibility tree, so nothing announces a button that does nothing.
+     It also means the layout does not jump when the button arrives. */
+  .panel.home.classselect-panel .playbtn[hidden],
+  .panel.home.charselect-panel .playbtn[hidden],
+  .panel.home.onboarding-shortform-panel .playbtn[hidden]{
+    display:block; visibility:hidden; pointer-events:none;
+  }
   /* Home only - not every .panel.home screen. margin-top:auto alone
      drives the button to the floor of the panel, which put it 23px above
      the tab bar and 168px below the tagline on an iPhone: hard against
@@ -4848,7 +4901,16 @@
        the min-height target \u2014 min-height is a floor, not a cap, so
        oversized padding here overflows regardless of what it's set to. */
     min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
-    box-sizing:border-box; justify-content:center; gap:.34rem;
+    /* flex-start with auto margins, at every width - this used to be
+       phone-only, and the tablets kept justify-content:center. Centring
+       a five-item column on a 1194px iPad left the group floating in the
+       middle with ~40px of slack under the hint AND above the sphere,
+       which is what "the stuff underneath the planet system needs to be
+       moved down or spaced out" was describing. The autos below put the
+       leftover height where it reads as layout: some above the sphere,
+       the rest between the text and the actions, with the actions
+       sitting at the bottom of the panel on every device. */
+    box-sizing:border-box; justify-content:flex-start; gap:.34rem;
   }
   /* clamp() against viewport height, not just width, so this
      actually shrinks on a short screen instead of holding a fixed
@@ -5600,6 +5662,12 @@
      generous gap is what actually reads as a filled screen: the group
      sits in the middle with even margins above and below it, and every
      gap inside it is one that was designed. */
+  /* The two auto margins themselves, unscoped. The hero takes one so the
+     sphere is not jammed under the status bar, the actions block takes
+     the other so it lands on the panel floor; everything between them
+     rides along. */
+  .cosmic-welcome .cosmic-hero-wrap,
+  .cosmic-welcome-actions{ margin-top:auto; }
   @media (max-width:32rem){
     /* Three auto margins rather than justify-content, per explicit
        follow-up: "everything underneath the planet system could be
@@ -5614,9 +5682,7 @@
        of the free space ends up above it however it is divided; splitting
        it three ways is what keeps the sphere from sliding up to the notch
        while the buttons go down. */
-    .cosmic-welcome{ justify-content:flex-start; gap:1.1rem; }
-    .cosmic-welcome .cosmic-hero-wrap,
-    .cosmic-welcome-actions{ margin-top:auto; }
+    .cosmic-welcome{ gap:1.1rem; }
     /* A real gap under the sphere, not an auto one. A third auto margin
        here divided the free space evenly and opened a 100px hole between
        the sphere and the title - looked at, and it read as a gap in the
@@ -25161,7 +25227,34 @@ function showWelcomeCodeEntry(){
    this drifted out of sync with each other). onComplete, if given,
    fires once when the tour finishes, whether that's stepping through
    every step normally or the person navigating away early. */
-function startSimpleTour(steps, onComplete){
+/* How long a tour will wait for a loading screen to clear before giving
+   up. The longest one in the app is "GENERATING PROFILE" at 10s. */
+const TOUR_OVERLAY_WAIT_MS = 14000;
+
+function startSimpleTour(steps, onComplete, _waitedMs){
+  /* Never over a loading screen. Confirmed from a screenshot: the
+     Settings tour ran on top of "GENERATING PROFILE", because the tab
+     bar tied with that overlay on z-index and stayed tappable through
+     it. The z-index is fixed too, but this is the rule that matters -
+     a tour has no business starting while the app is still working,
+     whatever route got it there.
+     It waits rather than abandoning, because every caller sets its own
+     seenXTour flag to true BEFORE calling this, so a tour dropped here
+     is a tour that person never sees. It abandons only if the screen
+     it was called for has been replaced in the meantime, or if the
+     overlay outlasts the budget. */
+  const loading = () => document.getElementById("genprofile-overlay")
+                      || document.getElementById("splashscreen");
+  if(loading()){
+    const waited = _waitedMs || 0;
+    if(waited >= TOUR_OVERLAY_WAIT_MS) return;
+    const screenAtCall = stage.firstElementChild;
+    setTimeout(() => {
+      if(stage.firstElementChild !== screenAtCall) return;
+      startSimpleTour(steps, onComplete, waited + 250);
+    }, 250);
+    return;
+  }
   const overlay = document.createElement("div");
   overlay.id = "tour-overlay";
   document.body.appendChild(overlay);
@@ -28295,7 +28388,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-50";
+const APP_BUILD = "2026-09-21-51";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33388,6 +33481,11 @@ function applyGlassRefraction(el, mapImgId){
                  && !!(typeof store !== "undefined" && store && store.onboardingComplete);
     bar.hidden = !show;
     document.body.classList.toggle("has-bottomtabs", show);
+    /* Toggled here for the same reason has-bottomtabs is: this function
+       already recalculates on every stage mutation, so the class clears
+       itself when the screen changes instead of relying on each screen to
+       undo it. */
+    document.body.classList.toggle("on-welcome", !!stage.querySelector(".cosmic-welcome"));
     /* On screens with their own floating action button (Setup's Start,
        a question's Next), the tab bar stacks above it rather than
        disappearing \u2014 losing the only way to reach Settings/Profile from

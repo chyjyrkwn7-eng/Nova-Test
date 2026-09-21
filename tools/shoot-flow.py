@@ -91,12 +91,23 @@ def main():
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
                 page.wait_for_timeout(400)
 
-                def shot(n, name):
+                def shot(n, name, bar_ok=False):
                     page.wait_for_timeout(350)
                     page.screenshot(path=f"{OUT}/{label}-{n:02d}-{name}.png")
-                    bar = page.evaluate("()=>{const t=document.querySelector('.bottomtabs');"
-                                        "return t.hidden?0:Math.round(t.getBoundingClientRect().height);}")
-                    if bar: print(f"  !! {label} {name}: TAB BAR VISIBLE ({bar}px)")
+                    bad = page.evaluate("""()=>{
+                        const t = document.querySelector('.bottomtabs');
+                        const loading = document.getElementById('genprofile-overlay')
+                                     || document.getElementById('splashscreen');
+                        return {bar: t.hidden ? 0 : Math.round(t.getBoundingClientRect().height),
+                                tourOverLoading: !!(loading && document.getElementById('tour-tooltip'))};}""")
+                    # Home and Settings are supposed to have a tab bar; an
+                    # onboarding screen never is.
+                    if bad["bar"] and not bar_ok:
+                        print(f"  !! {label} {name}: TAB BAR ON AN ONBOARDING SCREEN ({bad['bar']}px)")
+                    if not bad["bar"] and bar_ok:
+                        print(f"  !! {label} {name}: TAB BAR MISSING")
+                    if bad["tourOverLoading"]:
+                        print(f"  !! {label} {name}: TOOLTIP OVER A LOADING SCREEN")
 
                 shot(1, "welcome")
                 # the sign-in-with-a-code screen, then back
@@ -113,16 +124,22 @@ def main():
                 page.click(".avatarchar-option"); page.wait_for_timeout(250)
                 page.click(".charselect-panel .next.playbtn");        shot(8, "youre-all-set")
                 page.click(".onboarding-shortform-panel .next.playbtn")
-                page.wait_for_timeout(6000)                   # generating-profile overlay
-                shot(9, "home-with-tour")
+                # Wait for the loading overlay to actually finish rather than
+                # guessing. The old fixed 6s landed mid-overlay on a 10s
+                # "GENERATING PROFILE", and clicking on through it is what
+                # produced a screenshot of a Settings tour running on top of a
+                # loading screen.
+                page.wait_for_selector("#genprofile-overlay", state="detached", timeout=20000)
+                page.wait_for_timeout(1200)
+                shot(9, "home-with-tour", bar_ok=True)
                 for _ in range(14):                            # click the tour through
                     if not page.evaluate("()=>!!document.getElementById('tour-next')"): break
                     page.evaluate("()=>document.getElementById('tour-next').click()")
                     page.wait_for_timeout(260)
                 page.wait_for_timeout(600)
-                shot(10, "home")
+                shot(10, "home", bar_ok=True)
                 page.evaluate("()=>document.getElementById('bottomtab-settings').click()")
-                shot(11, "settings")
+                shot(11, "settings", bar_ok=True)
                 real = [e for e in errs if not any(k in e for k in
                         ("firebase", "firestore", "gstatic", "Failed to fetch", "net::"))]
                 print(f"{label}: done" + (f"  ERRORS {real[:2]}" if real else ""))

@@ -438,6 +438,27 @@ came out visibly narrower than the other three on an iPad; on a phone all
 four wrap to full width, so it never showed there. Anything meant to be a
 full-width row in that column needs `width:100%` explicitly.
 
+**Welcome's layout is auto margins at every width now, not just on a
+phone.** The tablets kept `justify-content:center`, which floated the
+whole five-item column in the middle of a 1194px iPad with slack both
+above the sphere and under the hint — "the stuff underneath the planet
+system needs to be moved down or spaced out". `flex-start` plus
+`margin-top:auto` on the hero and on the actions block puts the leftover
+height where it reads as layout and lands the actions on the panel floor
+on every device.
+
+**Welcome also carries its own `--panel-reserve`, because it has no
+bottom furniture.** It has no tab bar and no floating button, so the
+shared `4rem` of `.wrap` bottom padding is reserved for things that are
+not there — and that alone was holding the hint 82px off the bottom edge
+everywhere. `body.on-welcome` (toggled in `syncVisibility()`, the same
+self-clearing hook as `has-bottomtabs`) drops it to `2.25rem`, which
+brings the hint to ~50px and 62px on a device with a home indicator.
+**All three values move together**: `--panel-reserve` is `.wrap`'s top
+padding plus its bottom padding, and `--pad-inset-bottom` is whatever the
+inset adds *over that new bottom baseline*. Change one and the panels
+mis-size — this is the same arithmetic that once cost every panel ~93px.
+
 **Two `auto` margins centre an item in the leftover space.** That is the
 right tool when a button should sit *between* the content and the bottom of
 the panel rather than tucked under the content or jammed at the floor.
@@ -525,6 +546,31 @@ one-shot `MutationObserver` on `#stage` that removes it on the next screen
 change. It also has to be created *after* its own screen mounts: announcing
 from inside `showHome()` before `stage.replaceChildren()` had the mount
 immediately remove it, which a `setTimeout(…, 0)` fixes.
+
+**A control hidden with `[hidden]` stops holding the layout up.** Three
+onboarding screens gate Continue until something is chosen, and
+`display:none` takes its `margin-top:auto` with it — so on a tablet the
+panel's `::before` spacer was left as the only auto margin and swallowed
+every spare pixel, sinking the whole screen to the bottom. Reported as
+"all the stuff got pushed to the bottom" on Pick your class, Enter a
+username and Choose a character, with "You're all set" (button never
+hidden) looking right beside them. `visibility:hidden` is the tool: the
+box and its auto margin stay, it is still out of the accessibility tree
+so nothing announces a button that does nothing, and the layout does not
+jump when the button arrives.
+
+**Nothing may sit on top of a loading screen — and z-index alone does not
+enforce it.** `#genprofile-overlay` was `z-index:200`, tied with
+`.bottomtabs`, so the tab bar painted alongside a full-screen loading
+state and stayed tappable *through* it; tapping Settings there started
+the Settings tour on top of "GENERATING PROFILE". The overlay is 400 now
+(above the tour overlay at 205 and its tooltip at 210), and
+`startSimpleTour()` refuses to start while `#genprofile-overlay` or
+`#splashscreen` exists. It **waits** rather than abandoning, because
+every caller sets its own `seenXTour` flag to true *before* calling, so a
+tour dropped there is one that person never sees; it gives up only if the
+screen it was called for has been replaced, or after
+`TOUR_OVERLAY_WAIT_MS`.
 
 **Dead code that appends to `<body>` is worse than dead.** `showTourSendoff()`
 — the old "You're all set" popup — had not been called in a long time (the
