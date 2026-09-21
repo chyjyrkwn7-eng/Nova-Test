@@ -40,7 +40,9 @@ disagreed, the repo won and the difference is called out.
   after a batch of device-reported bugs were each verified on one iPad,
   which is not the bar. Exits non-zero and names the device. Extend it
   when a fix is worth holding to across the matrix; delete a check when
-  the thing it guards is gone.
+  the thing it guards is gone. Takes `--only <substring>` like the sweep,
+  because 63 runs of a page that waits on a splash is a long time to wait
+  to find out one device is wrong.
 - `tools/check-sync.py` — the question none of the three layout tools can
   answer: **does this build still keep people's accounts?** The sync code
   surviving, recovery landing somewhere that isn't Welcome, a rankings row
@@ -589,6 +591,44 @@ what is left, which is nothing. So `justify-content:center` plus
 the whole group jammed against the top. Home's phone rule
 (`.panel.home.screen-home-actual .playbtn{margin-bottom:auto}`) has to be
 explicitly reset to `0` inside the tablet block for exactly this reason.
+
+**A `position:fixed` control holds no space, so the layout has to reserve
+it by hand.** Home's daily-question circle and its version label are both
+fixed off the bottom edge; Home's primary button was centred between the
+tagline and the **tab bar**, which starts 54px *below* where the circle
+starts. Measured, the two collided outright: Start Studying overlapped the
+"?" by 8×44px on an SE 2nd/3rd gen and 8×9px on a 13 mini, and cleared it
+by **one pixel** on a 14/15/16. Every phone was within a rounding error of
+the same bug and the ones that looked fine were lucky, not right. The fix
+reserves the row rather than nudging the circle —
+`[data-layout="modern"] .panel.home.screen-home-actual{padding-bottom:5rem}`
+on `(max-width:32rem)` — so the two auto margins go on centring the button
+exactly as asked, just between the tagline and the furniture genuinely
+below it. Padding is inside the border box, so the panel's `min-height` is
+untouched and nothing that fit before starts scrolling. A tablet needs
+none of this: its circle and label sit in the corners beside the centred
+tab pill, 118px clear of the button.
+
+**Where Home already overflows, padding below the button cannot move it** —
+the button is at the end of the content, not on the panel floor, so the
+height has to come from something real. The hero is the only element with
+300px to spare, and `(max-width:32rem) and (min-height:36rem) and
+(max-height:48rem)` trims it to `min(23rem, 34vh)`. Short AND **narrow**,
+which is the opposite gate from the laptop tiers (short and *wide*) and
+must not catch their devices. Both ends matter: without the `48rem`
+ceiling a 13 mini at 812px loses a hero it has the room for, and without
+the `36rem` floor this four-class selector reaches down and *undoes* the
+`max-height:36rem` tier — an SE 1st gen's hero went from 148px back up to
+210px on the first pass. The band that actually needed it, swept across
+every phone height from 540 to 980px, is 736–800: a 14/15/16 in a
+**browser tab** is 393×742 once Safari's chrome is gone, and that is where
+the button landed level with the circle with 3px of horizontal gap between
+them.
+
+**`tools/check-fixes.py` now measures that row, and `check-positions.py`
+measures the button against it** rather than against the tab bar — the
+"centred" number that hid the collision was correct arithmetic about the
+wrong floor. `check-fixes.py` takes `--only` like the sweep does.
 
 **The same rule used deliberately is how four screens share one button
 position.** `::before{content:"";margin-top:auto}` on the panel plus
@@ -1320,7 +1360,7 @@ check a change against, not to trust forever. Measured installed, portrait.
 | viewport | 375×667 | 375×812 | 393×852 | **440×956** | 744×1133 | **834×1194** | 1024×1366 | 1366×638 | 1512×852 |
 | onboarding Continue, y | 527 | 672 | 712 | **816** | 993 | **1055** | 1227 | 502 | 716 |
 | …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 0 | **1** | 1 | 1 | 0 |
-| Home: tagline→button / button→tab bar | 50/33 | 61/68 | 68/75 | **96/103** | 82/83 | **93/93** | 148/149 | 45/63 | 34/51 |
+| Home: tagline→button / button→furniture | 50/21 | 33/19 | 40/26 | **68/54** | 82/83 | **93/94** | 128/128 | 45/60 | 34/49 |
 | Welcome: hint off the bottom edge | 42 | 62 | 62 | **62** | 50 | **49** | 50 | 46 | 46 |
 | intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 29/38 | **29/38** | 29/38 | 6/8 | 8/11 |
 | daily question button | 54px | 54 | 54 | **54** | 74 | **74** | 74 | 74 | 74 |
@@ -1333,7 +1373,10 @@ all and is not expected to.
 
 Rules those numbers encode, worth keeping: the gap **between** intro cards
 always beats the padding **inside** them; Home's button sits within a few px
-of the midpoint between the tagline and the tab bar; every onboarding
+of the midpoint between the tagline and the furniture below it — the
+daily-question circle on a phone, the tab bar on a tablet, where the circle
+and the version label sit in the corners beside the bar instead; every
+onboarding
 Continue lands on one line per device; and the Welcome hint clears the bottom
 edge by ~50px, or ~62px where there is a home indicator inside that.
 

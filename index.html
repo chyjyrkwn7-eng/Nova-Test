@@ -5471,7 +5471,15 @@
        behind the tab bar on four of them. Tying the size to the height
        that is actually available lets the same rule serve a short iPad
        and a tall one. */
-    .cosmic-hero-wrap{ max-width:min(36rem, 48vh); }
+    /* 40rem, not 36. The cap only ever binds above about 1280px of
+       height - below that 48vh is the smaller of the two and picks the
+       size - so raising it changes the 12.9"/13" iPads and nothing
+       else. There it takes 64px out of the empty band that sat between
+       the tagline and Start Studying (148px of it, measured) and gives
+       it to the one element on the screen that can carry a 1366px
+       display. Every shorter device, the 11" included, is byte
+       identical. */
+    .cosmic-hero-wrap{ max-width:min(40rem, 48vh); }
   }
   /* Smaller, sits above the greeting instead of dominating the whole
      screen the way it does on Welcome, since Home already has its own
@@ -6132,6 +6140,56 @@
        Every other .panel.home screen keeps the 2.7rem above. */
     .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
   }
+  /* The daily-question circle and the version label are FURNITURE, and
+     until now Home's button was centred as though they were not there.
+     Both are position:fixed off the bottom edge, so they hold no space
+     in the panel at all, while the button is centred in the space above
+     the TAB BAR - which is 54px lower than the "?" actually starts.
+     Measured, the two collided outright: the button overlapped the "?"
+     by 8x44px on an SE 2nd/3rd gen and 8x9px on a 13 mini, and cleared
+     it by ONE pixel on a 14/15/16. Every phone is within a rounding
+     error of the same bug; the ones that looked fine were lucky, not
+     right.
+     The fix reserves the row rather than nudging the circle: the panel's
+     own bottom padding grows to cover it, so the two auto margins go on
+     centring the button exactly as asked ("centered between the bottom
+     tab and Master the material") - just between the tagline and the
+     furniture genuinely below it, rather than through the middle of it.
+     The panel's min-height is untouched (padding is inside the border
+     box), so nothing that fit before starts scrolling.
+     Phone only. A tablet has real corners beside its centred tab pill
+     and the pair sits in them, clear of the button by 118px.
+     [data-layout="modern"] on the prefix for the usual reason - the
+     padding SHORTHAND ~900 lines below wins on source order otherwise. */
+  @media (max-width:32rem){
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:5rem; }
+  }
+  /* An SE has no slack to give: its content already overflows, so the
+     button sits at the end of the content rather than on the panel
+     floor, and padding below it cannot move it up. The height has to
+     come from somewhere real, and the hero is the one element with 300px
+     to spare - 46vh to 37vh is 60px, which is the clearance the circle
+     needs. Short AND NARROW on purpose: this is the opposite gate from
+     the laptop tiers, which are short and WIDE, and the two must not
+     catch each other's devices.
+     The min-height floor is not decoration either: this selector carries
+     four classes and the tiers for genuinely tiny screens
+     (max-height:36rem and below) carry one, so without a floor this rule
+     would reach down and UNDO them - an SE 1st gen's hero went from 148px
+     back up to 210px on the first pass. 36rem is 576px, under an SE
+     2nd/3rd gen's 667 and over a 1st gen's 568. */
+  /* 48rem (768px), not the 46rem the widened-column block above uses.
+     Swept across every phone height between 540 and 980px, the band that
+     actually misbehaves is 736-800: below it this tier already applies,
+     above it there is height to spare, and inside it Home overflows, the
+     button lands level with the circle, and the only thing between them
+     is 3px of horizontal gap on a 393px phone. 768px catches a 14/15/16
+     in a BROWSER TAB (393x742 once Safari's chrome is gone) and a Pixel
+     at 760, and stops short of a 13 mini installed at 812, which has the
+     room and must keep its full-size hero. */
+  @media (max-width:32rem) and (min-height:36rem) and (max-height:48rem){
+    .panel.home.screen-home-actual .cosmic-hero-wrap{ max-width:min(23rem, 34vh); }
+  }
   /* Phone. This was justify-content:space-between, to spread the leftover
      height into the gaps rather than leave it in one lump under the last
      line - which it did, but it spread it into EVERY gap, including the
@@ -6222,7 +6280,12 @@
   @media (min-width:40rem){
     .homeversion{ bottom:calc(2.6rem + env(safe-area-inset-bottom, 0px)); }
   }
-  .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+  /* Underlined at full strength on a .55-opacity label, it read as a
+     stray anchor dropped in the corner rather than as part of the
+     screen. The underline stays - it is the only thing saying this is
+     tappable, and it opens the release notes - but at 40% of the text's
+     own colour it sits under the words instead of shouting. */
+  .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-decoration-thickness:from-font; text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); text-underline-offset:2px; }
   /* The daily-question circle itself \u2014 a small offset FAB, not a
      full-width button, fixed to the viewport so its position is
      reliable regardless of panel layout. Liquid Glass like everything
@@ -30249,7 +30312,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-69";
+const APP_BUILD = "2026-09-21-70";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

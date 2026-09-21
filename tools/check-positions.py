@@ -163,7 +163,17 @@ def main():
                             document.querySelector('.cosmic-welcome-title').getBoundingClientRect().top-hr.bottom),
                           sh:document.documentElement.scrollHeight, vh:innerHeight};}""")
 
-                # 3. Home: Start Studying centred between the tagline and the tab bar
+                # 3. Home: Start Studying centred between the tagline and the
+                #    FURNITURE below it - which is the daily-question circle
+                #    and the version label on a phone, and the tab bar on a
+                #    tablet where those two sit in the corners beside it.
+                #    Measuring against the tab bar alone is what this check
+                #    did first, and it was wrong in a way that hid a real
+                #    collision: the circle starts 54px ABOVE the bar, so a
+                #    button "centred" on the bar sat on top of the circle on
+                #    every short phone (8x44px of overlap on an SE). The
+                #    number below is the distance to whatever is actually
+                #    closest.
                 run(page, "showHome")
                 home = page.evaluate("""()=>{const b=document.querySelector('#nextbtn');
                   const tl=document.querySelector('.hometagline'); const tb=document.querySelector('.bottomtabs');
@@ -171,8 +181,18 @@ def main():
                   const tlb = tl && tl.getBoundingClientRect().height>0 ? tl.getBoundingClientRect().bottom : null;
                   const tbt = tb && !tb.hidden ? tb.getBoundingClientRect().top : null;
                   const fab=document.querySelector('.daily-question-fab').getBoundingClientRect();
+                  const ver=document.querySelector('.homeversion');
+                  const vr = ver ? ver.getBoundingClientRect() : null;
+                  // The floor is whichever comes first, not the tab bar by
+                  // assumption. On a phone that is the circle, 54px above the
+                  // bar; on a tablet the circle and the label sit level with
+                  // the bar in the corners beside it, so the bar wins there
+                  // and the number is the one this file has always recorded.
+                  const floors = [tbt, fab && fab.top, vr && vr.top]
+                                   .filter(v=>v!==null && v!==undefined);
                   return {above: tlb!==null?Math.round(br_.top-tlb):null,
-                          below: tbt!==null?Math.round(tbt-br_.bottom):null,
+                          below: floors.length?Math.round(Math.min.apply(null,floors)-br_.bottom):null,
+                          belowTabs: tbt!==null?Math.round(tbt-br_.bottom):null,
                           fab:[Math.round(fab.width),Math.round(fab.height)],
                           fabClearsTabs: tbt===null?null:Math.round(tbt-fab.bottom)};}""")
                 rows.append((tag, spread, tops[0], scrolls, wel, home))

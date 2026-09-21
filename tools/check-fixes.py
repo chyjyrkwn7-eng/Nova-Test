@@ -6,7 +6,7 @@ where I meant it to". Neither asks "is this specific fix actually in effect
 here", which is the question after a batch of device-reported bugs. Every
 check below is a measurement, not a code read.
 """
-import functools, http.server, io, os, re, socket, sys, threading
+import argparse, functools, http.server, io, os, re, socket, sys, threading
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
@@ -74,12 +74,23 @@ def rgb(s):
     return tuple(float(x) for x in m[:3]) if len(m) >= 3 else None
 
 def main():
+    # Same --only as the sweep, and for the same reason: the whole matrix
+    # is 63 runs of a page that waits on a splash, which is a long time to
+    # wait to find out one device is wrong.
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--only", help="substring of the device label")
+    args = ap.parse_args()
+    devices = DEVICES
+    if args.only:
+        devices = [d for d in devices if args.only.lower() in d[0].lower()]
+        if not devices:
+            sys.exit(f"no device matches {args.only!r}")
     srv, url = serve()
     fails, checked = [], 0
     try:
         with sync_playwright() as pw:
             br = pw.chromium.launch(executable_path=CHROME)
-            for name, w, h, kind, ins_p, ins_l in DEVICES:
+            for name, w, h, kind, ins_p, ins_l in devices:
                 for orient in ("portrait", "landscape"):
                     vw, vh = (w, h) if orient == "portrait" else (h, w)
                     ins = ins_p if orient == "portrait" else ins_l
@@ -153,6 +164,40 @@ def main():
                                 fails.append(f"{tag}: {k} is {c[k]}, not transparent")
                         if not c["profileTab"]:
                             fails.append(f"{tag}: #bottomtab-profile missing (points fly target)")
+
+                        # 9. Home's bottom furniture must not collide. The
+                        # daily-question circle and the version label are both
+                        # position:fixed off the bottom edge, so they hold no
+                        # space in the panel, and Home's primary button was
+                        # centred as though the tab bar were the only thing
+                        # under it. Measured before the fix: the button
+                        # overlapped the "?" by 8x44px on an SE 2nd/3rd gen and
+                        # 8x9px on a 13 mini, and cleared it by ONE pixel on a
+                        # 14/15/16 - every phone within a rounding error of the
+                        # same bug. 12px is the floor because anything under
+                        # that reads as a collision even when the rectangles
+                        # technically miss.
+                        hf = pg.evaluate("""()=>{showHome();
+                          const R=s=>{const e=document.querySelector(s);
+                            return e && e.getBoundingClientRect();};
+                          const btn=R('.panel.home .playbtn'), fab=R('.daily-question-fab'),
+                                ver=R('.homeversion'), bar=R('.bottomtabs');
+                          if(!btn) return null;
+                          const hit=(a,b)=>a&&b&&!(a.right<=b.left||a.left>=b.right||
+                                                   a.bottom<=b.top||a.top>=b.bottom);
+                          const near=(a,b)=>(a&&b)?Math.round(Math.max(b.top-a.bottom,
+                                                                       b.left-a.right)):null;
+                          return {btnFab:hit(btn,fab), btnVer:hit(btn,ver),
+                                  fabVer:hit(fab,ver), fabBar:hit(fab,bar),
+                                  gapFab:near(btn,fab), gapVer:near(btn,ver)};}""")
+                        if hf:
+                            if hf["btnFab"]: fails.append(f"{tag}: Start Studying overlaps the daily-question circle")
+                            if hf["btnVer"]: fails.append(f"{tag}: Start Studying overlaps the version label")
+                            if hf["fabVer"]: fails.append(f"{tag}: the daily-question circle overlaps the version label")
+                            if hf["fabBar"]: fails.append(f"{tag}: the daily-question circle overlaps the tab bar")
+                            for k, what in (("gapFab", "daily-question circle"), ("gapVer", "version label")):
+                                if hf[k] is not None and 0 <= hf[k] < 12:
+                                    fails.append(f"{tag}: Start Studying clears the {what} by only {hf[k]}px")
 
                         # --- The grey bar, measured the only way that means
                         # anything: what body::before paints at the bottom edge
