@@ -2177,6 +2177,111 @@
   .lb-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lb-stats{ font-size:.78rem; color:var(--soft); }
   .lb-rows{ display:flex; flex-direction:column; }
+
+  /* ---------- Rankings rows ----------
+     Built on .lb-row's shape rather than beside it, so the medal
+     colours below (.lb-place-N, already tuned for dark mode and
+     deliberately NOT var(--accent)) keep applying without being
+     restated. */
+  .rank-rows{ display:flex; flex-direction:column; }
+  .rank-row{
+    display:flex; align-items:center; gap:.75rem; padding:.7rem .9rem; margin-bottom:.5rem;
+    border-radius:14px; background:var(--panel); border:1px solid var(--rule);
+  }
+  [data-layout="modern"] .rank-row{
+    background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
+    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
+    box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  [data-theme="dark"][data-layout="modern"] .rank-row{
+    background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
+    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .rank-place{ font-family:var(--mono); font-size:.85rem; font-weight:800; color:var(--soft); width:2.2rem; flex-shrink:0; }
+  /* position:relative on the WRAP, not the avatar, so the level badge
+     can hang over the avatar's edge without being clipped by it. */
+  .rank-avatar-wrap{ position:relative; width:2.6rem; height:2.6rem; flex-shrink:0; }
+  .rank-avatar{ display:block; width:100%; height:100%; }
+  .rank-avatar svg{ width:100%; height:100%; }
+  /* The level, on the avatar's bottom-right corner. Small, but a
+     separate solid chip with its own ring rather than bare text: over
+     an avatar's own artwork, plain text lands on whatever colour
+     happens to be underneath it and stops being readable on exactly
+     the characters with light patches. Fixed colours for the same
+     reason the medals use fixed ones - var(--accent) is the VIEWER's
+     unlocked theme, so it would recolour everyone else's level to
+     whatever the person looking happens to have equipped. */
+  .rank-level{
+    position:absolute; right:-.22rem; bottom:-.22rem;
+    min-width:1.15rem; height:1.15rem; padding:0 .22rem;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:999px; box-sizing:border-box;
+    background:#2563EB; color:#FFFFFF;
+    font-family:var(--mono); font-size:.62rem; font-weight:800; line-height:1;
+    border:1.5px solid var(--paper);
+  }
+  .rank-name-wrap{ display:flex; flex-direction:column; min-width:0; flex:1; }
+  .rank-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank-stat{ font-size:.78rem; color:var(--soft); }
+  /* The podium, and deliberately not animated - asked for explicitly.
+     What makes it read as a medal instead of a coloured border is the
+     tinted surface plus a heavier ring, so the whole row changes
+     material rather than just its text. The text colours themselves
+     come from .lb-place-N below, already dark-mode-tuned. */
+  [data-layout="modern"] .rank-row.rank-podium-1{
+    border:1.5px solid rgba(214,168,58,.55);
+    background:linear-gradient(180deg, rgba(214,168,58,.16), rgba(214,168,58,.05));
+    box-shadow:0 2px 14px rgba(214,168,58,.14), inset 0 1px 0 rgba(255,255,255,.10);
+  }
+  [data-layout="modern"] .rank-row.rank-podium-2{
+    border:1.5px solid rgba(176,190,201,.5);
+    background:linear-gradient(180deg, rgba(176,190,201,.14), rgba(176,190,201,.04));
+    box-shadow:0 2px 14px rgba(176,190,201,.12), inset 0 1px 0 rgba(255,255,255,.10);
+  }
+  [data-layout="modern"] .rank-row.rank-podium-3{
+    border:1.5px solid rgba(186,120,66,.5);
+    background:linear-gradient(180deg, rgba(186,120,66,.15), rgba(186,120,66,.04));
+    box-shadow:0 2px 14px rgba(186,120,66,.12), inset 0 1px 0 rgba(255,255,255,.10);
+  }
+  /* Your own row keeps its accent ring even on the podium - being
+     first should not cost you the ability to find yourself. Stated
+     after the podium rules so it wins on source order. */
+  [data-layout="modern"] .rank-row.lb-row-me{ border:1.5px solid var(--accent); }
+  /* The flash after "Find me". One shot, removed on animationend, so
+     pressing the button twice runs it twice. */
+  @keyframes rank-flash-anim{
+    0%   { box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); }
+    60%  { box-shadow:0 0 0 12px rgba(0,0,0,0); }
+    100% { box-shadow:0 0 0 0 rgba(0,0,0,0); }
+  }
+  .rank-row.rank-flash{ animation:rank-flash-anim 1.1s ease-out 2; }
+
+  .rank-tools{ display:flex; gap:.5rem; align-items:center; margin:0 0 .75rem; }
+  /* min-width:0 so the field can actually shrink: a flex item defaults
+     to min-content width, which on a search input is wide enough to
+     push the button off a 320px screen. */
+  .rank-search{ flex:1; min-width:0; margin:0; }
+  /* A real surface, not a bare .iconbtn. Beside a full-width search
+     field an unfilled text label reads as a caption rather than
+     something to press - and this is the one control on the screen
+     people will reach for repeatedly. Same solid treatment the app
+     uses elsewhere for "findable" controls, with the 44px floor. */
+  .rank-me-btn{
+    flex-shrink:0; white-space:nowrap;
+    min-height:2.75rem; padding:.55rem 1rem; border-radius:999px;
+    font-size:.82rem; font-weight:700; letter-spacing:.02em;
+    background:var(--panel); border:1px solid var(--rule); color:var(--ink);
+  }
+  [data-layout="modern"] .rank-me-btn{
+    background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
+    box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  [data-theme="dark"][data-layout="modern"] .rank-me-btn{
+    background:rgba(28,33,40,.65); border:1px solid rgba(255,255,255,.12);
+    color:var(--ink);
+    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  [data-layout="modern"] .rank-me-btn:active{ opacity:.75; }
   /* The top three carry their medal colour through the row's own text,
      not just the rank circle, per explicit request - name and stat line
      both. Everyone from fourth down keeps the ordinary --ink/--soft
@@ -4583,6 +4688,15 @@
        A ceiling plus room for the labels to tighten, rather than letting
        the whole page slide sideways. */
     max-width:100%;
+    /* Wrapping is now the default, not a breakpoint. Profile carries
+       FOUR tabs since Achievements and Unlocks moved here, and the
+       24rem gate below was sized when the widest strip was three. A
+       fixed breakpoint has to be re-derived every time a tab is added
+       or a label is reworded; wrap:wrap simply cannot overflow, and on
+       any screen wide enough it still lays out as one row, so nothing
+       changes where nothing needed to. The rule this replaces is kept
+       below for its tighter padding on genuinely small screens. */
+    flex-wrap:wrap; justify-content:center; row-gap:.15rem;
   }
   /* Padding and font-size both reduced from the original 2-tab sizing
      \u2014 measured directly: with 3 tabs (Leaderboard added), the row was
@@ -7490,7 +7604,7 @@
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Rewards</span>
+        <span class="bottomtab-label">Rankings</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-settings" data-dest="settings">
         <span class="bottomtab-icon"></span>
@@ -19494,6 +19608,22 @@ const AVATAR_CHARACTERS = [
   { id: "dragon", kind: "dragon" }
 ];
 
+/* Always a Node, never null - which buildAvatarCharSVG below can
+   return, and which callers append straight into a row.
+
+   This is not hypothetical: the leaderboard rows did
+   `appendChild(buildAvatarCharSVG(entry.avatarChar || "ninja"))`, and
+   that `||` only catches an EMPTY avatar, not an unrecognised one. Fed
+   eight entries where three carried ids this build does not know, the
+   rankings rendered five rows and threw three times - three classmates
+   silently missing from a board, which is the worst way for this to
+   fail. Entries come from other people's devices, so an id from an
+   older build, a renamed character or a future one is an ordinary thing
+   to receive, not a corrupt document. */
+function buildAvatarCharSVGSafe(charId){
+  return buildAvatarCharSVG(charId) || buildAvatarCharSVG(AVATAR_CHARACTERS[0].id);
+}
+
 function buildAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
@@ -20555,6 +20685,22 @@ function pushToCloud(){
            no "correct" - those read as 0 until that person's app updates
            and pushes again, which it does on the next save. */
         correct: (store.lifetime && store.lifetime.correct) || 0,
+        /* The three Rankings boards. All three come from the metric
+           functions near TIER_ORDER_FULL so there is one definition of
+           each, and `correct` stays published beside them: a classmate
+           still on an older build reads this document and would show
+           everyone as blank without it. Older documents lacking these
+           three read as 0 here for the same reason, until that person's
+           app updates and pushes again - which it does on the next save.
+
+           The document id is the SYNC CODE, which is what makes two
+           synced devices one entry on the board rather than two. It is
+           not a coincidence worth losing: keying this by anything
+           device-local would duplicate every person who uses a phone
+           and an iPad. */
+        level: levelOf(store),
+        badges: badgeCountOf(store),
+        hundos: hundosOf(store),
         lastModified: Date.now()
       }).catch(() => {});
     } catch(e){}
@@ -21139,6 +21285,67 @@ const TIER_UNLOCKS = {
    seven of these, rather than repeating the same seven-item array at
    each call site. */
 const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"];
+
+
+/* ---------- Rankings: the three ranked metrics ----------
+   The Rankings tab boards every classmate on three numbers, and all
+   three come from here so there is exactly one definition of each.
+   Two of them are PROVISIONAL and deliberately marked: levels and
+   badges are being designed next, and the boards were asked for
+   first. When those systems land, change these two functions and
+   every board, every row badge and every published document follows -
+   nothing else reads the underlying fields directly.
+
+   hundosOf() is NOT provisional. store.lifetime.perfectTests is
+   already incremented wherever a test finishes at 100%, so that board
+   is ranking the real thing from the start. */
+
+/* Provisional. A points curve, not a formula anyone agreed to: each
+   level costs 15% more than the last, starting at 500, so the early
+   ones come quickly and the later ones do not. Level 1 is the floor -
+   nobody is level 0 - and it is capped so a single outlier cannot own
+   the top of the board forever. */
+const LEVEL_BASE_POINTS = 500;
+const LEVEL_GROWTH = 1.15;
+const LEVEL_CAP = 99;
+function levelFromPoints(points){
+  let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
+  const p = Math.max(0, Number(points) || 0);
+  while(lvl < LEVEL_CAP && p >= spent + need){
+    spent += need; need = Math.round(need * LEVEL_GROWTH); lvl += 1;
+  }
+  return lvl;
+}
+function levelOf(st){
+  return levelFromPoints(st && st.lifetime ? st.lifetime.points : 0);
+}
+
+/* Provisional. Until badges exist as their own thing, this counts the
+   Mastery Ladder tiers actually unlocked - the closest thing the app
+   already has to "an award you either have or you do not". It reads
+   as a real number on the board today and becomes a one-line change
+   when real badges arrive. */
+function badgeCountOf(st){
+  if(!st) return 0;
+  try {
+    return TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
+  } catch(e){ return 0; }
+}
+
+function hundosOf(st){
+  return (st && st.lifetime && st.lifetime.perfectTests) || 0;
+}
+
+/* What each board ranks, what its rows say underneath a name, and what
+   the tab is called. Adding a fourth board is adding an entry here. */
+const RANKING_BOARDS = [
+  { key: "level",  tab: "Level",  field: "level",
+    unit: (n) => "Level " + n },
+  { key: "badges", tab: "Badges", field: "badges",
+    unit: (n) => n + (n === 1 ? " badge" : " badges") },
+  { key: "hundos", tab: "Hundos", field: "hundos",
+    unit: (n) => n + (n === 1 ? " perfect test" : " perfect tests") }
+];
 
 
 function tierColorUnlocked(name){
@@ -25610,9 +25817,9 @@ function startMainMenuTour(){
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, no matter where you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "Rewards has your achievements, the Mastery Ladder, everything you have unlocked, and the leaderboard." },
+      text: "Rankings is the class leaderboards \u2014 level, badges and perfect tests, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: "Profile has your name, avatar, colors, and stats." },
+      text: "Profile has your name, avatar and colours, your stats, and now your achievements and unlocks too." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
@@ -28521,7 +28728,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-56";
+const APP_BUILD = "2026-09-21-57";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -29948,7 +30155,7 @@ function showAppearance(){
      card treatment (background, padding, rounded corners, subtle
      shadow) Motion & interaction's own header already has above it,
      instead of the plain uppercase label every other section uses. */
-  lbLab.className = "slab section-divider motion-summary"; lbLab.textContent = "Leaderboard";
+  lbLab.className = "slab section-divider motion-summary"; lbLab.textContent = "Rankings";
   lbSect.appendChild(lbLab);
   const lbRow = document.createElement("label");
   lbRow.className = "opt";
@@ -29964,7 +30171,7 @@ function showAppearance(){
   lbBox.className = "box"; lbBox.setAttribute("aria-hidden", "true"); lbBox.textContent = "\u2713";
   const lbWrap = document.createElement("span");
   lbWrap.className = "otext";
-  lbWrap.appendChild(document.createTextNode("Show me on the leaderboard"));
+  lbWrap.appendChild(document.createTextNode("Show me in the rankings"));
   const lbHint = document.createElement("span");
   lbHint.className = "ohint";
   /* Kept: exactly what gets shared, and that switching off hides the
@@ -29972,15 +30179,17 @@ function showAppearance(){
      the explanation of WHY that is (seeing it means being on it) and
      the reassurance that it can be turned off later, which a switch
      already implies. */
-  /* "correct answers", because that is what the board now ranks on and
-     the only figure published. Level and badge count are the eventual
-     replacements, per the plan, but neither exists in the app yet -
-     naming them here would describe data nothing collects or shares. */
+  /* Names all three boards, because all three are now published and
+     all three are what someone is agreeing to appear on. The previous
+     version said "correct answers" and noted that level and badges did
+     not exist yet; they are published now, so the copy has to say so -
+     a consent line that under-describes what is shared is worse than
+     one that is merely out of date. */
   /* Leads with what the board IS, not with what gets uploaded. "Shares
      your correct answers" read as though a list of answers was being
      published, rather than a class ranking on how many questions each
      person has answered correctly. */
-  lbHint.textContent = "Ranks the class by questions answered correctly. Shares your name, avatar, and that number \u2014 nothing else. With this off, you can't see the leaderboard either.";
+  lbHint.textContent = "Ranks the class three ways \u2014 level, badges and perfect tests. Shares your username, avatar and those three numbers \u2014 nothing else. With this off, you can't see the rankings either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
   lbSect.appendChild(lbRow);
@@ -31883,6 +32092,97 @@ function renderLeaderboardList(list){
   }
 }
 
+/* ---------- Rankings boards ----------
+   One renderer, three boards. `board` is an entry from RANKING_BOARDS,
+   so what a row ranks on and what its second line says are data, not
+   three copies of this function.
+
+   Everyone is ranked, best at the top, and NOBODY is filtered out for
+   having a zero: on the old correct-answers board a zero meant a stray
+   or an abandoned account, but "level 1, no badges, no perfect tests"
+   is just someone who started today, and a board people are meant to
+   climb has to show them the bottom rung they are standing on. Entries
+   with no name at all are still dropped - those are genuinely broken
+   documents, not people. */
+function renderRankingRows(rows, entries, board, opts){
+  const o = opts || {};
+  const query = (o.query || "").trim().toLowerCase();
+  const val = (e) => Number(e && e[board.field]) || 0;
+
+  const sorted = entries.slice()
+    .filter(e => e && String(e.firstName || "").trim() !== "")
+    .sort((a, b) => (val(b) - val(a)) ||
+                    String(a.firstName || "").localeCompare(String(b.firstName || "")));
+
+  /* Rank is computed over the WHOLE board and then filtered, never the
+     other way round: searching for a name must tell you that person's
+     real position, not their position among the search results. */
+  const ranked = sorted.map((e, i) => ({ entry: e, place: i + 1 }));
+  const shown = query
+    ? ranked.filter(r => String(r.entry.firstName || "").toLowerCase().includes(query))
+    : ranked;
+
+  rows.replaceChildren();
+  if(ranked.length === 0){
+    const empty = document.createElement("p");
+    empty.className = "lb-board-empty";
+    empty.textContent = "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
+    rows.appendChild(empty);
+    return;
+  }
+  if(shown.length === 0){
+    const none = document.createElement("p");
+    none.className = "lb-board-empty";
+    none.textContent = "No one matching \u201c" + (o.query || "").trim() + "\u201d.";
+    rows.appendChild(none);
+    return;
+  }
+
+  shown.forEach(({ entry, place }) => {
+    const row = document.createElement("div");
+    row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
+    /* Matched on the sync code, not the name. Two classmates called
+       Madison would otherwise both light up as "me". The code is NOT a
+       published field - it is the document's own id, attached when the
+       snapshot is read. That distinction matters: a sync code is what
+       signs a person in, so it must not be written into a document body
+       that is then read and re-published anywhere else. */
+    const isMe = !!(syncCode && entry.code === syncCode);
+    if(isMe){ row.classList.add("lb-row-me"); row.dataset.me = "1"; }
+
+    const rank = document.createElement("span");
+    rank.className = "rank-place";
+    renderRankMarker(rank, place);
+
+    const avatarWrap = document.createElement("span");
+    avatarWrap.className = "rank-avatar-wrap";
+    const avatar = document.createElement("span");
+    avatar.className = "rank-avatar";
+    avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
+    /* The level sits on the avatar's corner rather than beside it, so a
+       long username keeps the whole rest of the row. It is on every
+       board, not just the Level one - it is who someone is, the same
+       way the avatar is, rather than that board's ranked number. */
+    const lvl = document.createElement("span");
+    lvl.className = "rank-level";
+    lvl.textContent = Number(entry.level) || 1;
+    avatarWrap.append(avatar, lvl);
+
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "rank-name-wrap";
+    const name = document.createElement("span");
+    name.className = "rank-name lb-name";
+    name.textContent = entry.firstName || "Anonymous";
+    const stats = document.createElement("span");
+    stats.className = "rank-stat lb-stats";
+    stats.textContent = board.unit(val(entry));
+    nameWrap.append(name, stats);
+
+    row.append(rank, avatarWrap, nameWrap);
+    rows.appendChild(row);
+  });
+}
+
 /* One board, ranked on correct answers. Previously two side-by-side
    boards (Points and Stars) in a cramped two-column layout; a single
    full-width list is both the requested behaviour and the reason the
@@ -31926,7 +32226,7 @@ function renderLeaderboardRows(rows, entries){
     avatar.className = "lb-avatar";
     /* Falls back to the default character rather than rendering an empty
        box for an entry written before avatarChar was published. */
-    avatar.appendChild(buildAvatarCharSVG(entry.avatarChar || "ninja"));
+    avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
 
     const nameWrap = document.createElement("div");
     nameWrap.className = "lb-name-wrap";
@@ -32379,7 +32679,20 @@ function showProfile(defaultTab){
   const statsTabBtn = document.createElement("button");
   statsTabBtn.type = "button"; statsTabBtn.className = "iconbtn profile-stats-tab-btn" + (initialTab === "stats" ? " active" : "");
   statsTabBtn.textContent = "Stats";
-  profileTabSeg.append(identityTabBtn, statsTabBtn);
+  /* Achievements and Unlocks, moved here from the Rewards tab now
+     that that tab is Rankings. Four tabs is more than this strip has
+     carried before, so the labels are kept short and .profiletabs
+     scrolls sideways below the width where four stop fitting rather
+     than squashing them - a squashed strip was the exact failure the
+     Rewards switcher had, where three nowrap labels overlapped instead
+     of the page scrolling. */
+  const achTabBtn = document.createElement("button");
+  achTabBtn.type = "button"; achTabBtn.className = "iconbtn" + (initialTab === "achievements" ? " active" : "");
+  achTabBtn.textContent = "Achievements";
+  const unlocksTabBtn = document.createElement("button");
+  unlocksTabBtn.type = "button"; unlocksTabBtn.className = "iconbtn" + (initialTab === "unlocks" ? " active" : "");
+  unlocksTabBtn.textContent = "Unlocks";
+  profileTabSeg.append(identityTabBtn, statsTabBtn, achTabBtn, unlocksTabBtn);
   panel.appendChild(profileTabSeg);
 
   const identityTab = document.createElement("div");
@@ -32387,16 +32700,38 @@ function showProfile(defaultTab){
   const statsTab = document.createElement("div");
   statsTab.className = "profile-stats-tab";
   statsTab.hidden = initialTab !== "stats";
-  panel.append(identityTab, statsTab);
+  /* Built once, here, rather than inside selectProfileTab: the
+     achievements content animates its ladder connectors on build, and
+     rebuilding it on every tab change would replay that animation
+     each time someone swiped past. */
+  const rewardTabs = buildRewardTabs();
+  const achievementsTab = rewardTabs.achievements;
+  const unlocksTab = rewardTabs.unlocks;
+  achievementsTab.hidden = initialTab !== "achievements";
+  unlocksTab.hidden = initialTab !== "unlocks";
+  panel.append(identityTab, statsTab, achievementsTab, unlocksTab);
 
+  const profileTabOrder = ["profile", "stats", "achievements", "unlocks"];
+  let profileTabKey = initialTab;
   function selectProfileTab(which){
+    profileTabKey = which;
     identityTab.hidden = which !== "profile";
     statsTab.hidden = which !== "stats";
+    achievementsTab.hidden = which !== "achievements";
+    unlocksTab.hidden = which !== "unlocks";
     identityTabBtn.classList.toggle("active", which === "profile");
     statsTabBtn.classList.toggle("active", which === "stats");
+    achTabBtn.classList.toggle("active", which === "achievements");
+    unlocksTabBtn.classList.toggle("active", which === "unlocks");
+    toTop();
   }
   identityTabBtn.addEventListener("click", () => selectProfileTab("profile"));
   statsTabBtn.addEventListener("click", () => selectProfileTab("stats"));
+  achTabBtn.addEventListener("click", () => selectProfileTab("achievements"));
+  unlocksTabBtn.addEventListener("click", () => selectProfileTab("unlocks"));
+  /* Swipeable, per explicit request, using the same helper the Rankings
+     tab uses. */
+  attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab);
 
   /* The avatar and name used to live in a persistent top bar on every
      screen \u2014 now that the bar itself is gone (redundant once the same
@@ -32740,109 +33075,219 @@ function showProfile(defaultTab){
   }
 }
 
-function showRewards(defaultTab){
-  captureSetupReturn();
-  if(store.pendingSupernovaCutscene){ playSupernovaCutscene(); return; }
-  if(store.pendingTierCutscene){ playTierCutscene(store.pendingTierCutscene); return; }
-  stopTimer();
-  flushStudyTime();
-  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
-  timerlineEl.hidden = true; livesEl.hidden = true;
-  setActiveNav("rewards");
-  countEl.textContent = "Rewards";
-  const initialTab = defaultTab || "achievements";
+/* Contained swipe across a screen's own top tab strip. Lifted verbatim
+   from the one the Rewards tab already had so Profile and Rankings
+   share one implementation rather than three copies drifting apart -
+   the comments below are that original's, and every one of them is a
+   bug that was actually hit.
+
+   This is NOT the page-wide "swipe anywhere to change tabs" that was
+   deliberately removed for the bottom nav bar: that one changed tabs
+   while someone was trying to read. This is scoped to one screen's own
+   panel.
+
+   order: array of tab keys, left to right. getCurrent: returns the
+   active key. select: called with the key to move to. */
+function attachTabSwipe(panel, order, getCurrent, select){
+  let startX = null, startY = null, locked = false;
+  panel.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY; locked = false;
+  }, { passive: true });
+  /* The actual reason this swipe reportedly never fired on a real
+     device: with no touchmove handling at all, a real (never perfectly
+     horizontal) swipe over a tab whose content is tall enough to
+     scroll lets the browser's own vertical scroll claim the gesture the
+     moment there is any vertical drift, so by touchend the page has
+     simply scrolled and dy has grown past the tolerance below, silently
+     failing the swipe. Once the drag is clearly more horizontal than
+     vertical, claim it before the native scroll gets the chance. An
+     ordinary vertical scroll never crosses that threshold. */
+  panel.addEventListener("touchmove", (e) => {
+    if(startX === null) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    if(!locked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) locked = true;
+    if(locked) e.preventDefault();
+  }, { passive: false });
+  panel.addEventListener("touchend", (e) => {
+    if(startX === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    startX = null; startY = null; locked = false;
+    if(Math.abs(dx) < 60 || Math.abs(dy) > 70) return;
+    const i = order.indexOf(getCurrent());
+    const next = dx < 0 ? i + 1 : i - 1;
+    if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
+  });
+}
+
+/* ---------- The Rankings tab ----------
+   What used to be Rewards. Achievements and Unlocks moved to Profile;
+   this tab is now three leaderboards and nothing else, because that is
+   what the bottom tab promises when it says Rankings.
+
+   "Rankings" rather than "Leaderboards" on the tab itself is a width
+   decision, not a rename of the idea: the bottom bar gives each tab a
+   few characters before the label wraps or shrinks, and the screen
+   still calls its contents leaderboards. */
+let rankingsLiveUnsub = null;
+let rankingsBoardKey = "level";
+
+function showRankings(defaultBoard){
+  setActiveNav(null);
+  countEl.textContent = "Rankings";
+  if(defaultBoard) rankingsBoardKey = defaultBoard;
+  if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = "level";
 
   const panel = document.createElement("section");
-  panel.className = "panel screen-rewards";
+  panel.className = "panel screen-rankings";
 
-  /* Achievements and Unlocks only — name, avatar, and accent color now
-     live solely in the separate Profile screen, not duplicated here. */
-  const profileTabSeg = document.createElement("div");
-  profileTabSeg.className = "navsegment profiletabs";
-  const achTabBtn = document.createElement("button");
-  achTabBtn.type = "button"; achTabBtn.className = "iconbtn" + (initialTab === "achievements" ? " active" : "");
-  achTabBtn.textContent = "Achievements";
-  const unlocksTabBtn = document.createElement("button");
-  unlocksTabBtn.type = "button"; unlocksTabBtn.className = "iconbtn" + (initialTab === "unlocks" ? " active" : "");
-  unlocksTabBtn.textContent = "Unlocks";
-  /* A genuine third tab now, not a link tucked inside the Points box
-     \u2014 per explicit request, that link read as too hidden to actually
-     find. Same active/inactive switcher pattern as the other two. */
-  const leaderboardTabBtn = document.createElement("button");
-  leaderboardTabBtn.type = "button"; leaderboardTabBtn.className = "iconbtn" + (initialTab === "leaderboard" ? " active" : "");
-  leaderboardTabBtn.textContent = "Leaderboard";
-  profileTabSeg.append(achTabBtn, unlocksTabBtn, leaderboardTabBtn);
-  panel.appendChild(profileTabSeg);
+  const seg = document.createElement("div");
+  seg.className = "navsegment profiletabs";
+  const tabBtns = {};
+  RANKING_BOARDS.forEach(b => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "iconbtn" + (b.key === rankingsBoardKey ? " active" : "");
+    btn.textContent = b.tab;
+    btn.addEventListener("click", () => selectBoard(b.key));
+    tabBtns[b.key] = btn;
+    seg.appendChild(btn);
+  });
+  panel.appendChild(seg);
 
+  /* Search and "find me" live above the list and outside it, so they
+     stay put while the rows below them re-render under a live snapshot.
+     Rebuilding them with the rows would blow away whatever is being
+     typed every time any classmate anywhere answers a question. */
+  const tools = document.createElement("div");
+  tools.className = "rank-tools";
+  const search = document.createElement("input");
+  search.type = "search"; search.className = "searchbox rank-search";
+  search.placeholder = "Search by username";
+  search.setAttribute("aria-label", "Search the rankings by username");
+  const meBtn = document.createElement("button");
+  meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn";
+  meBtn.textContent = "Find me";
+  tools.append(search, meBtn);
+  panel.appendChild(tools);
+
+  const rows = document.createElement("div");
+  rows.className = "rank-rows";
+  panel.appendChild(rows);
+
+  let entries = [];
+  let loaded = false;
+
+  function paint(){
+    const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
+    renderRankingRows(rows, entries, board, { query: search.value });
+  }
+
+  function selectBoard(key){
+    rankingsBoardKey = key;
+    Object.keys(tabBtns).forEach(k => tabBtns[k].classList.toggle("active", k === key));
+    paint();
+  }
+
+  search.addEventListener("input", paint);
+
+  /* Scrolls your own row into view and flashes it. The flash is a
+     class removed on animationend rather than a timer, so pressing
+     this twice in a row re-runs it instead of being swallowed by a
+     class that is already applied. Only ever your own row - nobody
+     else's screen flashes because you looked yourself up. */
+  meBtn.addEventListener("click", () => {
+    if(search.value){ search.value = ""; paint(); }
+    const mine = rows.querySelector('[data-me="1"]');
+    if(!mine){
+      showDailyAlert(loaded
+        ? "You are not in the rankings yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings."
+        : "Still loading the rankings \u2014 try that again in a moment.");
+      return;
+    }
+    mine.scrollIntoView({ behavior: "smooth", block: "center" });
+    mine.classList.remove("rank-flash");
+    void mine.offsetWidth;
+    mine.classList.add("rank-flash");
+    mine.addEventListener("animationend", () => mine.classList.remove("rank-flash"), { once: true });
+  });
+
+  const showError = () => {
+    rows.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "info-note";
+    p.textContent = "Couldn\u2019t load the rankings right now \u2014 try again in a moment.";
+    rows.appendChild(p);
+  };
+
+  const loading = document.createElement("p");
+  loading.className = "lb-board-empty";
+  loading.textContent = "Loading the rankings\u2026";
+  rows.appendChild(loading);
+
+  if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
+  if(!fbDb){
+    rows.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "info-note";
+    p.textContent = "Rankings need a connection \u2014 they\u2019ll appear once you\u2019re back online.";
+    rows.appendChild(p);
+  } else {
+    /* Live, with no refresh button, which was the explicit ask.
+       onSnapshotResilient rather than a bare .onSnapshot() - a direct
+       call is the shipped bug class where a listener goes silently
+       stale and the board quietly stops being live, which is the one
+       failure this screen cannot afford. */
+    try{
+      rankingsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+        const next = [];
+        /* doc.id IS the sync code. Attached here so a row can tell
+           whether it is you, and deliberately never written into the
+           document itself. */
+        snap.forEach(doc => next.push(Object.assign({ code: doc.id }, doc.data())));
+        entries = next; loaded = true;
+        paint();
+      }, { onError: showError });
+    } catch(e){ showError(); }
+  }
+
+  /* The same contained tab swipe the old Rewards tab had, now shared -
+     see attachTabSwipe. */
+  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard);
+
+  /* Detach the snapshot when this screen goes, not just when Rankings is
+     opened again. Without this, walking Rankings -> Home -> Rankings
+     leaves the first listener attached and paying for every write any
+     classmate makes, forever, painting into a detached node. Same
+     one-shot MutationObserver on #stage that .daily-alert uses to clear
+     itself, and for the same reason: a screen change is the only signal
+     a detached-by-replaceChildren node ever gets. */
+  (function(){
+    const mine = panel;
+    const obs = new MutationObserver(() => {
+      if(document.contains(mine)) return;
+      obs.disconnect();
+      if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
+    });
+    obs.observe(stage, { childList: true });
+  })();
+
+  stage.replaceChildren(panel);
+  toTop();
+}
+
+/* Achievements and Unlocks, built as two detached nodes for whoever
+   mounts them. They lived in the Rewards tab; that tab is the Rankings
+   tab now and these moved to Profile, per explicit request. Everything
+   between here and the return is the original code unchanged - the
+   content never referenced the screen around it (no panel, no tab
+   strip, no countEl), which is what made the move a re-parenting rather
+   than a rewrite. */
+function buildRewardTabs(){
   const achievementsTab = document.createElement("div");
-  achievementsTab.hidden = initialTab !== "achievements";
   const unlocksTab = document.createElement("div");
-  unlocksTab.hidden = initialTab !== "unlocks";
-  const leaderboardTab = document.createElement("div");
-  leaderboardTab.hidden = initialTab !== "leaderboard";
-  panel.append(achievementsTab, unlocksTab, leaderboardTab);
-
-  let leaderboardTabLoaded = false;
-  function selectProfileTab(which){
-    achievementsTab.hidden = which !== "achievements";
-    unlocksTab.hidden = which !== "unlocks";
-    leaderboardTab.hidden = which !== "leaderboard";
-    achTabBtn.classList.toggle("active", which === "achievements");
-    unlocksTabBtn.classList.toggle("active", which === "unlocks");
-    leaderboardTabBtn.classList.toggle("active", which === "leaderboard");
-    /* Fetched once, the first time this tab is actually opened, not
-       on every showRewards() call regardless of which tab is active
-       \u2014 no reason to hit the network for a tab the person hasn't
-       looked at yet. */
-    if(which === "leaderboard" && !leaderboardTabLoaded){
-      leaderboardTabLoaded = true;
-      /* If leaderboard sharing is off, the leaderboard itself is off
-         too, per explicit request \u2014 not just "you're not listed on
-         it," but no access to seeing it at all. Shows a direct path
-         to turn it on rather than a dead end. */
-      if(!store.leaderboardOptIn){
-        const optInMsg = document.createElement("p");
-        optInMsg.className = "info-note"; optInMsg.style.textAlign = "center";
-        optInMsg.textContent = "Turn on leaderboard sharing in Settings to see it.";
-        /* Same "next settings-done-btn" class and the same
-           settings-done-bar wrapper Done itself uses, per explicit
-           request \u2014 this was previously a small inline .next button
-           with a manual margin, nowhere near Done's own full-width,
-           bottom-anchored size and position. */
-        const optInBar = document.createElement("div");
-        optInBar.className = "startbar settings-done-bar";
-        const optInBtn = document.createElement("button");
-        optInBtn.type = "button"; optInBtn.className = "next settings-done-btn";
-        optInBtn.textContent = "Go to Settings";
-        optInBtn.addEventListener("click", showAppearance);
-        optInBar.appendChild(optInBtn);
-        leaderboardTab.append(optInMsg, optInBar);
-      } else {
-        renderLeaderboardList(leaderboardTab);
-      }
-    }
-  }
-  achTabBtn.addEventListener("click", () => selectProfileTab("achievements"));
-  unlocksTabBtn.addEventListener("click", () => selectProfileTab("unlocks"));
-  leaderboardTabBtn.addEventListener("click", () => selectProfileTab("leaderboard"));
-  if(initialTab === "leaderboard"){
-    leaderboardTabLoaded = true;
-    if(!store.leaderboardOptIn){
-      const optInMsg = document.createElement("p");
-      optInMsg.className = "info-note"; optInMsg.style.textAlign = "center";
-      optInMsg.textContent = "Turn on leaderboard sharing in Settings to see it.";
-      const optInBar = document.createElement("div");
-      optInBar.className = "startbar settings-done-bar";
-      const optInBtn = document.createElement("button");
-      optInBtn.type = "button"; optInBtn.className = "next settings-done-btn";
-      optInBtn.textContent = "Go to Settings";
-      optInBtn.addEventListener("click", showAppearance);
-      optInBar.appendChild(optInBtn);
-      leaderboardTab.append(optInMsg, optInBar);
-    } else {
-      renderLeaderboardList(leaderboardTab);
-    }
-  }
 
   const totalUnits = topicsIn(QUESTIONS).length;
   const fullyDone = fullMasteryCount();
@@ -33283,86 +33728,9 @@ function showRewards(defaultTab){
     unlocksTab.appendChild(sectionList);
   });
 
-
-  /* No Done button - see the note in showAppearance(). The Home tab
-     below already returns from this screen. */
-
-  stage.replaceChildren(panel);
-  toTop();
-
-  /* Swipe between Achievements/Unlocks/Leaderboard, per explicit
-     request \u2014 scoped specifically to this panel's own touch events,
-     not the page-wide "swipe anywhere to change tabs" system that was
-     deliberately removed elsewhere in this file for the bottom nav
-     bar (that one caused tab changes while someone was just trying to
-     read content). This is different: a contained swipe within one
-     screen's own tab strip, not a page-wide gesture, so it doesn't
-     bring back that same problem. */
-  const rewardsTabOrder = ["achievements", "unlocks", "leaderboard"];
-  let rewardsSwipeStartX = null, rewardsSwipeStartY = null, rewardsSwipeLocked = false;
-  panel.addEventListener("touchstart", (e) => {
-    const t = e.touches[0];
-    rewardsSwipeStartX = t.clientX; rewardsSwipeStartY = t.clientY;
-    rewardsSwipeLocked = false;
-  }, { passive: true });
-  /* The actual reason this swipe reportedly never fired on a real
-     device: with no touchmove handling at all, a real (never
-     perfectly horizontal) swipe over a tab whose content is tall
-     enough to scroll -- Achievements and Leaderboard both can be --
-     lets the browser's own vertical scroll claim the gesture the
-     moment there's any vertical drift, so by touchend the page has
-     simply scrolled and dy has grown past the 70px tolerance below,
-     silently failing the swipe. This mirrors the exact preventDefault-
-     ordering fix already needed for the options-sheet's own swipe-to-
-     dismiss elsewhere in this file: once the drag is clearly more
-     horizontal than vertical, claim it (preventDefault) before the
-     browser's native scroll gets the chance, so the swipe actually
-     completes instead of being eaten by an incidental page scroll. An
-     ordinary vertical scroll never crosses that horizontal threshold,
-     so it's untouched. */
-  panel.addEventListener("touchmove", (e) => {
-    if(rewardsSwipeStartX === null) return;
-    const t = e.touches[0];
-    const dx = t.clientX - rewardsSwipeStartX;
-    const dy = t.clientY - rewardsSwipeStartY;
-    if(!rewardsSwipeLocked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)){
-      rewardsSwipeLocked = true;
-    }
-    if(rewardsSwipeLocked) e.preventDefault();
-  }, { passive: false });
-  panel.addEventListener("touchend", (e) => {
-    if(rewardsSwipeStartX === null) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - rewardsSwipeStartX;
-    const dy = t.clientY - rewardsSwipeStartY;
-    rewardsSwipeStartX = null; rewardsSwipeStartY = null;
-    rewardsSwipeLocked = false;
-    if(Math.abs(dx) < 60 || Math.abs(dy) > 70) return;
-    const currentIdx = rewardsTabOrder.indexOf(
-      !achievementsTab.hidden ? "achievements" : (!unlocksTab.hidden ? "unlocks" : "leaderboard")
-    );
-    const nextIdx = dx < 0 ? currentIdx + 1 : currentIdx - 1;
-    if(nextIdx >= 0 && nextIdx < rewardsTabOrder.length) selectProfileTab(rewardsTabOrder[nextIdx]);
-  }, { passive: true });
-
-  if(!store.seenRewardsTour){
-    store.seenRewardsTour = true;
-    saveStore();
-    startSimpleTour([
-      /* Was targeting .tierladder \u2014 the WHOLE ladder (every tier
-         stacked together), so the line pointed at that big container's
-         geometric center, which for a multi-tier list usually lands
-         between two rows rather than on anything actually visible \u2014
-         confirmed as the cause of the reported "pointing at nothing."
-         Targeting the first tier's own node (a small, well-defined
-         circle) instead gives the line an actual, specific thing to
-         point at, while the text below still correctly describes
-         tapping "any tier," not just this first one. */
-      { target: ".tierladder-node", align: "left", vplacement: "below",
-        text: "Tap any tier here to see exactly what it takes to reach it \u2014 the same info you get by tapping a Flare on Home." }
-    ]);
-  }
+  return { achievements: achievementsTab, unlocks: unlocksTab };
 }
+
 
 homeBtn.addEventListener("click", showHome);
 appearanceBtn.addEventListener("click", showAppearance);
@@ -33592,7 +33960,7 @@ function applyGlassRefraction(el, mapImgId){
         if(!testInProgress && stage.querySelector(".screen-home-actual")) return;
         confirmMainMenu();
       }
-      else if(dest === "rewards") showRewards();
+      else if(dest === "rewards") showRankings();
       else if(dest === "profile") showProfile();
       else if(dest === "settings") showAppearance();
     });
@@ -33664,7 +34032,13 @@ function applyGlassRefraction(el, mapImgId){
        reliable than sniffing for a "Stats" tab label that no longer
        exists on either screen post-split. */
     const onProfile = !!document.querySelector(".screen-profile");
-    const onRewards = !!document.querySelector(".screen-rewards");
+    /* .screen-rankings is the tab's own screen now; .screen-rewards is
+       kept in the test so the highlight is still right if anything
+       reaches the old screen while it is being dismantled. The element
+       ID stays bottomtab-rewards deliberately - renaming it would touch
+       the tour targets, the points-fly destination and every selector
+       in the harnesses for a label change nobody can see. */
+    const onRewards = !!document.querySelector(".screen-rankings, .screen-rewards");
     const onSettings = !!document.querySelector(".screen-settings");
     const onHome = !!document.querySelector(".homeversion-btn");
     bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile);
@@ -33698,7 +34072,7 @@ function applyGlassRefraction(el, mapImgId){
   let tabDragActive = false;
   let tabDragMoved = false;
   let tabDragPointerId = null;
-  const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRewards(),
+  const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
     "bottomtab-profile": () => showProfile(), "bottomtab-settings": () => showAppearance() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];

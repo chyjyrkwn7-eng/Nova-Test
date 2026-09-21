@@ -104,7 +104,7 @@ SCREENS = [
     "showWelcome", "showWelcomeIntro", "showWelcomeNamePrompt",
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
-    "showHome", "showAppearance", "showProfile", "showRewards",
+    "showHome", "showAppearance", "showProfile", "showRankings",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
     "showExamOptions", "showCalendar", "showTestReviewList",
     # the rest
