@@ -963,9 +963,14 @@
      is immune to that: the origin is right, so pixel offsets are right,
      however wrong the box is. JS sets them; see the script under the
      markup. */
+  /* position:FIXED, not absolute. Absolute made the containing block
+     #splashscreen's own box - the very box that is mis-measured during a
+     launch - so a correct pixel offset inside a wrong box still lands in
+     the wrong place. Fixed takes the viewport directly and removes that
+     indirection entirely. */
   #splash-group{
     display:flex; flex-direction:column; align-items:center; gap:.7rem;
-    position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+    position:fixed; left:50%; top:50%; transform:translate(-50%, -50%);
     opacity:0;
   }
   #splash-group.splash-ready{ animation:splash-in .4s ease forwards; }
@@ -4074,6 +4079,46 @@
     .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:2rem; height:2rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab-icon-avatar{ width:2rem; height:2rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.8rem; }
+  }
+  /* The compact, icon-only bar above is a PHONE compromise, and the
+     :not(.has-start-tab) that used to run through every rule up there
+     applied it everywhere. Reported directly: on an iPad the unit
+     selection bar is visibly smaller than the one on the main menu -
+     measured, 290x73 against 437x93, 26px icons against 32px, and no
+     labels at all.
+
+     The compromise is real but it is about WIDTH, and only a phone is
+     short of it: four labelled tabs plus a Start pill genuinely do not
+     fit a 390px screen, which is what the note above measured. They
+     fit an iPad with hundreds of pixels to spare. So the merged bar
+     gets the same treatment as the plain one from 40rem up - same icon
+     size, same labels, same padding - and the bar is one bar again on
+     every device wide enough to hold it.
+
+     has-options-tab is deliberately left out: that is six items in one
+     pill, not five, and it is the one case where even a tablet is
+     tight. It keeps the compact treatment until it is measured. */
+  @media (min-width:40rem){
+    .bottomtabs.has-start-tab:not(.has-options-tab){ padding:.55rem; }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow{ gap:.3rem; }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{
+      padding:.6rem 1.5rem; gap:.2rem;
+    }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-label{
+      display:block; font-size:.8rem;
+    }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon{
+      width:2rem; height:2rem;
+    }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon-avatar{
+      width:2rem; height:2rem;
+    }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{
+      padding:.6rem 1.1rem; font-size:.8rem;
+    }
+    .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start .bottomtab-icon{
+      width:2rem; height:2rem;
+    }
   }
   .bottomtab-start{
     display:none; flex-direction:column; align-items:center; gap:.15rem;
@@ -7466,6 +7511,117 @@
   [data-layout="modern"] .homestat-card, [data-layout="modern"] .homenext-card{ box-shadow:0 2px 8px rgba(18,26,32,.06); }
   [data-theme="dark"][data-layout="modern"] .homestat-card, [data-theme="dark"][data-layout="modern"] .homenext-card{ box-shadow:0 2px 8px rgba(0,0,0,.3); }
 
+  /* ---------- Review & Start sheet ----------------------------------
+     Two reports in one: it still does not read as Liquid Glass, and
+     what is inside it is not organised.
+
+     The glass first, because the previous two passes both treated the
+     SHEET and neither touched what is behind it. A blur has to have
+     something to blur: the scrim over the page was rgba(18,22,27,.5),
+     which flattens an already-dark app to a near-uniform field, and a
+     30px blur of a uniform field is indistinguishable from a flat
+     panel at any alpha. Lowering the scrim is what gives the filter
+     something to work with; the white sheen laid over a much more
+     transparent base, and the bright top hairline, are what make the
+     surface read as a pane of glass rather than as a lighter slab.
+
+     Then the organisation. Every group in here used a different
+     alignment and a different width: a centred summary with a rule
+     under it, three edge-to-edge chips, two left-hugging chips, a
+     toggle row, a full-width bar. They are all one rhythm now - left
+     aligned, full width, the same gap - and both chip rows are the
+     same segmented control, sized by how many options they hold
+     rather than by how long their words are. */
+  .unitoptions-modal-scrim{ background:rgba(8,10,14,.34); }
+  [data-layout="modern"] .unitoptions-modal-sheet{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.045) 42%, rgba(255,255,255,.02)),
+      linear-gradient(rgba(21,25,32,.56), rgba(21,25,32,.56));
+    border:1px solid rgba(255,255,255,.16); border-bottom:none;
+    border-radius:24px 24px 0 0;
+    backdrop-filter:blur(34px) saturate(1.9); -webkit-backdrop-filter:blur(34px) saturate(1.9);
+    box-shadow:0 -10px 44px rgba(0,0,0,.46),
+               inset 0 1px 0 rgba(255,255,255,.3),
+               inset 0 -40px 60px -40px rgba(255,255,255,.05);
+  }
+  .unitoptions-modal-sheet{
+    padding:.45rem 1.15rem calc(1.15rem + env(safe-area-inset-bottom));
+  }
+  .unitoptions-modal-sheet .unitoptions-modal-handle{
+    width:2.4rem; height:4px; margin:.4rem auto .8rem;
+    background:rgba(255,255,255,.26);
+  }
+  .unitoptions-modal-sheet .unitoptions-modal-head{ margin-bottom:.9rem; }
+  .unitoptions-modal-sheet .unitoptions-modal-title{ font-size:1.15rem; }
+  /* A round icon, not a second big filled pill. The white "Close"
+     button was the same treatment as Begin at the other end of the
+     sheet, so the two competed for the eye and the one that ends the
+     task without starting anything was winning. */
+  .unitoptions-modal-sheet .unitoptions-modal-head .next{
+    width:2.1rem; height:2.1rem; min-width:0; flex-shrink:0;
+    padding:0 !important; border-radius:999px;
+    font-size:0; line-height:0; color:transparent; position:relative;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16);
+    background-image:none; box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  }
+  .unitoptions-modal-sheet .unitoptions-modal-head .next::before,
+  .unitoptions-modal-sheet .unitoptions-modal-head .next::after{
+    content:""; position:absolute; left:50%; top:50%; width:.78rem; height:1.5px;
+    border-radius:2px; background:var(--ink); opacity:.85;
+  }
+  .unitoptions-modal-sheet .unitoptions-modal-head .next::before{ transform:translate(-50%,-50%) rotate(45deg); }
+  .unitoptions-modal-sheet .unitoptions-modal-head .next::after{ transform:translate(-50%,-50%) rotate(-45deg); }
+
+  /* The summary reads as the header of the sheet, so it sits in the
+     same column as everything under it instead of centred on its own. */
+  .unitoptions-modal-sheet .sheet-summary{
+    display:flex; align-items:baseline; justify-content:space-between; gap:.8rem;
+    text-align:left; border-bottom:none; border-radius:16px;
+    padding:.8rem 1rem; margin:0 0 1.15rem;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+  }
+  .unitoptions-modal-sheet .sheet-summary-mode{ font-size:1.02rem; margin:0; }
+  .unitoptions-modal-sheet .sheet-summary-line{ margin:0; text-align:right; white-space:nowrap; }
+
+  .unitoptions-modal-sheet .optionsmodal-body > .sect{ margin-bottom:1.15rem; }
+  .unitoptions-modal-sheet .slab{ margin-bottom:.5rem; }
+  /* One segmented control, whether it holds two options or three.
+     grid rather than flex so the columns are equal by construction -
+     .drawfrom-sect had its own flex:1 rule and Length did not, which
+     is why one row spanned the sheet and the other hugged the left. */
+  .unitoptions-modal-sheet .chips{
+    display:grid; grid-auto-flow:column; grid-auto-columns:1fr;
+    gap:.4rem; width:100%; flex-wrap:nowrap;
+  }
+  .unitoptions-modal-sheet .chip{
+    width:100%; text-align:center; min-width:0;
+    padding-left:.4rem; padding-right:.4rem;
+    background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.14);
+  }
+  .unitoptions-modal-sheet .chip:disabled{ opacity:.4; }
+  .unitoptions-modal-sheet .chip.on{
+    background:var(--accent); border-color:var(--accent);
+  }
+  /* The expander matches the summary slab rather than being the one
+     square-edged, full-bleed bar in a sheet of rounded surfaces. */
+  .unitoptions-modal-sheet .more-toggle{
+    border-radius:16px; padding:.85rem 1rem;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+  }
+  .unitoptions-modal-sheet .sheet-begin-btn{ margin-top:1.1rem; }
+  /* On a tablet the sheet spans the whole 834px and a single column of
+     full-width controls stretched across it reads thin and unconsidered.
+     The surface still reaches both edges - it is a bottom sheet - but
+     what is on it keeps a readable column, the same way every other
+     screen in the app treats a tablet. */
+  @media (min-width:40rem){
+    .unitoptions-modal-sheet .unitoptions-modal-head,
+    .unitoptions-modal-sheet .optionsmodal-body{
+      max-width:34rem; margin-left:auto; margin-right:auto;
+    }
+    .unitoptions-modal-sheet{ padding-bottom:calc(1.6rem + env(safe-area-inset-bottom)); }
+  }
+
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -7511,14 +7667,51 @@
     var g = document.getElementById("splash-group");
     if(!g) return;
     var vv = window.visualViewport || null;
-    function place(){
-      var w = vv ? vv.width  : window.innerWidth;
-      var h = vv ? vv.height : window.innerHeight;
-      g.style.left = Math.round(w / 2) + "px";
-      g.style.top  = Math.round(h / 2) + "px";
+    /* The SMALLEST size any viewport API reports, not whichever one is
+       asked first. Every description of this bug - content low and to
+       the right, snapping back once things settle - is a box measured
+       too BIG; nothing has ever measured too small. So where the APIs
+       disagree during a launch, the smallest is the one telling the
+       truth about what is actually on screen, and taking the minimum
+       is right without having to know which of them is lying.
+
+       This is the third attempt and the first that does not depend on
+       trusting one number. The first changed the overlay's sizing
+       units; the second held the group hidden until innerHeight stopped
+       changing. Both trusted a single input, both reported success, and
+       both left the thing on screen in the corner - because the input
+       each one trusted was not the one that was wrong. Chromium cannot
+       reproduce a launch, so neither was ever really exercised. */
+    function viewport(){
+      var de = document.documentElement;
+      var w = window.innerWidth  || Infinity;
+      var h = window.innerHeight || Infinity;
+      if(de && de.clientWidth)  w = Math.min(w, de.clientWidth);
+      if(de && de.clientHeight) h = Math.min(h, de.clientHeight);
+      if(vv){ w = Math.min(w, vv.width); h = Math.min(h, vv.height); }
+      if(!isFinite(w)) w = 0;
+      if(!isFinite(h)) h = 0;
+      return { w: w, h: h, x: vv ? vv.offsetLeft : 0, y: vv ? vv.offsetTop : 0 };
     }
-    place();
-    g.classList.add("splash-ready");
+    function place(){
+      var v = viewport();
+      g.style.left = Math.round(v.x + v.w / 2) + "px";
+      g.style.top  = Math.round(v.y + v.h / 2) + "px";
+    }
+    /* And then check the RESULT rather than trusting the placement:
+       the group's own painted rect against that viewport. Whatever is
+       still settling - the viewport, the fixed containing block, the
+       scale - nothing is revealed until what is on screen is where it
+       belongs. The frame ceiling means a device that never agrees still
+       shows a splash rather than a blank screen. */
+    function centred(){
+      var v = viewport(), r = g.getBoundingClientRect();
+      return Math.abs((r.left + r.width  / 2) - (v.x + v.w / 2)) <= 2 &&
+             Math.abs((r.top  + r.height / 2) - (v.y + v.h / 2)) <= 2;
+    }
+    function reveal(){
+      if(!g.classList.contains("splash-ready")) g.classList.add("splash-ready");
+    }
     if(vv){
       vv.addEventListener("resize", place);
       vv.addEventListener("scroll", place);
@@ -7528,6 +7721,11 @@
     var frames = 0;
     (function tick(){
       place();
+      /* ~30 frames is half a second against an 8s first-run splash, so
+         the hold is invisible when it is needed and costs nothing when
+         it is not. In a desktop browser the first frame is already
+         centred and this reveals immediately. */
+      if(centred() || frames >= 30) reveal();
       if(++frames < 90) requestAnimationFrame(tick);
     })();
   })();
@@ -31080,7 +31278,7 @@ function showTestReviewList(){
   const panel = document.createElement("section");
   panel.className = "panel";
 
-  const back = buildBackLink("Back to Profile", showProfile);
+  const back = buildBackLink("Back to Profile", () => showProfile("stats"));
   panel.appendChild(back);
 
   const head = document.createElement("p");
@@ -32708,7 +32906,7 @@ function showCalendar(){
   const panel = document.createElement("section");
   panel.className = "panel screen-calendar";
 
-  panel.appendChild(buildBackLink("Back to Profile", showProfile));
+  panel.appendChild(buildBackLink("Back to Profile", () => showProfile()));
 
   const title = document.createElement("h1");
   title.className = "cal-title"; title.textContent = "Class Calendar";
@@ -33061,8 +33259,20 @@ function showAnswerReview(units){
 
 /* defaultTab exists so a future link can drop someone straight onto
    Stats; every current call site passes nothing and lands on Profile. */
+const PROFILE_TABS = ["profile", "stats", "achievements", "unlocks"];
+
 function showProfile(defaultTab){
-  const initialTab = defaultTab || "profile";
+  /* Validated, not just defaulted, and that is the whole of a real bug:
+     showProfile was passed STRAIGHT to addEventListener and to
+     buildBackLink at three call sites, so defaultTab arrived as a
+     MouseEvent. An event is truthy, so `defaultTab || "profile"` kept
+     it, and every `hidden = initialTab !== "..."` below then matched
+     nothing and hid all four tabs at once - the blank screen reported
+     behind "Back to Profile" in test review. Any screen function that
+     takes an argument and is used as a handler has this waiting for it;
+     checking the value rather than its truthiness is what closes it,
+     wherever the call comes from. */
+  const initialTab = PROFILE_TABS.indexOf(defaultTab) !== -1 ? defaultTab : "profile";
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
      to the cutscene no matter which tab was actually tapped from
@@ -33128,7 +33338,7 @@ function showProfile(defaultTab){
   unlocksTab.hidden = initialTab !== "unlocks";
   panel.append(identityTab, statsTab, achievementsTab, unlocksTab);
 
-  const profileTabOrder = ["profile", "stats", "achievements", "unlocks"];
+  const profileTabOrder = PROFILE_TABS;
   let profileTabKey = initialTab;
   function selectProfileTab(which){
     profileTabKey = which;
@@ -33506,11 +33716,25 @@ function showProfile(defaultTab){
    order: array of tab keys, left to right. getCurrent: returns the
    active key. select: called with the key to move to. */
 function attachTabSwipe(panel, order, getCurrent, select){
+  /* Listen across the whole screen area, not just the panel. A panel is
+     only as tall as its own content, and on a tablet most of the screen
+     is the empty space UNDERNEATH it - which is exactly where a thumb
+     lands. Reported as the swipe never having been added at all;
+     measured, it worked on a phone and on Profile, and did nothing on an
+     iPad Pro 11" Rankings, whose list of classmates ends about halfway
+     up a 1194px screen. Every swipe below that was landing on nothing. */
+  /* document.querySelector, not panel.closest: every caller attaches
+     this while it is still BUILDING its panel, several lines before
+     stage.replaceChildren() puts it on screen, so closest() had nothing
+     to climb and silently fell back to the panel itself - which is the
+     narrow surface this is meant to stop relying on. */
+  const surface = document.querySelector(".wrap") || panel;
   let startX = null, startY = null, locked = false;
-  panel.addEventListener("touchstart", (e) => {
+  const onStart = (e) => {
     const t = e.touches[0];
     startX = t.clientX; startY = t.clientY; locked = false;
-  }, { passive: true });
+  };
+  surface.addEventListener("touchstart", onStart, { passive: true });
   /* The actual reason this swipe reportedly never fired on a real
      device: with no touchmove handling at all, a real (never perfectly
      horizontal) swipe over a tab whose content is tall enough to
@@ -33520,14 +33744,15 @@ function attachTabSwipe(panel, order, getCurrent, select){
      failing the swipe. Once the drag is clearly more horizontal than
      vertical, claim it before the native scroll gets the chance. An
      ordinary vertical scroll never crosses that threshold. */
-  panel.addEventListener("touchmove", (e) => {
+  const onMove = (e) => {
     if(startX === null) return;
     const t = e.touches[0];
     const dx = t.clientX - startX, dy = t.clientY - startY;
     if(!locked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) locked = true;
     if(locked) e.preventDefault();
-  }, { passive: false });
-  panel.addEventListener("touchend", (e) => {
+  };
+  surface.addEventListener("touchmove", onMove, { passive: false });
+  const onEnd = (e) => {
     if(startX === null) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - startX, dy = t.clientY - startY;
@@ -33536,7 +33761,21 @@ function attachTabSwipe(panel, order, getCurrent, select){
     const i = order.indexOf(getCurrent());
     const next = dx < 0 ? i + 1 : i - 1;
     if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
+  };
+  surface.addEventListener("touchend", onEnd);
+
+  /* .wrap outlives the screen inside it, so these have to come off when
+     the panel goes - otherwise every screen after this one inherits this
+     screen's swipe, and two visits leave two sets of handlers fighting
+     over the same gesture. Same self-clearing hook .daily-alert uses. */
+  const obs = new MutationObserver(() => {
+    if(panel.isConnected) return;
+    obs.disconnect();
+    surface.removeEventListener("touchstart", onStart);
+    surface.removeEventListener("touchmove", onMove);
+    surface.removeEventListener("touchend", onEnd);
   });
+  obs.observe(stage, { childList: true, subtree: true });
 }
 
 /* ---------- The Rankings tab ----------
@@ -34208,7 +34447,7 @@ function buildRewardTabs(){
 
 homeBtn.addEventListener("click", showHome);
 appearanceBtn.addEventListener("click", showAppearance);
-profileBtn.addEventListener("click", showProfile);
+profileBtn.addEventListener("click", () => showProfile());
 pauseBtn.addEventListener("click", pauseRun);
 
 /* ---------- keyboard ---------------------------------------------------- */
