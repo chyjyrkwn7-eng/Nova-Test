@@ -2448,26 +2448,49 @@
      end, which is what put it 184px away from where every other
      onboarding screen puts it on an SE while measuring 0px apart on a
      Pro Max.
-     52rem is 832px: over every device that overflowed, under an iPhone
-     14/15/16 at 852 and everything taller, so no screen that already
-     fits is touched. Four cards of real text cannot be made to fit a
-     320x568 SE 1st gen and this does not pretend otherwise; it gets
-     everything else back inside the viewport. */
-  @media (max-height:52rem){
+     56rem is 896px. It started at 52rem, which was only ever about
+     getting the overflowing screens back inside their viewport - but
+     fitting is not the same as looking right, and measured afterwards,
+     Continue sat 3px under the last card on an SE, 33px on a 13 mini and
+     21px on a 14/15/16 while the gap below it is a near-constant 90px on
+     every device. 56rem takes in the 14/15/16 at 852 as well, so all
+     four get a gap above the button in the same range as the one below.
+     An iPhone 16/17 Pro Max is 956px = 59.75rem and is deliberately
+     outside this, as is every iPad in portrait: both already read as
+     intended and were explicitly asked to be left alone.
+     The second condition exists for one reason: a 1920x1080 laptop
+     leaves a 950px viewport in Chrome, which is 59.4rem - past the 56rem
+     line and so getting the full tablet card sizing on a screen with no
+     height for it (measured, Continue 35px under the last card). Raising
+     the plain height line to 60rem would catch it, but it would also
+     catch the 956px Pro Max by 4px, so the wide case is written
+     separately. It is deliberately the SAME declarations, not a third
+     set of values between the other two - a middle tier here overrode
+     this one on every short laptop and made all three of them worse than
+     they had been, pushing a Dell Latitude 77px into overflow.
+     Four cards of real text cannot be made to fit a 320x568 SE 1st gen
+     and this does not pretend otherwise; it gets everything else back
+     inside the viewport. */
+  @media (max-height:56rem), (min-width:40rem) and (max-height:60rem){
     .welcomeintro-row{ margin-bottom:.45rem; padding:.5rem .9rem; }
     .welcomeintro-head{ font-size:.9rem; margin-bottom:.1rem; }
     .welcomeintro-body{ font-size:.8rem; line-height:1.3; }
     .welcomeintro-title{ font-size:1.25rem; margin-bottom:.5rem; }
     .panel.home.welcomeintro-panel{ padding-top:.8rem; }
   }
-  /* One more step for the shortest phones still overflowing after the
-     tier above - an SE 2nd/3rd gen was 88px over. Padding and margins
-     only: the body type stays at .8rem because it was raised from that
-     size once already, on an explicit report that these descriptions
-     were too small to read, and winning 20px back by undoing that is a
-     bad trade. Narrow AND short, so a laptop window (wide, and already
-     fitting with room) is not caught by it. */
-  @media (max-width:32rem) and (max-height:44rem){
+  /* One more step for the shortest phones. It started at 44rem, purely to
+     stop an SE 2nd/3rd gen overflowing by 88px, and is now 52rem because
+     fitting was never the whole ask: measured afterwards, a 13 mini left
+     33px between the last card and Continue and an Android phone 28px,
+     against a gap below the button that is a near-constant 90px on every
+     device. 52rem is 832px - over both of those, and under an iPhone
+     14/15/16 at 852 which already sits at 88px and is left alone.
+     Padding and margins only: the body type stays at .8rem because it
+     was raised from that size once already, on an explicit report that
+     these descriptions were too small to read, and winning 20px back by
+     undoing that is a bad trade. Narrow AND short, so a laptop window
+     (wide, and already fitting with room) is not caught by it. */
+  @media (max-width:32rem) and (max-height:52rem){
     .welcomeintro-row{ margin-bottom:.2rem; padding:.3rem .65rem; }
     .welcomeintro-title{ font-size:1.15rem; margin-bottom:.25rem; }
     /* Width, not just height. Every pixel of column this screen gets back
@@ -2482,6 +2505,23 @@
     [data-layout="modern"] .panel.home.welcomeintro-panel{
       padding-top:.5rem; padding-left:.55rem; padding-right:.55rem;
     }
+  }
+  /* The one case tightening cannot reach. On an SE 2nd/3rd gen the four
+     cards fill the panel exactly - the button's own margin-top:auto has
+     nothing left to absorb, so Continue sits 3px under the last card
+     with 87px of empty reserve below it. Reported as "pushed up against
+     the bottom box".
+     A bottom margin on the last card is the fix precisely because it is
+     self-cancelling: where there IS slack (a 13 mini has 113px) the auto
+     margin simply absorbs it and nothing moves, and where there is none
+     the panel grows past its min-height and carries the button down into
+     that reserve instead. 2.8rem lands an SE at roughly 48 above / 42
+     below - centred between the last card and the bottom of the screen,
+     which is what was asked for.
+     The min-height guard keeps it off an SE 1st gen: that one already
+     overflows this screen by 186px, and 45px more scroll helps nobody. */
+  @media (max-width:32rem) and (max-height:52rem) and (min-height:40rem){
+    .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.8rem; }
   }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
@@ -28169,7 +28209,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-46";
+const APP_BUILD = "2026-09-21-47";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

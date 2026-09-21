@@ -417,6 +417,19 @@ full-width row in that column needs `width:100%` explicitly.
 right tool when a button should sit *between* the content and the bottom of
 the panel rather than tucked under the content or jammed at the floor.
 
+**A bottom margin on the last item is a self-cancelling gap, and it is the
+only way to say "centre it when there is no room, floor it when there is".**
+CSS has no `margin-top: max(2.5rem, auto)`. But a margin on the LAST CARD
+is absorbed by the button's `margin-top:auto` wherever slack exists (a 13
+mini has 113px of it — nothing moves) and, where there is none, grows the
+panel past its `min-height` and carries the button down into the reserve
+below it instead. On an SE 2nd/3rd gen that turned 3px above / 87px below
+into 45/45 while every roomier device stayed byte-identical. It costs 27px
+of scroll on the SE — nothing is hidden, the button still sits 45px off the
+bottom edge — which is the right trade for the screen it fixes. Guard it
+with a `min-height` so it does not land on a device that is already
+overflowing badly.
+
 **A screen that overflows its viewport cannot honour a shared button
 position, so making it fit IS the fix.** "What This Actually Is" is the
 one onboarding screen with enough content to overflow, and wherever it
@@ -520,6 +533,17 @@ applies and only the padding is ignored.
 the Rewards switcher let the flex items shrink below their own `nowrap` text:
 the page stopped scrolling sideways and the three labels overlapped instead.
 **Look at a screenshot, not just the numbers.**
+
+**The harness shows the bottom tab bar on onboarding screens. The app does
+not.** Both `sweep-layout.py` and any screenshot script seed a finished
+account and then call `showWelcomeIntro()` (or similar) directly, and the
+tab bar's visibility is derived from the legacy `.navsegment`, which that
+state leaves visible. Walked for real — fresh `localStorage`, clicking
+from Welcome through What's New into the intro — the bar reports
+`hidden:true` and a height of 0 on every onboarding screen, on every size.
+Reported once as "a massive bug" from a screenshot, and it is worth
+knowing before someone fixes a bug that is not there. If you need to check
+it, walk the flow; do not mount the screen.
 
 **Chromium cannot see any of this by itself.** It reports every
 `env(safe-area-inset-*)` as `0` and has no display-mode emulation, so the
