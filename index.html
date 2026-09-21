@@ -4885,13 +4885,19 @@
     .panel.home.charselect-panel .playbtn,
     .panel.home.classselect-panel .playbtn,
     .panel.home.welcomeintro-panel .playbtn{ margin-top:auto; }
-    /* welcomeintro takes the button rule but NOT the ::before spacer the
-       three above it get. Those are short screens that would otherwise
-       strand their content at the top of a 1194px iPad; this one is four
-       full-height cards plus a title and has no spare height to float
-       into. Floating it anyway pushed the back link 137px down the
-       screen for nothing. Same floor for the button, content left where
-       it is. */
+    /* welcomeintro gets the ::before spacer too now, so it floats like
+       the other three. It was deliberately excluded on the grounds that
+       four full-height cards plus a title left no spare height to float
+       into - true when it was written, and no longer: the cards lost
+       height when their padding came down to 1.8rem (the gap between
+       them had to beat the padding inside them), and measured on an
+       iPad Pro 11" that left 280px of dead space between the last card
+       and Continue with everything pinned to the top. 452px on a 12.9".
+       Reported as this screen being the only one that stands out.
+       Where the screen genuinely has no slack - every phone, and the
+       shortest laptops - an auto margin distributes nothing, so this
+       cannot strand anything. */
+    .panel.home.welcomeintro-panel::before{ content:""; margin-top:auto; }
     .panel.home.onboarding-shortform-panel .hometitle{ font-size:clamp(1.9rem, 5vh, 2.6rem); }
     .panel.home.onboarding-shortform-panel .hometagline{ font-size:1.15rem; }
     .panel.home.onboarding-shortform-panel .searchbox{ font-size:1.1rem; padding-top:.9rem; padding-bottom:.9rem; }
@@ -28406,7 +28412,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-53";
+const APP_BUILD = "2026-09-21-54";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

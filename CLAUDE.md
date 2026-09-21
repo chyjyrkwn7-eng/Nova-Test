@@ -572,6 +572,23 @@ select, Pick your class, the code screens and "You're all set", which
 centring each screen separately cannot do (it left a 125px spread on an
 iPad).
 
+**"What This Actually Is" is on that rule too now, and the exception that
+kept it off was a measurement with a shelf life.** It had the button half
+(`margin-top:auto`) but not the `::before` spacer, on the reasoning that
+four full-height cards plus a title left no spare height to float into —
+correct when it was written. The cards then lost height in the gap fix
+(padding down to `1.8rem` so the gap between them could beat the padding
+inside them), and with only one auto margin the whole screen sat at the
+top: **280px of dead space above Continue on an iPad Pro 11", 452px on a
+12.9"**, reported as the one screen that stood out. With both autos it
+floats like its neighbours (280 → 159, 452 → 245) and **Continue does not
+move by a pixel** on any device, which is the property to check after
+touching any of these screens. Where a screen genuinely has no slack —
+every phone, the shortest laptops — an auto margin distributes nothing, so
+adding one cannot strand anything. **The lesson is the shelf life, not the
+rule**: an exception justified by a measurement needs re-measuring
+whenever the thing it measured changes.
+
 **`justify-content:space-between` spreads the leftover height into EVERY
 gap, including ones that belong together.** Welcome's two buttons are styled
 11px apart and measured 41px apart on an iPhone because each of the five gaps
