@@ -80,7 +80,11 @@ def main():
                     for mode in ("installed", "browser"):
                         if kind == "desktop" and mode == "installed": continue
                         if kind == "desktop" and orient == "landscape": continue
-                        H = vh if mode == "installed" else vh - CHROME_H.get(kind, 0)
+                        # CHROME_H holds (portrait, landscape) pairs, not a
+                        # single number - browser chrome is shorter on a phone
+                        # held sideways. Same indexing the sweep uses.
+                        chrome = CHROME_H[kind][0 if orient == "portrait" else 1]
+                        H = vh if mode == "installed" else vh - chrome
                         I = ins if mode == "installed" else (0, 0, 0, 0)
                         tag = f"{name} {vw}x{H} {mode}"
                         ctx = br.new_context(viewport={"width": vw, "height": H})
@@ -155,12 +159,19 @@ def main():
                             if bt["offRight"] < 0: fails.append(f"{tag}: back-to-top off the right edge")
 
                         # 8. daily "already done" must be a top banner clear of the bar
-                        dq = pg.evaluate("""()=>{showHome();
+                        dq = pg.evaluate("""async ()=>{showHome();
                           store.dailyQuestionDate = dailyPeriodKey(); startDailyQuestion();
                           const a=document.getElementById('dailyalert');
+                          // .daily-alert enters from translateY(-8px) and only
+                          // gets .show on the next frame, so measuring it
+                          // synchronously reads the animation's FIRST frame and
+                          // calls a healthy banner off-screen by 2px. Ask for the
+                          // settled position, not the starting one.
                           const t=document.querySelector('.toast');
                           const bar=document.querySelector('.bottomtabs');
                           if(!a) return {banner:false, toast:!!t};
+                          await new Promise(r=>setTimeout(r,320));
+                          if(!a.classList.contains('show')) return {banner:true, toast:!!t, never:true};
                           const r=a.getBoundingClientRect();
                           const A=bar&&!bar.hidden?bar.getBoundingClientRect():null;
                           return {banner:true, toast:!!t, top:Math.round(r.top),
@@ -168,6 +179,7 @@ def main():
                                   clearsBar:A?Math.round(A.top-r.bottom):999};}""")
                         if not dq["banner"]: fails.append(f"{tag}: daily 'already done' is not a banner")
                         elif dq["toast"]: fails.append(f"{tag}: daily 'already done' still raises a toast")
+                        elif dq.get("never"): fails.append(f"{tag}: daily banner never animated in")
                         elif not dq["onScreen"]: fails.append(f"{tag}: daily banner off-screen (top {dq['top']})")
                         elif dq["clearsBar"] < 0: fails.append(f"{tag}: daily banner behind the tab bar")
 

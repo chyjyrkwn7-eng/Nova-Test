@@ -3892,14 +3892,28 @@
      the button sits 1.1rem (18px) from the right edge, so it read as
      jammed against the bar rather than placed in the corner. This
      matches the vertical gap to the horizontal one. */
-  body.has-bottomtabs:not(.has-floatbtn) .backtotop{ bottom:6.8rem; }
+  /* Carries the safe-area inset, and that is the fix for a real overlap
+     this file already claimed was solved. A flat 6.8rem (108.8px) is
+     measured from the bottom of the VIEWPORT, but the bar it has to clear
+     is lifted by the home indicator's inset on top of its own .6rem
+     offset - so on a notched phone the bar's top edge sits 117px up while
+     this button's bottom edge sat at 108.8, overlapping it by 8px. It
+     went unnoticed because the earlier check measured the gap between
+     them and never asked whether the boxes intersect. tools/check-fixes.py
+     asks. inset + 6.2rem leaves a constant ~16px on every phone, notched
+     or not, installed or in a browser tab. */
+  body.has-bottomtabs:not(.has-floatbtn) .backtotop{
+    bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem);
+  }
   /* The dual-pill bottom layout (unit selection's Options/Start pill
      sitting beside the main tab bar) reaches slightly higher than a
      single-row bottom bar did \u2014 measured directly: with both classes
      present, this button's own bottom edge overlapped the bar's top
      edge by about 4px. A little extra clearance here specifically
      for that combination fixes it with room to spare. */
-  body.has-floatbtn.has-bottomtabs .backtotop{ bottom:6.8rem; }
+  body.has-floatbtn.has-bottomtabs .backtotop{
+    bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem);
+  }
   /* Tablet clearance, and it has to live HERE rather than up with the
      tablet size rule. These selectors have identical specificity to the
      two above, so a media query earlier in the file loses on source
@@ -28507,7 +28521,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-55";
+const APP_BUILD = "2026-09-21-56";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
