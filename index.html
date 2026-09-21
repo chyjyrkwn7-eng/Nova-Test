@@ -403,6 +403,31 @@
      sliver of the device's own dark-mode chrome — e.g. on iOS overscroll
      bounce, or in a standalone home-screen app — when our theme is light. */
   html{ background:var(--paper); }
+  /* THE GREY BAR. The comment directly above already names the mechanism
+     and it took three wrong fixes to read it properly: on an iOS
+     overscroll BOUNCE the page is dragged past the end of the document
+     and what shows underneath is the root element's own background -
+     flat var(--paper), #12161B, which is precisely the colour sampled
+     out of the reported screenshot. Described exactly: "if I scroll down
+     it disappears, then it starts to slowly scroll back, showing the
+     grey bar" - the bar IS the bounce, and the slow scroll back is the
+     rubber band settling.
+
+     Nothing painted inside the page can cover that region, which is why
+     every previous attempt failed: body::before is a fixed layer that
+     stops at the viewport, and html's own gradients are anchored to the
+     document, so past the end of the document there is simply nothing
+     left but the background colour. background-attachment:fixed would
+     not have helped either even where it is supported.
+
+     overscroll-behavior-y:none removes the bounce itself, so there is no
+     region to reveal. Supported on iOS Safari 16+, which is already
+     below this app's floor (color-mix needs 16.2). Set on html AND body
+     because the scrolling element differs between standalone and a
+     browser tab, and setting it on the wrong one is a silent no-op.
+     It does not affect ordinary scrolling - only the rubber band at the
+     ends - and a home-screen app has no pull-to-refresh to lose. */
+  html, body{ overscroll-behavior-y:none; }
   /* The app-wide ambient background glow, visible behind every single
      screen \u2014 the actual last, most impactful remaining gap in the
      theme audit, since this is the one background effect present
@@ -2282,7 +2307,21 @@
      colours below (.lb-place-N, already tuned for dark mode and
      deliberately NOT var(--accent)) keep applying without being
      restated. */
-  .rank-rows{ display:flex; flex-direction:column; }
+  /* Bottom padding so the last row scrolls comfortably clear of the tab
+     bar. Honest about what was measured: the first reading said the last
+     row was stranded 75px behind the bar on a Pro Max and 304px on an
+     SE, and that reading was WRONG - the harness called window.scrollTo
+     while the app has smooth scrolling on, so it measured a page that
+     had barely begun to move. Re-measured with behavior:'instant', the
+     list already cleared the bar by ~35px without this. So this is
+     headroom, not a rescue: 155px of clearance on a Pro Max and 189px on
+     an SE, which is the difference between the last row technically
+     being reachable and it being readable.
+     7.5rem is the bar's whole footprint per this file's own note, and
+     deliberately WITHOUT env(safe-area-inset-bottom) on top: the bar's
+     height already contains the home indicator, and adding it again is
+     the documented double-count that opens a second gap. */
+  .rank-rows{ display:flex; flex-direction:column; padding-bottom:7.5rem; }
   .rank-row{
     display:flex; align-items:center; gap:.75rem; padding:.7rem .9rem; margin-bottom:.5rem;
     border-radius:14px; background:var(--panel); border:1px solid var(--rule);
@@ -2355,6 +2394,14 @@
   }
   .rank-row.rank-flash{ animation:rank-flash-anim 1.1s ease-out 2; }
 
+  /* Reads as a caption under the tabs, not as body copy: one size down
+     from the rows' own names, --soft, and centred to sit under a centred
+     tab strip. max-width keeps it to a comfortable measure on a tablet
+     rather than running the full width of an iPad. */
+  .rank-blurb{
+    margin:-.6rem auto .9rem; max-width:34rem;
+    font-size:.82rem; line-height:1.45; color:var(--soft); text-align:center;
+  }
   .rank-tools{ display:flex; gap:.5rem; align-items:center; margin:0 0 .75rem; }
   /* min-width:0 so the field can actually shrink: a flex item defaults
      to min-content width, which on a search input is wide enough to
@@ -21459,11 +21506,18 @@ function hundosOf(st){
    the tab is called. Adding a fourth board is adding an entry here. */
 const RANKING_BOARDS = [
   { key: "level",  tab: "Level",  field: "level",
-    unit: (n) => "Level " + n },
+    unit: (n) => "Level " + n,
+    blurb: "Ranked by level. Level comes from total points, so it climbs with everything you do \u2014 every question answered, every test finished." },
   { key: "badges", tab: "Badges", field: "badges",
-    unit: (n) => n + (n === 1 ? " badge" : " badges") },
+    unit: (n) => n + (n === 1 ? " badge" : " badges"),
+    blurb: "Ranked by how many badges you have earned. Badges are one-off awards \u2014 you either have one or you do not \u2014 so this rewards range rather than volume." },
+  /* "hundos", not "perfect tests". A run can cover several units at
+     once, and "perfect test" reads as though every unit in it has to be
+     clean - reported directly as confusing. The board's own name is the
+     clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
-    unit: (n) => n + (n === 1 ? " perfect test" : " perfect tests") }
+    unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
+    blurb: "Ranked by hundos \u2014 tests finished at 100%. The whole test has to be clean, so a run covering several units counts once and every question in it has to be right. The daily question does not count." }
 ];
 
 
@@ -28847,7 +28901,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-58";
+const APP_BUILD = "2026-09-21-59";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -29410,7 +29464,14 @@ function summarize(){
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
     else if(runMode === "game") store.lifetime.gamePlays += 1;
-    if(pct === 100) store.lifetime.perfectTests += 1;
+    /* The daily question is excluded, and it has to be. It is a single
+       question, so answering it correctly is a 100% run and was counting
+       as a perfect test - which on a board that ranks hundos would have
+       made the ranking mostly "how many days did you tap the ? button",
+       one per person per day, swamping real tests entirely. The perfect
+       BONUS above already excludes it on the same reasoning; this line
+       simply never got the same treatment. */
+    if(pct === 100 && runLabel !== "Daily question") store.lifetime.perfectTests += 1;
     saveStore();
     newBest = recordTestPlay(elapsedMs, pct);
     /* Every points-earning run can newly cross a Mastery Ladder tier
@@ -33276,6 +33337,14 @@ function showRankings(defaultBoard){
   });
   panel.appendChild(seg);
 
+  /* What this board ranks, in the board's own words. Sits between the
+     tabs and the search so it reads as a caption for the tab you just
+     chose, and is swapped in place rather than rebuilt with the rows -
+     a live snapshot repaints those constantly. */
+  const blurb = document.createElement("p");
+  blurb.className = "rank-blurb";
+  panel.appendChild(blurb);
+
   /* Search and "find me" live above the list and outside it, so they
      stay put while the rows below them re-render under a live snapshot.
      Rebuilding them with the rows would blow away whatever is being
@@ -33301,6 +33370,7 @@ function showRankings(defaultBoard){
 
   function paint(){
     const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
+    blurb.textContent = board.blurb || "";
     renderRankingRows(rows, entries, board, { query: search.value });
   }
 
@@ -33340,6 +33410,8 @@ function showRankings(defaultBoard){
     p.textContent = "Couldn\u2019t load the rankings right now \u2014 try again in a moment.";
     rows.appendChild(p);
   };
+
+  blurb.textContent = (RANKING_BOARDS.find(b => b.key === rankingsBoardKey) || {}).blurb || "";
 
   const loading = document.createElement("p");
   loading.className = "lb-board-empty";
