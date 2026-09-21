@@ -855,6 +855,20 @@ re-evaluated on the next check.
   is still in the document before doing anything, so navigating away lets it
   expire harmlessly. It updates the button in place rather than re-rendering
   Home under someone.
+- **The ring round the Rewards tab is the welcome bonus landing.** At the
+  end of the main-menu tour `awardWelcomeBonus()` adds 100 points and
+  `showPointsFlyEffect()` floats a "+100 points for creating an account!"
+  banner, flies it into `#bottomtab-rewards`, and pulses that tab — an
+  `avatar-pulse` ring expanding 0 → 14px while the icon scales to 1.18×
+  and back. **Rewards, not Profile**, deliberately: Rewards is where the
+  Points and Stars boxes actually live. It is the only thing in the app
+  that rings a tab, so an unexplained halo in a screenshot is this and
+  nothing else. **Its removal timeout must match the animation's own
+  duration** — it was `500` against a `.8s` animation, left behind when the
+  animation was lengthened from `.5s` (to stop it being missed), so the
+  class came off at 62% with the icon still at ~1.05 and it snapped back to
+  size instead of settling. Measured, the ring had already faded by then,
+  so the whole visible cost was that snap; both are 800 now.
 - **`autoFlagMissed`** flags a question every *fifth* miss
   (`AUTO_FLAG_MISS_THRESHOLD`), hooked in `recordResult()` — the single place a
   miss is recorded, so every mode gets it without its own copy. Every-fifth,

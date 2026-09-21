@@ -25578,7 +25578,14 @@ function showPointsFlyEffect(message){
         banner.remove();
         if(avatarBtn){
           avatarBtn.classList.add("avatar-pulse");
-          setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 500);
+          /* 800, matching .avatar-pulse's own .8s. It was 500, left behind
+             when the animation was lengthened from .5s to .8s to stop it
+             being missed - so the class came off at 62% of the way
+             through, while the icon was still scaled to ~1.05, and it
+             snapped back to size instead of settling. Measured: the ring
+             had already faded to transparent by then, so the visible cost
+             was purely that snap. */
+          setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
         }
         if(statsPopoverOpen) renderStatsPopoverContent();
       }, 500);
@@ -28399,7 +28406,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-52";
+const APP_BUILD = "2026-09-21-53";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
