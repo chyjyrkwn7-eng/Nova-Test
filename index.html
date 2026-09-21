@@ -7749,17 +7749,42 @@
      ran 391px wide inside a 375px phone. Caught by the sweep, not by a
      screenshot: the overflow scrolls sideways rather than clipping, so
      a capture of the top of the screen looks perfectly fine. */
-  .badge-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.7rem; }
+  /* The case. In the reference the badges are not floating on a page -
+     they are seated in a tray, each in its own recess, and that is most
+     of why sixteen of them read as a collection rather than as a grid of
+     icons. The tray is one surface; the slot is the inset well behind
+     each badge. */
+  /* TWO columns on a narrow phone, three from 27rem, four from 40rem.
+     Three across a 375px screen leaves each name 72px, and
+     "Professionalism" alone is 89px at this size - measured per device,
+     not guessed, after mid-word breaks like "Multiculturalis / m"
+     showed up in a screenshot. Two columns also suit the case: bigger
+     badges, fewer per row, which is how the reference reads. */
+  .badge-grid{
+    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.55rem;
+    padding:.6rem; border-radius:20px;
+    background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.07);
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.35);
+  }
   .badge-tile{
     display:flex; flex-direction:column; align-items:center; gap:.4rem; min-width:0;
-    padding:.75rem .45rem .65rem; border-radius:16px; cursor:pointer;
-    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    justify-content:flex-start;
+    padding:.6rem .35rem .55rem; border-radius:14px; cursor:pointer;
+    background:none; border:1px solid transparent;
     font:inherit; -webkit-tap-highlight-color:transparent;
     transition:transform .15s ease, background-color .15s ease;
   }
   .badge-tile:active{ transform:scale(.96); }
-  .badge-tile.is-earned{ background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.16); }
-  .badge-tile-art{ display:block; width:100%; max-width:4.6rem; aspect-ratio:1; min-width:0; }
+  .badge-tile.is-earned{ background:rgba(255,255,255,.045); border-color:rgba(255,255,255,.09); }
+  /* The slot itself: a shallow well, lit from below like a pressed
+     tray, with the badge sitting in it. */
+  .badge-tile-art{
+    display:flex; align-items:center; justify-content:center;
+    width:100%; max-width:4.9rem; aspect-ratio:1; min-width:0;
+    padding:.3rem; border-radius:50%;
+    background:radial-gradient(circle at 50% 42%, rgba(0,0,0,.34), rgba(0,0,0,.12) 68%, rgba(255,255,255,.03));
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,255,255,.07);
+  }
   .badge-tile-art svg{ width:100%; height:100%; display:block; }
   .badge-tile.is-earned .badge-tile-art svg{ filter:drop-shadow(0 4px 9px rgba(0,0,0,.45)); }
   /* Three lines, not two. Half these unit names are long enough that
@@ -7767,9 +7792,15 @@
      Texas Constitution..." - and a badge case whose labels do not say
      which unit they are is not a badge case. */
   .badge-tile-name{
-    font-size:.65rem; font-weight:700; line-height:1.24; text-align:center;
+    font-size:.62rem; font-weight:700; line-height:1.24; text-align:center;
     color:var(--ink); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
-    overflow:hidden; hyphens:auto; overflow-wrap:anywhere; min-width:0; max-width:100%;
+    /* break-word, not anywhere: anywhere breaks a word the moment it
+       helps the line, which turned "Multiculturalism" into
+       "Multiculturalis / m". break-word only breaks a word that cannot
+       fit at all, and at .62rem none of the sixteen has to. The grid
+       cannot overflow either way now that its tracks are minmax(0,1fr). */
+    overflow:hidden; hyphens:auto; overflow-wrap:break-word; word-break:normal;
+    min-width:0; max-width:100%;
   }
   /* Four on a phone, where a three-column grid leaves about nineteen
      characters a line and two unit names are twice that. Measured per
@@ -7777,7 +7808,14 @@
      Wellness, and Stress Management" on every phone in the matrix. */
   @media (max-width:40rem){ .badge-tile-name{ -webkit-line-clamp:4; } }
   .badge-tile.is-locked .badge-tile-name{ color:var(--soft); }
+  /* margin-top:auto, so every progress line sits on its tile's floor.
+     Unit names run from one line to four, and without this the numbers
+     stepped up and down across a row - which is exactly what a case is
+     not: the reference's slots line up. The tiles are already equal
+     height, being grid items; this just puts the leftover space above
+     the number instead of below it. */
   .badge-tile-prog{
+    margin-top:auto; padding-top:.15rem;
     font-size:.66rem; font-weight:800; letter-spacing:.04em; color:var(--soft);
     font-variant-numeric:tabular-nums;
   }
@@ -7790,12 +7828,16 @@
   .avatarchar-option{ max-width:3.7rem; }
   .swatch{ width:3.4rem; height:3.4rem; }
   .swatch .dot{ width:2.25rem; height:2.25rem; }
+  @media (min-width:27rem){
+    .badge-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
     .swatch{ width:4.2rem; height:4.2rem; }
     .swatch .dot{ width:2.8rem; height:2.8rem; }
     .badge-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1rem; }
-    .badge-tile-art{ max-width:5.6rem; }
+    .badge-tile-art{ max-width:6rem; padding:.4rem; }
+    .badge-grid{ padding:.9rem; gap:.8rem; }
     .badge-tile-name{ font-size:.76rem; }
     .badge-tile-prog{ font-size:.74rem; }
     .profile-hero-avatar{ width:5.4rem; height:5.4rem; }
@@ -22275,18 +22317,18 @@ const BADGE_EMBLEMS = {
 const UNIT_BADGE_SPECS = {
   "Professionalism and Ethics":                   { shape: "shield",   c1: "#9CC8F2", c2: "#1E4C88", emblem: "star" },
   "Professional Policing":                        { shape: "star5",    c1: "#FFDC86", c2: "#A97410", emblem: "ring" },
-  "Fitness, Wellness, and Stress Management":     { shape: "flame",    c1: "#FFB271", c2: "#B4301B", emblem: "bolt" },
+  "Fitness, Wellness, and Stress Management":     { shape: "flame",    c1: "#FFBE85", c2: "#C43D26", emblem: "bolt" },
   "TCOLE Rules":                                  { shape: "hexagon",  c1: "#9BEBE0", c2: "#136B61", emblem: "bars" },
-  "Multiculturalism and Human Relations":         { shape: "quatrefoil", c1: "#EEA9FB", c2: "#6A2A9C", emblem: "dot3" },
-  "Racial Profiling":                             { shape: "triangle", c1: "#AEB6FF", c2: "#2B2D8E", emblem: "scales" },
-  "US and Texas Constitution and Rights":         { shape: "star6",    c1: "#FF9E9E", c2: "#9E1B2B", emblem: "star" },
-  "Penal Code":                                   { shape: "octagon",  c1: "#FFD49B", c2: "#94400F", emblem: "book" },
+  "Multiculturalism and Human Relations":         { shape: "quatrefoil", c1: "#F0B6FB", c2: "#7C39AE", emblem: "dot3" },
+  "Racial Profiling":                             { shape: "triangle", c1: "#BCC3FF", c2: "#3B3EA0", emblem: "scales" },
+  "US and Texas Constitution and Rights":         { shape: "star6",    c1: "#FFAFAF", c2: "#B42A3A", emblem: "star" },
+  "Penal Code":                                   { shape: "octagon",  c1: "#FFDCAC", c2: "#A84E1B", emblem: "book" },
   "Code of Criminal Procedure and Bill of Rights":{ shape: "banner",   c1: "#F5E3B4", c2: "#856526", emblem: "bars" },
-  "Arrest, Search, and Seizure":                  { shape: "cuff",     c1: "#D6DEE6", c2: "#434F5B", emblem: "ring" },
+  "Arrest, Search, and Seizure":                  { shape: "cuff",     c1: "#B7CCE0", c2: "#3B5872", emblem: "ring" },
   "Victims of Crime":                             { shape: "heart",    c1: "#FFB6CC", c2: "#A11D52", emblem: "teardrop" },
   "Missing and Exploited Children":               { shape: "drop",     c1: "#9ED8FF", c2: "#175C9B", emblem: "dot3" },
   "Identity Crimes":                              { shape: "cog",      c1: "#9CF0B4", c2: "#19763B", emblem: "ring" },
-  "Sexual Assault and Family Violence":           { shape: "pentagon", c1: "#D3B6FF", c2: "#56279A", emblem: "shieldlet" },
+  "Sexual Assault and Family Violence":           { shape: "pentagon", c1: "#DCC4FF", c2: "#6633AC", emblem: "shieldlet" },
   "Verbal Communication":                         { shape: "bubble",   c1: "#8FEEF8", c2: "#0E6C86", emblem: "wave" },
   "Civil Process and Liability":                  { shape: "diamond",  c1: "#FFE39B", c2: "#9E6F0C", emblem: "chevron" }
 };
@@ -22316,6 +22358,18 @@ function badgeSpecFor(unitName){
    fifteen wrong fills. */
 let badgeSvgSeq = 0;
 
+/* Drawn against the real thing: a Sinnoh badge case. What makes eight
+   unrelated silhouettes read as one COLLECTION there is not the shapes
+   and not the colours - it is that every one of them is set in the same
+   pale metal, a thick rim following its own outline rather than a shared
+   plate behind it. The first pass here had a thin dark rim and a glossy
+   dome, and the sixteen read as sixteen icons.
+
+   Three changes came out of looking at the reference beside the render:
+   the heavy silver setting, a much flatter interior (enamel, not glass -
+   a soft top light instead of a full dome), and a palette pulled back
+   from jewel tones towards the reference's chalkier colours. The shape
+   is scaled to 0.84 so the setting fits inside the viewBox. */
 function buildUnitBadgeSVG(unitName, earned){
   const NS = "http://www.w3.org/2000/svg";
   const spec = badgeSpecFor(unitName);
@@ -22325,105 +22379,89 @@ function buildUnitBadgeSVG(unitName, earned){
   svg.setAttribute("class", "badge-art" + (earned ? " is-earned" : " is-locked"));
   svg.setAttribute("aria-hidden", "true");
 
-  if(!earned){
-    /* Outline only, per explicit request: you can see the SHAPE of what
-       is missing, which is the whole appeal of a badge case, but not
-       the badge. */
-    const ghost = document.createElementNS(NS, "path");
-    ghost.setAttribute("d", d);
-  ghost.setAttribute("fill-rule", "evenodd");
-    ghost.setAttribute("fill", "rgba(255,255,255,.035)");
-    ghost.setAttribute("stroke", "rgba(255,255,255,.3)");
-    ghost.setAttribute("stroke-width", "3");
-    ghost.setAttribute("stroke-linejoin", "round");
-    svg.appendChild(ghost);
-    return svg;
-  }
+  /* Everything is drawn inside this group so the setting has room. */
+  const g = document.createElementNS(NS, "g");
+  g.setAttribute("transform", "translate(50 50) scale(.84) translate(-50 -50)");
+  svg.appendChild(g);
 
   const uid = "bdg" + (++badgeSvgSeq);
   const defs = document.createElementNS(NS, "defs");
+  svg.insertBefore(defs, g);
 
-  const grad = document.createElementNS(NS, "linearGradient");
-  grad.setAttribute("id", uid + "-f");
-  grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0");
-  grad.setAttribute("x2", "0"); grad.setAttribute("y2", "1");
-  [[0, spec.c1], [0.52, spec.c2], [1, spec.c2]].forEach(([off, col]) => {
-    const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(off));
-    st.setAttribute("stop-color", col);
-    grad.appendChild(st);
-  });
-  defs.appendChild(grad);
+  function linear(id, stops){
+    const lg = document.createElementNS(NS, "linearGradient");
+    lg.setAttribute("id", id);
+    lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0");
+    lg.setAttribute("x2", "0"); lg.setAttribute("y2", "1");
+    stops.forEach(([off, col]) => {
+      const st = document.createElementNS(NS, "stop");
+      st.setAttribute("offset", String(off));
+      st.setAttribute("stop-color", col);
+      lg.appendChild(st);
+    });
+    defs.appendChild(lg);
+    return "url(#" + id + ")";
+  }
+  function path(dd, attrs){
+    const el = document.createElementNS(NS, "path");
+    el.setAttribute("d", dd);
+    el.setAttribute("fill-rule", "evenodd");
+    Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k]));
+    g.appendChild(el);
+    return el;
+  }
 
-  /* The dome. A single white-to-nothing gradient over the top half is
-     what turns a flat silhouette into something with a surface - the
-     same trick the app icon uses, and the reason it does not need a
-     drop shadow to read as an object. */
-  const gloss = document.createElementNS(NS, "linearGradient");
-  gloss.setAttribute("id", uid + "-g");
-  gloss.setAttribute("x1", "0"); gloss.setAttribute("y1", "0");
-  gloss.setAttribute("x2", "0"); gloss.setAttribute("y2", "1");
-  [[0, "rgba(255,255,255,.75)"], [0.35, "rgba(255,255,255,.18)"],
-   [0.55, "rgba(255,255,255,0)"], [1, "rgba(0,0,0,.22)"]].forEach(([off, col]) => {
-    const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(off));
-    st.setAttribute("stop-color", col);
-    gloss.appendChild(st);
-  });
-  defs.appendChild(gloss);
-  svg.appendChild(defs);
+  if(!earned){
+    /* The empty setting, per explicit request: you can see the SHAPE of
+       what is missing but not the badge. Drawn at the setting's own
+       weight rather than as a hairline, so a locked slot reads as a
+       mount waiting for its badge instead of as a faint sketch. */
+    path(d, { fill: "rgba(255,255,255,.03)", stroke: "rgba(255,255,255,.26)",
+              "stroke-width": "7", "stroke-linejoin": "round" });
+    return svg;
+  }
 
-  const body = document.createElementNS(NS, "path");
-  body.setAttribute("d", d);
-  body.setAttribute("fill-rule", "evenodd");
-  body.setAttribute("fill", "url(#" + uid + "-f)");
-  body.setAttribute("stroke", "rgba(0,0,0,.45)");
-  body.setAttribute("stroke-width", "3.5");
-  body.setAttribute("stroke-linejoin", "round");
-  svg.appendChild(body);
+  /* The setting. Two strokes: a dark one underneath so the metal has an
+     edge against a dark screen, then the metal itself. Both are strokes
+     on the SAME path, which is what makes the rim follow the silhouette
+     - the thing the reference does and a plate behind the shape does
+     not. */
+  const silver = linear(uid + "-s", [
+    [0, "#F4F6F8"], [0.42, "#C8D0D8"], [0.66, "#98A2AC"], [1, "#C2CAD2"]
+  ]);
+  path(d, { fill: "none", stroke: "rgba(0,0,0,.5)", "stroke-width": "15",
+            "stroke-linejoin": "round" });
+  path(d, { fill: "none", stroke: silver, "stroke-width": "11",
+            "stroke-linejoin": "round" });
+  /* A hairline where the metal meets the enamel, so the two surfaces
+     do not blend into each other at small sizes. */
+  path(d, { fill: "none", stroke: "rgba(0,0,0,.35)", "stroke-width": "2.5",
+            "stroke-linejoin": "round" });
 
-  const dome = document.createElementNS(NS, "path");
-  dome.setAttribute("d", d);
-  dome.setAttribute("fill-rule", "evenodd");
-  dome.setAttribute("fill", "url(#" + uid + "-g)");
-  svg.appendChild(dome);
-
-  /* An inner rim, set in from the edge, is the detail that reads as
-     enamel-on-metal rather than a coloured sticker. */
-  const rim = document.createElementNS(NS, "path");
-  rim.setAttribute("d", d);
-  rim.setAttribute("fill-rule", "evenodd");
-  rim.setAttribute("fill", "none");
-  rim.setAttribute("stroke", "rgba(255,255,255,.4)");
-  rim.setAttribute("stroke-width", "2.5");
-  rim.setAttribute("stroke-linejoin", "round");
-  rim.setAttribute("transform", "translate(50 50) scale(.82) translate(-50 -50)");
-  svg.appendChild(rim);
+  /* The enamel. Flatter than a dome: two close stops and a soft light
+     across the top third, rather than the full glass highlight the
+     first pass used. */
+  const enamel = linear(uid + "-f", [[0, spec.c1], [0.62, spec.c2], [1, spec.c2]]);
+  path(d, { fill: enamel });
+  const sheen = linear(uid + "-g", [
+    [0, "rgba(255,255,255,.42)"], [0.34, "rgba(255,255,255,.1)"],
+    [0.5, "rgba(255,255,255,0)"], [1, "rgba(0,0,0,.16)"]
+  ]);
+  path(d, { fill: sheen });
 
   const em = BADGE_EMBLEMS[spec.emblem];
   if(em){
-    const shadow = document.createElementNS(NS, "path");
-    shadow.setAttribute("d", em.d);
-    shadow.setAttribute("transform", "translate(0 1.5)");
-    shadow.setAttribute("fill", em.fill ? "rgba(0,0,0,.35)" : "none");
-    shadow.setAttribute("stroke", em.fill ? "none" : "rgba(0,0,0,.35)");
-    if(!em.fill){
-      shadow.setAttribute("stroke-width", String(em.w || 5));
-      shadow.setAttribute("stroke-linecap", "round");
-      shadow.setAttribute("stroke-linejoin", "round");
-    }
-    svg.appendChild(shadow);
-
-    const mark = document.createElementNS(NS, "path");
-    mark.setAttribute("d", em.d);
-    mark.setAttribute("fill", em.fill ? "rgba(255,255,255,.92)" : "none");
-    mark.setAttribute("stroke", em.fill ? "none" : "rgba(255,255,255,.92)");
-    if(!em.fill){
-      mark.setAttribute("stroke-width", String(em.w || 5));
-      mark.setAttribute("stroke-linecap", "round");
-      mark.setAttribute("stroke-linejoin", "round");
-    }
-    svg.appendChild(mark);
+    const common = em.fill
+      ? { fill: "rgba(255,255,255,.94)", stroke: "none" }
+      : { fill: "none", stroke: "rgba(255,255,255,.94)",
+          "stroke-width": String(em.w || 5), "stroke-linecap": "round",
+          "stroke-linejoin": "round" };
+    const shade = Object.assign({}, common, em.fill
+      ? { fill: "rgba(0,0,0,.3)" }
+      : { stroke: "rgba(0,0,0,.3)" });
+    shade.transform = "translate(0 1.6)";
+    path(em.d, shade);
+    path(em.d, common);
   }
   return svg;
 }
@@ -30048,7 +30086,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-66";
+const APP_BUILD = "2026-09-21-67";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

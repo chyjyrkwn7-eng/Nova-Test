@@ -890,6 +890,33 @@ The three things the app now measures are **XP → level**, **badges**, and
   still a deterministic fallback for an unknown unit, and that is not
   padding: the leaderboard lost three classmates to `buildAvatarCharSVG`
   returning null for an id it did not know.
+- **What makes sixteen shapes read as a COLLECTION is the setting, not
+  the shapes.** Drawn against Madison's reference (a Sinnoh badge case):
+  every badge there is set in the same pale metal, as a thick rim
+  *following its own outline* — not a shared plate behind it. So the
+  earned badge is two strokes on the same path (a dark one under a
+  silver one) before the enamel is filled, and the whole thing is scaled
+  to `0.84` so the setting fits the viewBox. The first pass had a thin
+  dark rim and a glossy dome and read as sixteen icons.
+- **Enamel, not glass.** The reference's interiors are nearly flat, with
+  a soft light across the top third; the first pass used a full dome
+  highlight. The palette is pulled back from jewel tones too — the
+  deepest stops went muddy against a pale setting.
+- **An unearned badge is the empty setting**, drawn at the setting's own
+  weight rather than as a hairline, so a locked slot reads as a mount
+  waiting for its badge instead of a faint sketch.
+- **The case is a tray with recessed slots**, which is most of why the
+  reference reads as a case. `.badge-grid` is the tray, `.badge-tile-art`
+  is the inset well behind each badge, and `.badge-tile-prog` takes
+  `margin-top:auto` so every progress line sits on its tile's floor —
+  without it, names running one to four lines stepped the numbers up and
+  down across a row, which is exactly what a case is not.
+- **Two columns on a narrow phone, three from 27rem, four from 40rem.**
+  Three across a 375px screen leaves each name 72px and
+  "Professionalism" alone is 89px, so `overflow-wrap:anywhere` was
+  breaking it mid-word ("Multiculturalis / m"). `break-word` is the
+  right value — it breaks only a word that cannot fit at all — but the
+  real fix is the column count, measured per device.
 - **Gradient ids inside a generated SVG must be unique per instance.**
   Sixteen badges on one screen referencing `url(#badge-grad)` is one
   shared definition and fifteen wrong fills; `badgeSvgSeq` exists for
