@@ -922,38 +922,38 @@ is the rank.
   needs all three Secret Flares, so without it every remote person is
   capped at Elite however far they have actually got. An older document
   lacking the field reads as 0 and self-heals on that person's next push.
-- **One emblem set, one table.** `RANK_EMBLEM_PARTS` lists which pieces
-  each rank's emblem is built from, in paint order; reading down it *is*
-  the escalation. Every rank shares the same core mark — the V from the
-  app's own icon — and gains furniture as it climbs, which is how the
-  reference set Madison sent works too: one triangle, eight frames around
-  it. **Centred parts are drawn once and are symmetric by construction;
-  side parts are drawn on the RIGHT only and mirrored**, the same
-  guarantee the badges get from generating half a silhouette.
-  **The core has to stay well inside the box** — the first pass gave the
-  shield most of the width and every wing after it painted underneath,
-  so Vanguard and Sentinel came out the same drawing in two colours.
-- **A rank part-way earned is part-way lit.** The emblem is drawn twice
-  and the lit copy is clipped from the bottom (`--rank-fill` on
-  `.rankcard-art`, a `clip-path:inset()` on the layer inside it), so the
-  card fills like a gauge and a reached rank glows. The property is set
-  on the **wrapper**, not on the clipped layer: a custom property
-  inherits down, and the waterline is an `::after` on the wrapper that
-  has to read it.
-- **The hero bar measures the STEP, not the next rank from zero.**
-  `rankPct()` measures from nothing, so arriving at Veteran showed the
-  bar already two thirds of the way to Vanguard — which reads as having
-  climbed a rank and lost ground. Each requirement is normalised against
-  the rank below and the two are **averaged**; the card meters keep the
-  slower-of-the-two, which is the right answer to "what is gating me" and
-  the wrong one for a bar between two ranks, where it sits at zero for
-  the whole first half of every step.
-- **Seven is prime, so the track is flex and not grid.** A grid leaves
-  the last row ragged at every column count that is not seven — 3+3+1 on
-  a phone, 4+3 on an iPad — with the orphans jammed left and a hole
-  beside them. Wrapped flex plus `justify-content:center` puts the short
-  row in the middle. `min-width:0` on the card does the job
-  `minmax(0,1fr)` does in a grid.
+- **Every rank is the same mark at a different stage of its life, and
+  the mark is a supernova.** The first set was the app's V inside a
+  frame that gained wings and horns as it climbed; it escalated, but it
+  had nothing to do with the app it belongs to. `RANK_STAR` is the whole
+  progression as a table — arms, reach, waist, corona, rays, core,
+  shockwave — and reading down any column it only ever grows. Generated
+  from those numbers rather than drawn seven times, so the escalation is
+  a property of the table and not of how carefully seven paths were
+  hand-tuned to agree. Rookie is a four-point spark; Titan is the burst
+  the app is named after.
+- **The emblem is lit or it is not.** It was two stacked copies with the
+  lit one clipped from the bottom, so a rank part-way earned was
+  part-way lit — asked for, built, and then explicitly asked against
+  ("the stuff slowly being filled up with colour is not the move"). A
+  rank is something you hold or do not, and a waterline across it says
+  neither. **Don't bring it back.**
+- **Four states, and each card says which in a word.** Reached / You are
+  here / Up next / Locked, as a chip. The colour and the dimming say it
+  too, but only to somebody who has already worked out the code, and
+  "what you are, what you have, what is to come" was the thing the
+  rebuild was asked for. A meter appears only on a rank you have not
+  reached; on a reached one it is a bar that is always full, which is
+  noise.
+- **One full-width row per rank on a phone; the upright card is for
+  46rem and up.** Two short cards per row was the phone layout and it
+  was reported as atrocious, fairly: a 152px column wraps "Vanguard
+  emblem by your name" onto four lines, and seven of those stacked two
+  abreast is a wall with no reading order. A phone has width and not
+  height, so the card lies on its side there — emblem left, everything
+  else beside it — and the seven read top to bottom as the climb they
+  are. Same markup either way; only `flex-direction` turns.
+
 - **Only list rewards that exist.** Each card names three: the flare on
   Home, the theme colour, and the rank's emblem beside your name. The
   reference lists four per tier and it would have been easy to pad;
@@ -994,6 +994,51 @@ is the rank.
   note rather than the spin, because the global
   `[data-reduce-motion="true"] *{animation:none}` would otherwise strip
   the keyframes and leave a badge sitting motionless behind a dim.
+- **These are TOKENS, not gems.** The set before this one cut every
+  badge like a stone — a pavilion of shaded faces around a bright table
+  — and it read as sixteen jewels. The reference is nothing like that: a
+  heavy dark keyline, two or three FLAT colour fields inside it, one
+  small bright mark, a pale rim outside the keyline, and that is the
+  whole drawing. **Flat is the style, not a shortcut**, and a dome
+  highlight is exactly what made the last set read as glass — the gleam
+  is a hard-edged triangle clipped to the token, a light *side* rather
+  than a light *centre*.
+- **Every badge has a slot, and the slot is drawn whether the badge is
+  earned or not.** That is the other half of the reference: each badge
+  sits in a recess cut to its own outline, which is why an empty slot
+  still tells you the shape of what goes in it and a filled one reads as
+  something *placed*. A recess lit from the top-left has its shadow on
+  the TOP-LEFT inner edge and its catch-light on the bottom-right, which
+  is the opposite of a raised object and the whole reason it reads as a
+  hole. Two copies of the outline, offset in opposite directions and
+  clipped to it, do that without a filter — filters are the one SVG
+  feature that has bitten this app on real iOS hardware.
+  The token is scaled to `.945` inside its slot: exactly the size of the
+  hole and it looks printed on.
+- **Never one colour field.** `bands` is two or three, never one. One is
+  a flat disc of a single colour with a mark on it, which is precisely
+  the "the entire badge is not a solid colour" the reference never does.
+  The inner field is a darker sibling on some and a lighter one on
+  others, decided by the unit's own hash — all-darker was one reason
+  these read as repeated, because sixteen tokens with the same tonal
+  move in them look like sixteen printings of one design.
+- **The colour NODS at the unit; the shape does not.** `UNIT_BADGE_THEME`
+  hand-assigns one of the twenty-one `BADGE_FAMILY` colours per unit —
+  gold for Ethics, police blue for Professional Policing, gunmetal for
+  Arrest/Search/Seizure, amber for Missing and Exploited Children. That
+  is the whole of the relevance, and it is deliberate: a badge that
+  *draws* its subject was rejected twice, but a set where the colour
+  means nothing at all is what made these read as sixteen arbitrary
+  objects. The reference works the same way — the red gym badges are
+  fire and none of them is a picture of a flame.
+  **Sixteen DISTINCT families, and that is checkable rather than
+  assumed.** A hash into a sixteen-entry table is sixteen independent
+  draws from sixteen slots, which lands about six of them on a colour
+  another badge already has — reported as "a lot of repeating colours",
+  and it was. The families are named rather than evenly spaced round the
+  hue wheel: even steps is the obvious answer and it produces four
+  greens out of sixteen, because green occupies about a sixth of the
+  wheel and reads as one colour whatever the spacing says.
 - **Badges are GROWN from the unit name, and the shape is mirror-symmetric
   by construction.** Vertices sit at even angles starting straight up, and
   that angle set is already closed under a reflection in the vertical axis
@@ -1001,77 +1046,52 @@ is the rank.
   the same set) — so the only thing that can break the mirror is unequal
   radii, and the half is generated and copied across, jitter included.
   **The free rotation the first version applied is gone**: it is exactly
-  what stopped the shapes reading as designed rather than found.
+  what stopped the shapes reading as designed rather than found. The
+  inner field's four shapes keep the mirror too — a concentric copy and
+  a circle obviously do, and a 180-degree turn does as well, because
+  reflect-then-turn is a reflection in the other axis.
 - **Every pattern carries at least one near radius.** The all-far pattern
   draws a regular polygon, which is the one shape a seed can land on that
   looks like nothing was designed — it produced three plain pentagons out
   of sixteen. **A wide near/far ratio is most of the shape variety there
   is**; at 0.54–0.82 every badge came out a pentagon-ish blob with a dent
   in it.
-- **Colours are DEALT, not hashed.** A hash into a sixteen-entry table is
-  sixteen independent draws from sixteen slots, which lands about six of
-  them on a colour another badge already has — reported as "a lot of
-  repeating colours", and it was. `badgeColourFor()` deals one palette
-  entry per unit in **sorted name order**, which is what keeps it
-  independent of the bank's order the way the shapes already are. Adding
-  a unit does re-deal, and that is the honest behaviour.
-  The palette is twenty **named families** rather than twenty even steps
-  round the hue wheel: even steps is the obvious answer and it produces
-  four greens out of sixteen, because green occupies about a sixth of the
-  wheel and reads as one colour whatever the spacing says.
-- **Every badge carries a design on its face**, drawn about the badge's
-  own vertical axis so it cannot break the mirror, and sized against the
-  table rather than at a fixed radius — a mark that reads as an inclusion
-  on the widest stone is a speck on the narrowest. Eight of them,
-  deliberately geometric: the first set was a bar and a double rule and
-  they read as a capital I and an equals sign, which is a meaning where
-  there is supposed to be none. **None of them is a picture of anything
-  either** — no crowns, no eyes, no shields — because the shapes were
-  already asked not to represent the unit they belong to, and a motif that
-  did it instead would only move the problem inside the badge.
-- **What makes sixteen shapes read as a COLLECTION is the setting, not
-  the shapes.** Drawn against Madison's reference (a Sinnoh badge case):
-  every badge there is set in the same pale metal, as a thick rim
-  *following its own outline* — not a shared plate behind it. So the
-  earned badge is two strokes on the same path (a dark one under a
-  silver one) before the enamel is filled, and the whole thing is scaled
-  to `0.84` so the setting fits the viewBox. The first pass had a thin
-  dark rim and a glossy dome and read as sixteen icons.
-- **Enamel, not glass.** The reference's interiors are nearly flat, with
-  a soft light across the top third; the first pass used a full dome
-  highlight.
-- **An unearned badge is a SOLID silhouette** — a flat fill, no rim, no
-  interior, a shade off the tray. Both earlier guesses (an outline, then
-  an empty setting) were wrong, and a second reference photo showing a
-  partly-filled case settled it: you read the shape and nothing else,
-  which is what makes an earned one beside it look lit up.
-- **Every earned badge carries two or three small four-point glints**,
-  one proud of the top-left edge. They are most of why the reference's
-  badges read as *won* rather than merely coloured, and they are drawn
-  outside the scaled group so the corner one can overlap the silhouette.
-- **There are no slots and no tile boxes.** The badges sit straight on a
-  flat tray. What looked like a recess in the first photo was each
-  badge's own setting, and adding a ring behind it gave every tile a
-  circle the artwork already provided. `.badge-grid` is the tray;
-  `.badge-tile-prog` takes `margin-top:auto` so every progress line sits
-  on its tile's floor, since names run one to four lines and otherwise
-  the numbers stepped up and down across a row.
-- **Two columns on a narrow phone, three from 27rem, four from 40rem.**
-  Three across a 375px screen leaves each name 72px and
-  "Professionalism" alone is 89px, so `overflow-wrap:anywhere` was
-  breaking it mid-word ("Multiculturalis / m"). `break-word` is the
-  right value — it breaks only a word that cannot fit at all — but the
-  real fix is the column count, measured per device.
+- **Twelve marks and four inner shapes, not eight marks.** Eight put the
+  same device on two badges in a set of sixteen often enough to be
+  reported as "repeated in a lot of ways". Twelve marks by four inner
+  shapes by two band counts is ninety-six combinations before the
+  silhouette is counted. They are all symmetric about the badge's own
+  vertical axis so they cannot break the mirror, and all sized against
+  the innermost field rather than at a fixed radius — a mark that reads
+  as a device on the widest token is a speck on the narrowest.
+  **None of them is a picture of anything**, no crowns, no eyes, no
+  shields: the shapes were already asked not to represent the unit they
+  belong to, and a motif that did it instead would only move the problem
+  inside the badge. The first set was a bar and a double rule and they
+  read as a capital I and an equals sign, which is a meaning where there
+  is supposed to be none.
+- **An unearned badge is its empty slot.** Not an outline, not a solid
+  silhouette on the tray, not an empty setting — all three were tried
+  and the second reference photo (a partly-filled case) settled it: you
+  read the shape of the hole and nothing else, which is what makes an
+  earned one beside it look placed.
 - **Gradient ids inside a generated SVG must be unique per instance.**
   Sixteen badges on one screen referencing `url(#badge-grad)` is one
   shared definition and fifteen wrong fills; `badgeSvgSeq` exists for
-  that, and `rankEmblemSeq` does the same job for the rank emblems.
+  that, `rankEmblemSeq` does the same job for the rank emblems, and the
+  same applies to every `clipPath` id.
 - **Look at a generated shape before believing its name.** Four of the
   sixteen hand-written silhouettes did not draw what they were called —
   the wings rendered as an arrow, the crescent as a hairline, the bloom
   as a shield, and the scroll was indistinguishable from the speech
   bubble. Rendering all sixteen at once is a thirty-second check and it
   is the only reason any of this got fixed.
+- **Two columns on a narrow phone, three from 27rem, four from 40rem.**
+  Three across a 375px screen leaves each name 72px and
+  "Professionalism" alone is 89px, so `overflow-wrap:anywhere` was
+  breaking it mid-word ("Multiculturalis / m"). `break-word` is the
+  right value — it breaks only a word that cannot fit at all — but the
+  real fix is the column count, measured per device.
 - **A grid of cards needs `minmax(0, 1fr)`, never a bare `1fr`** — the
   same trap `.pick` already documents. The badge grid's tracks sized
   themselves to the longest unbreakable word ("Multiculturalism") and ran

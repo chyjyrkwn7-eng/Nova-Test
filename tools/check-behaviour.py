@@ -342,7 +342,7 @@ def check_ranks(br):
     part-way lit, and a clip-path that never moves off its CSS default
     looks identical to one that works until you measure it.
     """
-    print("\n6. ranks: held, next, and part-way lit")
+    print("\n6. ranks: what you are, what you have, what is next")
     # Level 23 (12,400 XP on the 300 @ +5% curve) and 4 badges reaches
     # Veteran (20 / 4) and leaves Vanguard (30 / 6) as the next one.
     seed = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
@@ -376,27 +376,54 @@ def check_ranks(br):
 
     cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
       name:c.querySelector('.rankcard-name').textContent,
-      state:c.className.match(/is-\\w+/)[0],
-      fill:getComputedStyle(c.querySelector('.rankcard-art')).getPropertyValue('--rank-fill').trim(),
+      state:c.className.match(/is-\\w+/g).join(' '),
+      chip:c.querySelector('.rankcard-state').textContent,
+      meter:!!c.querySelector('.rankcard-meter'),
       rewards:c.querySelectorAll('.rankcard-rewards li').length}))""")
     check("seven ranks, named as ranks and not as flares",
           [c["name"] for c in cards] ==
           ["Rookie", "Ranger", "Veteran", "Vanguard", "Sentinel", "Elite", "Titan"],
           [c["name"] for c in cards])
-    check("held, next and locked are marked apart",
-          [c["state"] for c in cards] ==
-          ["is-held", "is-held", "is-held", "is-next", "is-locked", "is-locked", "is-locked"],
+    # The states are the whole point of the rewrite: "what you are, what
+    # you have, and what is to come" has to read without decoding a
+    # colour, so each card says it in a word.
+    check("every card says which of the three states it is in",
+          [c["chip"] for c in cards] ==
+          ["Reached", "Reached", "You are here", "Up next", "Locked", "Locked", "Locked"],
+          [c["chip"] for c in cards])
+    check("the rank you hold is the one marked is-here",
+          [i for i, c in enumerate(cards) if "is-here" in c["state"]] == [2],
           [c["state"] for c in cards])
-    fills = [c["fill"] for c in cards]
-    def pct(v):
-        try: return float(str(v).replace("%", ""))
-        except ValueError: return -1
-    check("a reached rank is fully lit", all(pct(f) >= 100 for f in fills[:3]), fills)
-    # Vanguard: min(23/30, 4/6) = 0.666 -> 67%. Part-way, not 0 and not 100.
-    check("a rank part-way earned is part-way lit",
-          0 < pct(fills[3]) < 100 and 0 < pct(fills[4]) < pct(fills[3]), fills)
+    # A reached rank is not a progress bar. It was, for one build, and
+    # that was the thing explicitly asked against.
+    check("only an unreached rank carries a meter",
+          [c["meter"] for c in cards] == [False, False, False, True, True, True, True],
+          [c["meter"] for c in cards])
     check("every rank lists what it hands over",
           all(c["rewards"] == 3 for c in cards), [c["rewards"] for c in cards])
+
+    # One column on a phone and the card on its side there; upright and
+    # four across from 46rem. Two short cards per row was the phone
+    # layout and it was reported as atrocious.
+    lay = pg.evaluate("""()=>{const c=document.querySelector('.rankcard');
+      return {wide:getComputedStyle(c).flexDirection};}""")
+    check("the card stands upright on a tablet", lay["wide"] == "column", lay)
+    ctx.close()
+    ctx2, pg2 = booted(br, 393, 852, seed=seed)
+    pg2.evaluate("()=>showProfile('ranks')")
+    pg2.wait_for_timeout(1200)
+    lay2 = pg2.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankcard')];
+      const t=document.querySelector('.ranktrack').getBoundingClientRect();
+      return {dir:getComputedStyle(cs[0]).flexDirection,
+              perRow:cs.filter(c=>Math.abs(c.getBoundingClientRect().top -
+                                           cs[0].getBoundingClientRect().top) < 2).length,
+              full:Math.round(cs[0].getBoundingClientRect().width) >= Math.round(t.width) - 2};}""")
+    check("one full-width row per rank on a phone",
+          lay2["dir"] == "row" and lay2["perRow"] == 1 and lay2["full"], lay2)
+    ctx2.close()
+    ctx, pg = booted(br, 834, 1194, seed=seed)
+    pg.evaluate("()=>showProfile('ranks')")
+    pg.wait_for_timeout(1200)
 
     # The rank has to show up where people are listed, or it is a tab
     # nobody else ever sees.
