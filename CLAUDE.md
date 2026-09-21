@@ -499,11 +499,14 @@ is absorbed by the button's `margin-top:auto` wherever slack exists (a 13
 mini has 113px of it — nothing moves) and, where there is none, grows the
 panel past its `min-height` and carries the button down into the reserve
 below it instead. On an SE 2nd/3rd gen that turned 3px above / 87px below
-into 45/45 while every roomier device stayed byte-identical. It costs 27px
-of scroll on the SE — nothing is hidden, the button still sits 45px off the
-bottom edge — which is the right trade for the screen it fixes. Guard it
-with a `min-height` so it does not land on a device that is already
-overflowing badly.
+into 45/45 while every roomier device stayed byte-identical. It costs **34px**
+of scroll on the SE (27px before the intro cards' gaps were raised; three
+gaps at +2.4px each is the whole difference) — and measured rather than
+assumed, **that scroll is slack below the button, not the button**: on an
+SE 2nd/3rd gen Continue's bottom edge sits at 629 in a 667px viewport, 38px
+above the fold and visible without scrolling anything. So the trade is
+cheaper than it reads. Guard it with a `min-height` so it does not land on
+a device that is already overflowing badly.
 
 **A screen that overflows its viewport cannot honour a shared button
 position, so making it fit IS the fix.** "What This Actually Is" is the
@@ -1071,14 +1074,14 @@ check a change against, not to trust forever. Measured installed, portrait.
 |---|---|---|---|---|---|---|---|---|---|
 | viewport | 375×667 | 375×812 | 393×852 | **440×956** | 744×1133 | **834×1194** | 1024×1366 | 1366×638 | 1512×852 |
 | onboarding Continue, y | 527 | 672 | 712 | **816** | 993 | **1055** | 1227 | 502 | 716 |
-| …spread across the 6 screens | 47¹ | 0 | 0 | **0** | 0 | **1** | 1 | 1 | 0 |
+| …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 0 | **1** | 1 | 1 | 0 |
 | Home: tagline→button / button→tab bar | 50/33 | 61/68 | 68/75 | **96/103** | 82/83 | **93/93** | 148/149 | 45/63 | 34/51 |
 | Welcome: hint off the bottom edge | 42 | 62 | 62 | **62** | 50 | **49** | 50 | 46 | 46 |
 | intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 29/38 | **29/38** | 29/38 | 6/8 | 8/11 |
 | daily question button | 54px | 54 | 54 | **54** | 74 | **74** | 74 | 74 | 74 |
 
 ¹ The one deliberate exception: on an SE the intro screen's four cards fill
-the panel exactly, so its Continue is carried ~47px lower by the
+the panel exactly, so its Continue is carried ~54px lower by the
 self-cancelling last-card margin rather than sitting on the shared floor.
 An **SE 1st gen (320×568)** is the one device that does not fit this screen at
 all and is not expected to.
