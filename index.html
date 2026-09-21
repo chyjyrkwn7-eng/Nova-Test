@@ -403,31 +403,11 @@
      sliver of the device's own dark-mode chrome — e.g. on iOS overscroll
      bounce, or in a standalone home-screen app — when our theme is light. */
   html{ background:var(--paper); }
-  /* THE GREY BAR. The comment directly above already names the mechanism
-     and it took three wrong fixes to read it properly: on an iOS
-     overscroll BOUNCE the page is dragged past the end of the document
-     and what shows underneath is the root element's own background -
-     flat var(--paper), #12161B, which is precisely the colour sampled
-     out of the reported screenshot. Described exactly: "if I scroll down
-     it disappears, then it starts to slowly scroll back, showing the
-     grey bar" - the bar IS the bounce, and the slow scroll back is the
-     rubber band settling.
-
-     Nothing painted inside the page can cover that region, which is why
-     every previous attempt failed: body::before is a fixed layer that
-     stops at the viewport, and html's own gradients are anchored to the
-     document, so past the end of the document there is simply nothing
-     left but the background colour. background-attachment:fixed would
-     not have helped either even where it is supported.
-
-     overscroll-behavior-y:none removes the bounce itself, so there is no
-     region to reveal. Supported on iOS Safari 16+, which is already
-     below this app's floor (color-mix needs 16.2). Set on html AND body
-     because the scrolling element differs between standalone and a
-     browser tab, and setting it on the wrong one is a silent no-op.
-     It does not affect ordinary scrolling - only the rubber band at the
-     ends - and a home-screen app has no pull-to-refresh to lose. */
-  html, body{ overscroll-behavior-y:none; }
+  /* The root background is what the overscroll bounce reveals, so it is
+     the edge colour rather than flat paper - see --edge-bottom. It is
+     invisible everywhere else: body::before is opaque and covers the
+     whole viewport, so this only ever shows in the region past the end
+     of the page. Verified at 0 levels of change to the app itself. */
   /* The app-wide ambient background glow, visible behind every single
      screen \u2014 the actual last, most impactful remaining gap in the
      theme audit, since this is the one background effect present
@@ -502,6 +482,54 @@
   [data-layout="modern"]{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
   @media (min-width:40rem){
     [data-layout="modern"]{ --bg-glow-r1:100%; --bg-glow-r2:100%; }
+  }
+  /* --edge-bottom: the colour the app actually is along the very BOTTOM
+     edge of the screen, and the companion to --statusbar-mix2/3 below,
+     which do the same job for the top edge.
+
+     This is what the iOS overscroll bounce paints. Drag past the end of
+     the page and the region revealed underneath is the ROOT element's
+     background-colour - not body::before, which is a fixed layer that
+     stops at the viewport, and not html's gradients, which are
+     positioned inside html's own box. Flat var(--paper) there is a grey
+     bar against a warm background, which is exactly what was reported.
+     The bounce itself is wanted and stays; only its colour was wrong.
+
+     A single constant is correct here, which is not obvious: body::before
+     is FIXED, so the colour at the bottom edge of the SCREEN does not
+     change as the page scrolls. Measured with the page's own content
+     hidden, averaged across the width (the gold glow is centred at 50%,
+     so the middle runs warmer than the corners):
+
+       phone   (glow radii 40%/45%)    (35, 35, 34)
+       tablet  (glow radii 100%/100%)  (42, 38, 36) portrait
+                                       (50, 41, 40) landscape
+
+     Expressed as a mix of the theme's own colours rather than a fixed
+     grey so it follows every accent, the same way the glow itself does -
+     a hardcoded value would read as a grey bar again the moment someone
+     unlocked a different colour. The gold --theme-c1 is the bottom
+     glow; the tablet figure carries a little --theme-c3 as well, because
+     at 100% radii the corner glows still reach the bottom edge there and
+     they are the cool end of the ramp. */
+  [data-layout="modern"]{ --edge-bottom:color-mix(in srgb, var(--theme-c1) 7%, var(--paper)); }
+  /* Split by orientation, because the edge colour genuinely differs
+     there and one value for both left ~6 levels on the table. The glow
+     box is 100vw x 100lvh, so a landscape viewport puts the corner
+     glows' 100% radii proportionally closer to the bottom edge and the
+     edge runs warmer: measured (42, 38, 37) portrait against
+     (50, 41, 40) landscape on the same iPad. */
+  @media (min-width:40rem) and (orientation:portrait){
+    [data-layout="modern"]{
+      --edge-bottom:color-mix(in srgb, var(--theme-c1) 7.5%,
+                     color-mix(in srgb, var(--theme-c3) 4%, var(--paper)));
+    }
+  }
+  @media (min-width:40rem) and (orientation:landscape){
+    [data-layout="modern"]{
+      --edge-bottom:color-mix(in srgb, var(--theme-c1) 9%,
+                     color-mix(in srgb, var(--theme-c3) 5%, var(--paper)));
+    }
   }
   /* Companion tokens to --bg-glow-r1/r2 above: how much of each ambient
      glow is still in play at the very TOP EDGE of the viewport - the
@@ -675,8 +703,23 @@
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 6%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 6%, transparent), transparent var(--bg-glow-r2)),
-      var(--paper);
-    background-size:100vw 100lvh;
+      /* An opaque var(--paper) layer sized to html's OWN BOX, between the
+         glows and the background-colour. This is what lets one rule serve
+         two regions that need different colours:
+           inside html's box -> this layer, var(--paper), pixel-identical
+             to body::before, which is why this fallback exists at all
+           past html's box   -> only the background-colour is left, and
+             that is var(--edge-bottom), which is what the iOS overscroll
+             bounce reveals
+         Without it, setting the background-colour to the edge colour put
+         the fallback 27 levels away from body::before everywhere inside
+         the viewport - fixing the bounce by breaking the thing this rule
+         was written for. Measured both ways. */
+      linear-gradient(var(--paper), var(--paper)),
+      /* --edge-bottom: only ever visible past html's own box, which is
+         exactly the region the overscroll bounce reveals. */
+      var(--edge-bottom);
+    background-size:100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
     background-repeat:no-repeat;
   }
   /* Kept pixel-identical to the body::before stack above - that is the
@@ -759,7 +802,22 @@
          from there. */
       radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
-      var(--paper);
+      /* An opaque var(--paper) layer sized to html's OWN BOX, between the
+         glows and the background-colour. This is what lets one rule serve
+         two regions that need different colours:
+           inside html's box -> this layer, var(--paper), pixel-identical
+             to body::before, which is why this fallback exists at all
+           past html's box   -> only the background-colour is left, and
+             that is var(--edge-bottom), which is what the iOS overscroll
+             bounce reveals
+         Without it, setting the background-colour to the edge colour put
+         the fallback 27 levels away from body::before everywhere inside
+         the viewport - fixing the bounce by breaking the thing this rule
+         was written for. Measured both ways. */
+      linear-gradient(var(--paper), var(--paper)),
+      /* --edge-bottom: only ever visible past html's own box, which is
+         exactly the region the overscroll bounce reveals. */
+      var(--edge-bottom);
     /* 200lvh, not 100%. `100%` resolves against HTML'S OWN BOX, which is
        its content height - measured at 796px against an 800px viewport -
        not the document, so the gold stopped after roughly one screen and
@@ -769,8 +827,8 @@
        104lvh with a 55lvh radius, so it is gone by ~159lvh, and the
        corner glows' radius is at most one viewport from 8lvh. Beyond
        that, flat paper IS the right answer. */
-    background-size:100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, auto;
-    background-position:0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0;
+    background-size:100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
+    background-position:0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0, 0 0;
     background-repeat:no-repeat;
   }
   /* Toned down specifically while a question is actively on screen \u2014
@@ -28901,7 +28959,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-60";
+const APP_BUILD = "2026-09-21-61";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
