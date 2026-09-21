@@ -902,15 +902,23 @@ The three things the app now measures are **XP → level**, **badges**, and
   a soft light across the top third; the first pass used a full dome
   highlight. The palette is pulled back from jewel tones too — the
   deepest stops went muddy against a pale setting.
-- **An unearned badge is the empty setting**, drawn at the setting's own
-  weight rather than as a hairline, so a locked slot reads as a mount
-  waiting for its badge instead of a faint sketch.
-- **The case is a tray with recessed slots**, which is most of why the
-  reference reads as a case. `.badge-grid` is the tray, `.badge-tile-art`
-  is the inset well behind each badge, and `.badge-tile-prog` takes
-  `margin-top:auto` so every progress line sits on its tile's floor —
-  without it, names running one to four lines stepped the numbers up and
-  down across a row, which is exactly what a case is not.
+- **An unearned badge is a SOLID silhouette** — a flat fill, no rim, no
+  interior, a shade off the tray. Both earlier guesses (an outline, then
+  an empty setting) were wrong, and a second reference photo showing a
+  partly-filled case settled it: you read the shape and nothing else,
+  which is what makes an earned one beside it look lit up.
+- **Every earned badge carries two or three small four-point glints**,
+  one proud of the top-left edge. They are most of why the reference's
+  badges read as *won* rather than merely coloured, and they are drawn
+  outside the scaled group so the corner one can overlap the silhouette.
+- **There are no slots and no tile boxes.** The badges sit straight on a
+  flat tray. What looked like a recess in the first photo was each
+  badge's own setting, and adding a ring behind it gave every tile a
+  circle the artwork already provided; a highlight box on earned tiles
+  made the rows read as ragged when the artwork says it louder anyway.
+  `.badge-grid` is the tray; `.badge-tile-prog` takes `margin-top:auto`
+  so every progress line sits on its tile's floor, since names run one to
+  four lines and otherwise the numbers stepped up and down across a row.
 - **Two columns on a narrow phone, three from 27rem, four from 40rem.**
   Three across a 375px screen leaves each name 72px and
   "Professionalism" alone is 89px, so `overflow-wrap:anywhere` was

@@ -7775,15 +7775,18 @@
     transition:transform .15s ease, background-color .15s ease;
   }
   .badge-tile:active{ transform:scale(.96); }
-  .badge-tile.is-earned{ background:rgba(255,255,255,.045); border-color:rgba(255,255,255,.09); }
-  /* The slot itself: a shallow well, lit from below like a pressed
-     tray, with the badge sitting in it. */
+  /* No box round an earned tile either. The reference marks earned
+     against unearned with the artwork alone - lit and sparkling beside
+     a flat silhouette - and a highlight box on some tiles and not
+     others was making the rows read as ragged when the badges already
+     say it louder. */
+  /* No recessed well. The badges in the reference sit straight on the
+     flat tray - what I read as a slot in the first photo was each
+     badge's own setting, and inventing a second ring behind it gave
+     every tile a circle the artwork was already providing. */
   .badge-tile-art{
     display:flex; align-items:center; justify-content:center;
     width:100%; max-width:4.9rem; aspect-ratio:1; min-width:0;
-    padding:.3rem; border-radius:50%;
-    background:radial-gradient(circle at 50% 42%, rgba(0,0,0,.34), rgba(0,0,0,.12) 68%, rgba(255,255,255,.03));
-    box-shadow:inset 0 2px 5px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,255,255,.07);
   }
   .badge-tile-art svg{ width:100%; height:100%; display:block; }
   .badge-tile.is-earned .badge-tile-art svg{ filter:drop-shadow(0 4px 9px rgba(0,0,0,.45)); }
@@ -7836,7 +7839,7 @@
     .swatch{ width:4.2rem; height:4.2rem; }
     .swatch .dot{ width:2.8rem; height:2.8rem; }
     .badge-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1rem; }
-    .badge-tile-art{ max-width:6rem; padding:.4rem; }
+    .badge-tile-art{ max-width:6rem; }
     .badge-grid{ padding:.9rem; gap:.8rem; }
     .badge-tile-name{ font-size:.76rem; }
     .badge-tile-prog{ font-size:.74rem; }
@@ -22412,12 +22415,12 @@ function buildUnitBadgeSVG(unitName, earned){
   }
 
   if(!earned){
-    /* The empty setting, per explicit request: you can see the SHAPE of
-       what is missing but not the badge. Drawn at the setting's own
-       weight rather than as a hairline, so a locked slot reads as a
-       mount waiting for its badge instead of as a faint sketch. */
-    path(d, { fill: "rgba(255,255,255,.03)", stroke: "rgba(255,255,255,.26)",
-              "stroke-width": "7", "stroke-linejoin": "round" });
+    /* A SOLID silhouette, not an outline and not an empty setting. Both
+       of those were guesses; the reference shows the unearned slots
+       filled flat, a shade off the tray they sit on, with no rim and no
+       interior at all. You read the shape and nothing else, which is
+       what makes an earned one beside it look like it has been lit up. */
+    path(d, { fill: "rgba(255,255,255,.15)" });
     return svg;
   }
 
@@ -22449,6 +22452,26 @@ function buildUnitBadgeSVG(unitName, earned){
   ]);
   path(d, { fill: sheen });
 
+  /* The glints. Every earned badge in the reference carries two or
+     three little four-point sparkles, and they are most of why those
+     read as "won" rather than merely "coloured" - one sits proud of the
+     top-left edge, the others catch the face. Drawn OUTSIDE the scaled
+     group so the corner one can overlap the silhouette's edge the way
+     the reference's does. */
+  function sparkle(cx, cy, r, opacity){
+    const k = r * 0.17;
+    const el = document.createElementNS(NS, "path");
+    el.setAttribute("d",
+      "M" + cx + " " + (cy - r) +
+      " Q" + (cx + k) + " " + (cy - k) + " " + (cx + r) + " " + cy +
+      " Q" + (cx + k) + " " + (cy + k) + " " + cx + " " + (cy + r) +
+      " Q" + (cx - k) + " " + (cy + k) + " " + (cx - r) + " " + cy +
+      " Q" + (cx - k) + " " + (cy - k) + " " + cx + " " + (cy - r) + " Z");
+    el.setAttribute("fill", "#FFFFFF");
+    el.setAttribute("opacity", String(opacity));
+    svg.appendChild(el);
+  }
+
   const em = BADGE_EMBLEMS[spec.emblem];
   if(em){
     const common = em.fill
@@ -22463,6 +22486,9 @@ function buildUnitBadgeSVG(unitName, earned){
     path(em.d, shade);
     path(em.d, common);
   }
+  sparkle(20, 18, 12, 0.95);
+  sparkle(70, 64, 6.5, 0.8);
+  sparkle(78, 27, 4.5, 0.65);
   return svg;
 }
 
@@ -30086,7 +30112,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-67";
+const APP_BUILD = "2026-09-21-68";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
