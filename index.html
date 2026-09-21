@@ -22594,7 +22594,11 @@ const BADGE_FAMILY = {
   amber: "#E8922C", orange: "#E0703A", terracotta: "#C9573C", red: "#D6413F",
   crimson: "#C43263", pink: "#DC5B93", magenta: "#B84BC4", purple: "#8E51D6",
   violet: "#6A55CF", indigo: "#4C5BC0", brown: "#8A5A34", mauve: "#A85C86",
-  gunmetal: "#6B7A88"
+  /* Not the gunmetal it was: a steel-grey enamel inside a silver
+     setting is a badge you cannot see, and Arrest/Search/Seizure came
+     out as a piece of blank metal. Dark enough to read against the
+     setting and still cold enough to mean what it meant. */
+  steel: "#42536B"
 };
 /* The colour NODS at the unit. That is the whole of the relevance -
    the shapes stay abstract, because a badge that draws its subject is
@@ -22620,7 +22624,7 @@ const UNIT_BADGE_THEME = {
   "US and Texas Constitution and Rights":          ["red", "royal"],
   "Penal Code":                                    ["brown", "gold"],
   "Code of Criminal Procedure and Bill of Rights": ["indigo"],
-  "Arrest, Search, and Seizure":                   ["gunmetal"],
+  "Arrest, Search, and Seizure":                   ["steel"],
   "Victims of Crime":                              ["pink"],
   "Missing and Exploited Children":                ["amber"],
   "Identity Crimes":                               ["magenta"],
@@ -22656,7 +22660,7 @@ function badgeThemeFor(unitName){
        these read as repeated: sixteen tokens with the same tonal move
        in them look like sixteen printings of one design. */
     s: pair[1] ? BADGE_FAMILY[pair[1]]
-               : badgeShade(p, ((parseInt(hashOf(name), 36) >>> 0) & 1) ? -0.42 : 0.42),
+               : badgeShade(p, ((parseInt(hashOf(name), 36) >>> 0) & 1) ? -0.46 : 0.5),
     a: badgeShade(p, 0.62)
   };
 }
@@ -22773,7 +22777,9 @@ function badgeScalePts(pts, k, cx, cy){
    tells you the shape of what goes in it and a filled one reads as
    something placed rather than something printed. So the slot is drawn
    for every badge, earned or not, and the token sits in it. */
-const BADGE_KEYLINE = "#171A1F";
+/* Not a keyline any more - a hairline. It shows on either side of
+   the silver setting and nowhere else. */
+const BADGE_EDGE = "#1B1F25";
 function badgeTokenPaths(geo){
   /* The inner fields. All four kinds keep the vertical mirror: a
      concentric copy and a circle obviously do, and a 180-degree turn
@@ -22848,65 +22854,85 @@ function buildUnitBadgeSVG(unitName, earned){
 
   if(!earned) return svg;
 
-  /* ---- the token, sitting in it ---- */
-  /* Scaled a touch under the slot so the cut edge stays visible all the
-     way round. A token exactly the size of its hole looks printed on. */
-  const token = group({ transform: "translate(50 50) scale(.945) translate(-50 -50)" });
+  /* ---- the token, sitting in it ----
+     ONE MAKER made all sixteen, and the thing that says so is the
+     SETTING: a broad pale-silver rim following each badge's own
+     outline, the colour filled inside it, and every device inside
+     outlined in that same silver. The version before this led with a
+     heavy black keyline and put a thin pale line outside it, which is
+     backwards - the black was the dominant edge, so what the sixteen
+     had in common was a black line, and black is not a material.
+     Scaled under the slot so the cut edge stays visible all the way
+     round. A token exactly the size of its hole looks printed on. */
+  const token = group({ transform: "translate(50 50) scale(.92) translate(-50 -50)" });
   const tokenClip = clip(uid + "-tok", outline);
 
-  /* A POLISHED rim OUTSIDE the keyline. Drawn first and wider, so about
-     a unit of it shows past the dark edge - it is what lifts a token
-     off a dark case in the reference, and without it these sat in
-     their slots looking like holes with colour in them.
-     It is a gradient and not a flat grey, because a flat grey rim is
-     a drawn line and a ramp from white through shadow to a bright
-     bottom edge is a piece of metal catching light. That, the gloss
-     below and the glint are the whole of the "shiny". */
-  const rim = document.createElementNS(NS, "linearGradient");
-  rim.setAttribute("id", uid + "-rim");
-  rim.setAttribute("x1", "0"); rim.setAttribute("y1", "0");
-  rim.setAttribute("x2", ".25"); rim.setAttribute("y2", "1");
-  [[0, "#FFFFFF"], [0.3, "#DCE3EC"], [0.62, "#8B97A6"], [0.86, "#C9D3DE"], [1, "#F4F8FC"]]
-    .forEach(([o, c]) => {
-      const st = document.createElementNS(NS, "stop");
-      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-      rim.appendChild(st);
-    });
-  defs.appendChild(rim);
-  add(outline, { fill: "none", stroke: "url(#" + uid + "-rim)", "stroke-width": "6.4",
+  /* Polished, not painted. A flat grey rim is a drawn line; a ramp
+     from a white highlight through shadow to a bright bottom edge is a
+     piece of metal catching light, and that is most of "made of
+     metal". Angled slightly off vertical so the light has a direction. */
+  const silver = document.createElementNS(NS, "linearGradient");
+  silver.setAttribute("id", uid + "-ag");
+  silver.setAttribute("x1", "0"); silver.setAttribute("y1", "0");
+  silver.setAttribute("x2", ".3"); silver.setAttribute("y2", "1");
+  [[0, "#FBFDFF"], [0.22, "#DEE6EF"], [0.5, "#A5B1C0"], [0.72, "#79879A"],
+   [0.9, "#C3CEDB"], [1, "#EFF5FB"]].forEach(([o, c]) => {
+    const st = document.createElementNS(NS, "stop");
+    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
+    silver.appendChild(st);
+  });
+  defs.appendChild(silver);
+  const AG = "url(#" + uid + "-ag)";
+
+  /* Enamel first, then the setting laid over its edge as two strokes on
+     the same path: a dark one, and the silver a little narrower on top.
+     What shows of the dark is a hairline on either side of the metal -
+     outside it against the case, inside it against the colour - which
+     is what stops the silver dissolving into either. */
+  add(outline, { fill: geo.theme.p }, token);
+  add(outline, { fill: "none", stroke: BADGE_EDGE, "stroke-width": "11.4",
                  "stroke-linejoin": "round" }, token);
-  add(outline, { fill: geo.theme.p, stroke: BADGE_KEYLINE, "stroke-width": "3.6",
+  add(outline, { fill: "none", stroke: AG, "stroke-width": "8.2",
                  "stroke-linejoin": "round" }, token);
+
+  /* The inner fields, outlined in the SAME silver. In the reference the
+     shapes inside a badge are set exactly like the badge itself, and
+     that repetition at two scales is most of why sixteen different
+     silhouettes read as one set. */
   if(geo.bands >= 2){
-    add(paths.inner, { fill: geo.theme.s, stroke: BADGE_KEYLINE, "stroke-width": "2.4",
+    add(paths.inner, { fill: geo.theme.s, stroke: BADGE_EDGE, "stroke-width": "4.2",
+                       "stroke-linejoin": "round" }, token);
+    add(paths.inner, { fill: "none", stroke: AG, "stroke-width": "2.6",
                        "stroke-linejoin": "round" }, token);
   }
   if(geo.bands >= 3){
-    add(badgeOutline(badgeScalePts(geo.pts, 0.34, 50, 50)),
-        { fill: geo.theme.a, stroke: BADGE_KEYLINE, "stroke-width": "2",
-          "stroke-linejoin": "round" }, token);
+    const core = badgeOutline(badgeScalePts(geo.pts, 0.34, 50, 50));
+    add(core, { fill: geo.theme.a, stroke: BADGE_EDGE, "stroke-width": "4",
+                "stroke-linejoin": "round" }, token);
+    add(core, { fill: "none", stroke: AG, "stroke-width": "2.4",
+                "stroke-linejoin": "round" }, token);
   }
 
-  /* One mark, in the accent, about the badge's own axis. Sized against
-     the innermost field rather than at a fixed radius - a mark that
-     reads as a device on the widest token is a speck on the narrowest. */
+  /* The device, in metal too, on a dark underlay. The underlay is the
+     same motif scaled up about its own centre rather than a stroke,
+     because these motifs mix fills and strokes and one widened stroke
+     would only outline half of them. */
   const R = geo.bands >= 3 ? 11 : 16;
-  const ink = geo.bands >= 3 ? BADGE_KEYLINE : geo.theme.a;
-  drawBadgeMotif(add, token, geo.motif, 50, 50, R, ink, geo.theme);
+  const under = group({ transform: "translate(50 50) scale(1.13) translate(-50 -50)" }, token);
+  drawBadgeMotif(add, under, geo.motif, 50, 50, R, BADGE_EDGE, geo.theme);
+  drawBadgeMotif(add, token, geo.motif, 50, 50, R, AG, geo.theme);
 
   /* The gloss. Flat and hard-edged, clipped to the token - the gym
      badges have a light SIDE, not a dome, and a dome is exactly what
-     made the last set read as glass. Two parts: a broad wash over the
+     made an earlier set read as glass. Two parts: a broad wash over the
      upper-left half, and a narrow bright streak across it. The streak
      is what reads as SHINE rather than as shading; the wash on its own
      just made the top half paler. */
   const gleam = group({ "clip-path": tokenClip }, token);
-  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF", opacity: ".14" }, gleam);
-  add("M-12 34L58 -14L74 -14L-12 52Z", { fill: "#FFFFFF", opacity: ".3" }, gleam);
-  add("M-12 62L26 34L36 34L-12 70Z", { fill: "#FFFFFF", opacity: ".16" }, gleam);
-  /* And the keyline again on top, so no field's own stroke crosses it. */
-  add(outline, { fill: "none", stroke: BADGE_KEYLINE, "stroke-width": "3.6",
-                 "stroke-linejoin": "round" }, token);
+  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF", opacity: ".12" }, gleam);
+  add("M-12 34L58 -14L74 -14L-12 52Z", { fill: "#FFFFFF", opacity: ".26" }, gleam);
+  add("M-12 62L26 34L36 34L-12 70Z", { fill: "#FFFFFF", opacity: ".14" }, gleam);
+
   /* The glint, proud of the rim at the top-left where the light is
      coming from. Drawn OUTSIDE the token group so it can overlap the
      silhouette's edge - a sparkle that stops at the outline is a
@@ -30827,7 +30853,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-74";
+const APP_BUILD = "2026-09-21-75";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

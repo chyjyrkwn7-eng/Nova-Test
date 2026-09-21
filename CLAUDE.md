@@ -1033,25 +1033,43 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   note rather than the spin, because the global
   `[data-reduce-motion="true"] *{animation:none}` would otherwise strip
   the keyframes and leave a badge sitting motionless behind a dim.
-- **These are TOKENS, not gems.** The set before this one cut every
-  badge like a stone — a pavilion of shaded faces around a bright table
-  — and it read as sixteen jewels. The reference is nothing like that: a
-  heavy dark keyline, two or three FLAT colour fields inside it, one
-  small bright mark, a polished rim outside the keyline, and that is the
-  whole drawing. **Flat is the style, not a shortcut**, and a dome
-  highlight is exactly what made the last set read as glass — the gloss
-  is hard-edged and clipped to the token, a light *side* rather than a
-  light *centre*.
+- **These are ENAMEL IN A SILVER SETTING, not gems and not flat
+  tokens.** One pass cut every badge like a stone — a pavilion of shaded
+  faces around a bright table — and it read as sixteen jewels. The next
+  led with a heavy black keyline and put a thin pale line outside it,
+  which is backwards: the black was the dominant edge, so what the
+  sixteen had in common was a black line, and **black is not a
+  material**. What the reference actually shares is a broad pale-silver
+  rim following each badge's own outline, the colour filled inside it,
+  and the devices inside outlined in that same silver.
+- **The setting is two strokes on one path**: a dark one at 11.4, the
+  silver a little narrower at 8.2 on top. What shows of the dark is a
+  hairline on either side of the metal — outside it against the case,
+  inside it against the colour — which is what stops the silver
+  dissolving into either. **The inner fields get the same treatment at a
+  smaller scale**, and that repetition at two scales is most of why
+  sixteen different silhouettes read as one set.
+- **The device is metal too, on a dark underlay**, and the underlay is
+  the motif scaled up about its own centre rather than a widened stroke:
+  these motifs mix fills and strokes, and a widened stroke would only
+  outline half of them.
 - **Flat is not the same as dull, and the shine is three separate
-  things.** The rim is a GRADIENT, not a flat grey: white through
-  shadow to a bright bottom edge, because a flat grey rim is a drawn
-  line and a ramp is a piece of metal catching light. The gloss is a
-  broad wash over the upper-left plus a **narrow bright streak** across
-  it — the streak is what reads as shine; the wash on its own just made
-  the top half paler. And a four-point glint sits proud of the rim at
-  the badge's top-left vertex, drawn **outside** the token group so it
-  can overlap the silhouette: a sparkle that stops at the outline is one
-  painted on the badge rather than one coming off it.
+  things.** The silver is a GRADIENT, not a flat grey: a white
+  highlight, through shadow, to a bright bottom edge, because a flat
+  grey rim is a drawn line and a ramp is a piece of metal catching
+  light. The gloss is a broad wash over the upper-left plus a **narrow
+  bright streak** across it — the streak is what reads as shine; the
+  wash on its own just made the top half paler. And a four-point glint
+  sits proud of the rim at the badge's top-left vertex, drawn
+  **outside** the token group so it can overlap the silhouette: a
+  sparkle that stops at the outline is one painted on the badge rather
+  than one coming off it. A dome highlight is what made the gem set read
+  as glass — everything here is hard-edged and clipped to the token.
+- **No enamel colour may be close to the setting.** Arrest, Search and
+  Seizure was gunmetal, for steel, and inside a silver rim it came out
+  as a blank piece of metal with no badge in it. It is a much darker
+  steel-blue now: the relevance survives, the collision does not. Check
+  any new family against the silver before adding it.
 - **Every badge has a slot, and the slot is drawn whether the badge is
   earned or not.** That is the other half of the reference: each badge
   sits in a recess cut to its own outline, which is why an empty slot
