@@ -7742,9 +7742,16 @@
   .badges-blurb{
     margin:.75rem 0 0; font-size:.82rem; line-height:1.5; color:var(--soft);
   }
-  .badge-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:.7rem; }
+  /* minmax(0,1fr), not a bare 1fr - the same trap .pick documents. A
+     bare 1fr track's automatic minimum is its CONTENT, and the content
+     here is unit names with unbreakable words like "Multiculturalism",
+     so the three tracks sized themselves to fit that word and the grid
+     ran 391px wide inside a 375px phone. Caught by the sweep, not by a
+     screenshot: the overflow scrolls sideways rather than clipping, so
+     a capture of the top of the screen looks perfectly fine. */
+  .badge-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.7rem; }
   .badge-tile{
-    display:flex; flex-direction:column; align-items:center; gap:.4rem;
+    display:flex; flex-direction:column; align-items:center; gap:.4rem; min-width:0;
     padding:.75rem .45rem .65rem; border-radius:16px; cursor:pointer;
     background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
     font:inherit; -webkit-tap-highlight-color:transparent;
@@ -7752,7 +7759,7 @@
   }
   .badge-tile:active{ transform:scale(.96); }
   .badge-tile.is-earned{ background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.16); }
-  .badge-tile-art{ display:block; width:100%; max-width:4.6rem; aspect-ratio:1; }
+  .badge-tile-art{ display:block; width:100%; max-width:4.6rem; aspect-ratio:1; min-width:0; }
   .badge-tile-art svg{ width:100%; height:100%; display:block; }
   .badge-tile.is-earned .badge-tile-art svg{ filter:drop-shadow(0 4px 9px rgba(0,0,0,.45)); }
   /* Three lines, not two. Half these unit names are long enough that
@@ -7762,7 +7769,7 @@
   .badge-tile-name{
     font-size:.65rem; font-weight:700; line-height:1.24; text-align:center;
     color:var(--ink); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
-    overflow:hidden; hyphens:auto;
+    overflow:hidden; hyphens:auto; overflow-wrap:anywhere; min-width:0; max-width:100%;
   }
   /* Four on a phone, where a three-column grid leaves about nineteen
      characters a line and two unit names are twice that. Measured per
@@ -7787,7 +7794,7 @@
     .avatarchar-option{ max-width:4.5rem; }
     .swatch{ width:4.2rem; height:4.2rem; }
     .swatch .dot{ width:2.8rem; height:2.8rem; }
-    .badge-grid{ grid-template-columns:repeat(4, 1fr); gap:1rem; }
+    .badge-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1rem; }
     .badge-tile-art{ max-width:5.6rem; }
     .badge-tile-name{ font-size:.76rem; }
     .badge-tile-prog{ font-size:.74rem; }
@@ -7845,6 +7852,87 @@
   @media (min-width:40rem){
     .pick-badge{ width:1.7rem; height:1.7rem; }
   }
+
+  /* ---------- the badge cutscene ------------------------------------
+     A badge arrives spinning out of nothing, holds long enough to be
+     read, then flies into the Profile tab and pulses it - the same
+     landing the welcome bonus uses, so "something new is in there" is
+     one gesture the app makes rather than two. */
+  .badge-cutscene{
+    position:fixed; inset:0; z-index:420;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:.2rem; padding:2rem 1.5rem; text-align:center;
+    background:radial-gradient(120% 80% at 50% 42%, rgba(12,16,24,.82), rgba(4,6,10,.94));
+    opacity:0; transition:opacity .3s ease;
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  }
+  .badge-cutscene-in{ opacity:1; }
+  .badge-cutscene-out{ opacity:0; transition:opacity .45s ease .25s; }
+  .badge-cutscene-burst{
+    position:absolute; left:50%; top:50%; width:22rem; height:22rem;
+    transform:translate(-50%,-50%) scale(.2); opacity:0;
+    background:radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 32%, rgba(255,255,255,0) 66%);
+    pointer-events:none;
+  }
+  .badge-cutscene-in .badge-cutscene-burst{ animation:badge-burst 1s ease-out .12s both; }
+  @keyframes badge-burst{
+    0%{ transform:translate(-50%,-50%) scale(.2); opacity:0; }
+    28%{ opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(1.35); opacity:0; }
+  }
+  .badge-cutscene-art{
+    width:min(13rem, 46vw); height:min(13rem, 46vw);
+    filter:drop-shadow(0 12px 30px rgba(0,0,0,.6));
+    transform:scale(0) rotateY(-540deg);
+  }
+  .badge-cutscene-art svg{ width:100%; height:100%; display:block; }
+  .badge-cutscene-in .badge-cutscene-art{ animation:badge-spin-in .95s cubic-bezier(.2,.85,.25,1.05) both; }
+  @keyframes badge-spin-in{
+    0%{ transform:scale(0) rotateY(-540deg); }
+    70%{ transform:scale(1.12) rotateY(0deg); }
+    100%{ transform:scale(1) rotateY(0deg); }
+  }
+  /* The flight is a TRANSITION, not a keyframe animation, deliberately:
+     it has to start from wherever the entrance left the badge, and the
+     offsets are measured at the moment it fires. */
+  .badge-cutscene-out .badge-cutscene-art{
+    animation:none;
+    transform:translate(var(--badge-flyx, 0px), var(--badge-flyy, 0px)) scale(.16) rotate(18deg);
+    opacity:.85;
+    transition:transform .6s cubic-bezier(.5,0,.75,.2), opacity .6s ease .25s;
+  }
+  .badge-cutscene-kicker{
+    margin:1.3rem 0 0; font-family:var(--mono); font-size:.76rem; font-weight:800;
+    letter-spacing:.24em; color:var(--theme-c1);
+  }
+  .badge-cutscene-name{
+    margin:.5rem 0 0; font-family:var(--serif); font-size:1.5rem; font-weight:800;
+    line-height:1.2; color:#fff; max-width:18rem;
+  }
+  .badge-cutscene-sub{ margin:.5rem 0 0; font-size:.84rem; color:var(--soft); }
+  .badge-cutscene-in .badge-cutscene-kicker,
+  .badge-cutscene-in .badge-cutscene-name,
+  .badge-cutscene-in .badge-cutscene-sub{ animation:badge-text-in .5s ease .75s both; }
+  @keyframes badge-text-in{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @media (min-width:40rem){
+    .badge-cutscene-art{ width:16rem; height:16rem; }
+    .badge-cutscene-name{ font-size:1.9rem; max-width:24rem; }
+  }
+
+  /* The badge's own end-of-test banner, and the reduced-motion note,
+     share the existing .unlockbanner shape with real art in place of
+     the glyph. */
+  .badgebanner .badgebanner-art{
+    display:inline-flex; width:2.6rem; height:2.6rem; flex-shrink:0;
+  }
+  .badgebanner .badgebanner-art svg{ width:100%; height:100%; display:block;
+    filter:drop-shadow(0 2px 5px rgba(0,0,0,.45)); }
+  .badge-quiet-note{
+    position:fixed; left:50%; bottom:6.5rem; transform:translateX(-50%) translateY(10px);
+    z-index:420; opacity:0; transition:opacity .28s ease, transform .28s ease;
+    max-width:min(26rem, calc(100vw - 2rem));
+  }
+  .badge-quiet-note.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -20901,6 +20989,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
               pendingSupernovaCutscene: false, supernovaAchieved: false,
+              pendingBadgeUnlocks: [],
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -21008,6 +21097,15 @@ function applyLoadedData(got){
      already reached titan under the hood. If it genuinely has, the
      very next tier-check will naturally set pendingSupernovaCutscene
      itself rather than this migration guessing at it. */
+  /* The queue of badges earned but not yet celebrated. Defaults to
+     EMPTY for an existing account rather than to "everything you have"
+     - the rule for a new persisted field is that people already past
+     the point it describes must not see it as new, and somebody who
+     mastered four units last month should not be met by four cutscenes
+     on the first launch after this ships. */
+  store.pendingBadgeUnlocks = Array.isArray(got.pendingBadgeUnlocks)
+    ? got.pendingBadgeUnlocks.filter(u => typeof u === "string")
+    : [];
   store.pendingSupernovaCutscene = typeof got.pendingSupernovaCutscene === "boolean"
     ? got.pendingSupernovaCutscene : false;
   store.supernovaAchieved = typeof got.supernovaAchieved === "boolean"
@@ -21298,6 +21396,7 @@ function wipeLocalProgressAndSettings(){
   store.leaderboardOptIn = true;
   store.leaderboardOptInChanged = false;
   store.pendingSupernovaCutscene = false;
+  store.pendingBadgeUnlocks = [];
   store.pendingTierCutscene = null;
   store.supernovaAchieved = false;
   store.seenUnlockedTiers = [];
@@ -27517,7 +27616,147 @@ function showHome(){
          has no way to know they've left Home. */
       if(document.querySelector(".homeversion-btn")) startMainMenuTour();
     }, 400);
+  } else {
+    /* Not while the sign-up tour is running: that tour is a sequence of
+       tooltips over this exact screen, and a full-screen cutscene
+       landing on top of it is the same collision the update banner had
+       (see noticeAllowedHere). A badge earned in that window is still
+       queued and still plays - just on the next visit to Home. */
+    setTimeout(playQueuedBadgeCutscenes, 500);
   }
+}
+
+/* ---------- the badge cutscene ------------------------------------------
+   Plays on the MAIN MENU, per explicit request, not on the results
+   screen: the results screen gets a banner naming what was earned, and
+   this is the moment. Several at once run back to back, which is a real
+   case - one multi-unit run can push two units over 35 at the same time.
+
+   Queued on the store rather than passed along, because there is no
+   fixed route from a test to Home: somebody can tap Home, Profile or the
+   tab bar from the results screen, and the queue survives all three (and
+   a relaunch). */
+function playQueuedBadgeCutscenes(){
+  const queue = store.pendingBadgeUnlocks || [];
+  if(!queue.length) return;
+  /* Nothing may sit on top of a loading screen or a tour - the same
+     rule the tours themselves follow. Re-checked on each badge rather
+     than once, since the queue can run for several seconds. */
+  if(document.getElementById("genprofile-overlay") ||
+     document.getElementById("splashscreen") ||
+     document.getElementById("tour-overlay")) return;
+  /* Not on any screen but Home. dataset.screen is set in exactly two
+     places in the file, so every other screen fails this by
+     construction rather than by a list somebody has to maintain. */
+  const homeRoot = stage.querySelector('[data-screen="home"]');
+  if(!homeRoot) return;
+
+  /* Muting achievement banners mutes this too - it is the loudest
+     banner in the app. The queue is cleared either way, so a muted
+     badge does not ambush somebody weeks later if they unmute. */
+  if(theme.muteBanners){
+    store.pendingBadgeUnlocks = [];
+    saveStore();
+    return;
+  }
+
+  const unit = queue[0];
+  store.pendingBadgeUnlocks = queue.slice(1);
+  saveStore();
+
+  /* Reduced motion gets the same information without the spin: the
+     global [data-reduce-motion] rule would strip the keyframes and
+     leave a badge sitting motionless behind a dim, which is worse than
+     not doing it at all. */
+  if(theme.reduceMotion){
+    showTierUpStyleBadgeNote(unit);
+    setTimeout(playQueuedBadgeCutscenes, 900);
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.id = "badge-cutscene";
+  overlay.className = "badge-cutscene";
+
+  const burst = document.createElement("div");
+  burst.className = "badge-cutscene-burst";
+  overlay.appendChild(burst);
+
+  const art = document.createElement("div");
+  art.className = "badge-cutscene-art";
+  art.appendChild(buildUnitBadgeSVG(unit, true));
+  overlay.appendChild(art);
+
+  const kicker = document.createElement("p");
+  kicker.className = "badge-cutscene-kicker";
+  kicker.textContent = "BADGE EARNED";
+  overlay.appendChild(kicker);
+
+  const name = document.createElement("p");
+  name.className = "badge-cutscene-name";
+  name.textContent = unit;
+  overlay.appendChild(name);
+
+  const sub = document.createElement("p");
+  sub.className = "badge-cutscene-sub";
+  sub.textContent = "Mastered \u2014 " + BADGE_THRESHOLD + " hundos.";
+  overlay.appendChild(sub);
+
+  document.body.appendChild(overlay);
+
+  let done = false;
+  function finish(){
+    if(done) return;
+    done = true;
+    /* The flight. Measured at this moment rather than precomputed: the
+       tab bar moves at the tablet breakpoint and can be mid-transition
+       when the overlay opens. */
+    const target = document.getElementById("bottomtab-profile");
+    if(target){
+      const t = target.getBoundingClientRect();
+      const a = art.getBoundingClientRect();
+      art.style.setProperty("--badge-flyx",
+        Math.round((t.left + t.width / 2) - (a.left + a.width / 2)) + "px");
+      art.style.setProperty("--badge-flyy",
+        Math.round((t.top + t.height / 2) - (a.top + a.height / 2)) + "px");
+    }
+    overlay.classList.add("badge-cutscene-out");
+    setTimeout(() => {
+      if(target){
+        target.classList.add("avatar-pulse");
+        /* 800, matching .avatar-pulse's own .8s - the same mismatch
+           that made the welcome bonus snap back mid-animation. */
+        setTimeout(() => target.classList.remove("avatar-pulse"), 800);
+      }
+    }, 520);
+    setTimeout(() => {
+      overlay.remove();
+      playQueuedBadgeCutscenes();
+    }, 780);
+  }
+
+  overlay.addEventListener("click", finish);
+  requestAnimationFrame(() => overlay.classList.add("badge-cutscene-in"));
+  setTimeout(finish, 2600);
+}
+
+/* The reduced-motion version: the same words, no spin, no flight. */
+function showTierUpStyleBadgeNote(unit){
+  const bar = document.createElement("div");
+  bar.className = "unlockbanner badgebanner badge-quiet-note";
+  const art = document.createElement("span");
+  art.className = "badgebanner-art";
+  art.appendChild(buildUnitBadgeSVG(unit, true));
+  const text = document.createElement("span");
+  const l1 = document.createElement("span");
+  l1.className = "unlockbanner-kicker"; l1.textContent = "BADGE EARNED";
+  const l2 = document.createElement("span");
+  l2.className = "unlockbanner-name"; l2.textContent = unit;
+  text.append(l1, l2);
+  bar.append(art, text);
+  document.body.appendChild(bar);
+  requestAnimationFrame(() => bar.classList.add("show"));
+  setTimeout(() => { bar.classList.remove("show"); setTimeout(() => bar.remove(), 300); }, 2600);
 }
 
 /* A bold, single-choice landing spot for what kind of test to take —
@@ -29809,7 +30048,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-65";
+const APP_BUILD = "2026-09-21-66";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -30354,6 +30593,15 @@ function summarize(){
   let newBest = false;
   let leveledUpTo = null;
   let multiUnitStarsEarned = { perfected: [], newlyStarred: [] };
+  /* Which badges this run earned, measured by diffing the real list
+     either side of the recording calls rather than by trusting any one
+     of them to report it. recordMultiUnitPerfectsIfEligible returns a
+     newlyStarred list, but only for multi-unit runs - a single-unit run
+     and a Virtual Room race reach the threshold by different paths, and
+     a badge that only celebrates on some of them is worse than one that
+     never celebrates at all. */
+  const badgesBefore = new Set(badgesEarnedList());
+  let badgesEarnedThisRun = [];
   let justBeatSpeed = null;
   let newFarthest = false;
   let pointsEarned = 0;
@@ -30435,6 +30683,16 @@ function summarize(){
         justBeatSpeed = recordGameBeatIfEligible();
         newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, total);
       }
+    }
+    /* After every recording call above, so the diff sees whatever any
+       of them credited. Queued on the store rather than handed to the
+       results screen, because the cutscene plays on the MAIN MENU and
+       the results screen is not on the way there by any fixed route -
+       somebody can tap Home, Profile or the tab bar from it. */
+    badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
+    if(badgesEarnedThisRun.length){
+      store.pendingBadgeUnlocks = (store.pendingBadgeUnlocks || []).concat(badgesEarnedThisRun);
+      saveStore();
     }
     TIER_ORDER.forEach(c => {
       if(!beforeTiers[c] && tierColorUnlocked(c)) newlyUnlockedColors.push(c);
@@ -30727,6 +30985,31 @@ function summarize(){
     }
   }
 
+  /* A badge is the biggest thing a single run can earn, so it gets its
+     own banner above the per-unit one rather than a clause tacked onto
+     it. The real badge art, not a glyph: the point is to see the thing
+     you just won, and the cutscene on the main menu shows the same
+     artwork so the two read as one event. */
+  if(badgesEarnedThisRun.length && !theme.muteBanners){
+    badgesEarnedThisRun.forEach(unit => {
+      const banner = document.createElement("div");
+      banner.className = "unlockbanner badgebanner";
+      const art = document.createElement("span");
+      art.className = "badgebanner-art";
+      art.appendChild(buildUnitBadgeSVG(unit, true));
+      const text = document.createElement("span");
+      const line1 = document.createElement("span");
+      line1.className = "unlockbanner-kicker";
+      line1.textContent = "BADGE EARNED";
+      const line2 = document.createElement("span");
+      line2.className = "unlockbanner-name";
+      line2.textContent = unit;
+      text.append(line1, line2);
+      banner.append(art, text);
+      panel.appendChild(banner);
+    });
+  }
+
   /* A combined multi-unit run rarely lands at 100% overall just because
      one unit had a slip \u2014 but a unit inside it that genuinely was
      aced deserves its own recognition instead of vanishing into a
@@ -30744,10 +31027,9 @@ function summarize(){
     line1.textContent = multiUnitStarsEarned.perfected.length === 1 ? "100% ON A UNIT" : "100% ON MULTIPLE UNITS";
     const line2 = document.createElement("span");
     line2.className = "unlockbanner-name";
-    line2.textContent = multiUnitStarsEarned.perfected.join(", ") +
-      (multiUnitStarsEarned.newlyStarred.length
-        ? " \u2014 Drill star earned on " + multiUnitStarsEarned.newlyStarred.join(", ") + "!"
-        : "");
+    /* No longer tacks "Drill star earned on X" onto the end: that is
+       the badge, and the badge has its own banner above this one. */
+    line2.textContent = multiUnitStarsEarned.perfected.join(", ");
     text.append(line1, line2);
     banner.append(dot, text);
     panel.appendChild(banner);

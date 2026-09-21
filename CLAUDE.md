@@ -49,6 +49,13 @@ disagreed, the repo won and the difference is called out.
   check in it was written against a build where it failed; `--against
   old-index.html` re-runs it there, which is the only thing that makes a
   green run mean anything. See **Accounts and the sync code**.
+- `tools/check-behaviour.py` — **does the app still DO the right
+  thing**, as opposed to still look right: the splash centred from its
+  first visible frame, a thumb swipe changing the top tab, a back link
+  landing somewhere that is not blank, a badge earned by every route to
+  35 and only then, and a queue of badges playing back to back on the
+  main menu. Every check in it was written against a build where it
+  failed; `--against old-index.html` runs it there.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
   `purge --yes` against the live Firestore over the plain REST API, no SDK
   and no credentials (the rules are open). `find` is the "someone lost
@@ -827,6 +834,85 @@ Everything below follows from that.
 
 ---
 
+## Levels, badges and the ladder
+
+The three things the app now measures are **XP → level**, **badges**, and
+**hundos**, and every screen that shows progress is built on those three.
+
+- **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (35)
+  hundos in it.** Sixteen units, sixteen badges. `DRILL_STAR_THRESHOLD` is
+  *written as that same constant* rather than as another literal, because
+  it was a separate 40 for the same idea and a unit could read "Advanced"
+  on its own card while still not being starred.
+- **`levelProgress()` is the one place the level curve lives** — the
+  level, how far into it, how far across, and what is left. The bar, the
+  number under it and the leaderboard each used to do their own
+  arithmetic on the same total. 300 XP at +5% a level, capped at 80. The
+  cap came with the curve: 500 at +15% compounded 80 times asks for about
+  200 million XP when an aced three-unit test pays under a thousand, so
+  the ceiling Madison asked for was unreachable until the curve moved.
+  **Check that a curve change cannot lower anybody's level** before
+  making one — that property is what made this one safe.
+- **The Mastery Ladder climbs on level and badges**, not on XP and stars.
+  `tierShortfall(rule)` words what is missing, once; the flares on Home,
+  the ladder nodes, the note under the ladder and the Unlocks rows all
+  call it, and they used to each do their own arithmetic and phrase the
+  result differently.
+- **Badge detection diffs the real list either side of the recording
+  calls** in `summarize()`, rather than trusting any one of them to
+  report it. `recordMultiUnitPerfectsIfEligible` does return a
+  `newlyStarred` list, but only for multi-unit runs — a single-unit run
+  and a Virtual Room race cross the threshold by different paths, and a
+  badge that only celebrates on some of them is worse than one that never
+  celebrates at all. `tools/check-behaviour.py` runs all four routes.
+- **The cutscene queue is on `store`, not passed along.** There is no
+  fixed route from a test to Home — Home, Profile and the tab bar are all
+  reachable from the results screen — so `store.pendingBadgeUnlocks`
+  survives the trip and a relaunch. It **defaults to empty** for an
+  existing account, per the `applyLoadedData` rule: somebody who mastered
+  four units last month must not be met by four cutscenes on the first
+  launch after this ships.
+- **`playQueuedBadgeCutscenes()` re-checks its preconditions per badge**,
+  not once: it runs for several seconds, and a splash, a generating
+  overlay or a tour can appear inside that window. It refuses on any
+  screen but Home by testing `dataset.screen`, which is set in exactly two
+  places in the file, so every other screen fails by construction.
+- **`muteBanners` mutes the cutscene too**, and clears the queue while
+  doing it — a muted badge that stayed queued would ambush somebody weeks
+  later if they unmuted. `reduceMotion` gets the same words as a static
+  note rather than the spin, because the global
+  `[data-reduce-motion="true"] *{animation:none}` would otherwise strip
+  the keyframes and leave a badge sitting motionless behind a dim.
+- **Badges are drawn, not hashed.** `UNIT_BADGE_SPECS` assigns a
+  silhouette, a colour pair and an emblem per unit by name. A hash gives
+  sixteen *different* badges and not sixteen *designed* ones — the shape
+  landing on "Victims of Crime" would be whatever the hash said. There is
+  still a deterministic fallback for an unknown unit, and that is not
+  padding: the leaderboard lost three classmates to `buildAvatarCharSVG`
+  returning null for an id it did not know.
+- **Gradient ids inside a generated SVG must be unique per instance.**
+  Sixteen badges on one screen referencing `url(#badge-grad)` is one
+  shared definition and fifteen wrong fills; `badgeSvgSeq` exists for
+  that.
+- **Look at a generated shape before believing its name.** Four of the
+  sixteen silhouettes did not draw what they were called — the wings
+  rendered as an arrow, the crescent as a hairline, the bloom as a
+  shield, and the scroll was indistinguishable from the speech bubble —
+  and two emblems read as a medical cross on units that are not medical.
+  `tools/badgepreview`-style rendering of all sixteen at once is a
+  thirty-second check.
+- **A grid of cards needs `minmax(0, 1fr)`, never a bare `1fr`** — the
+  same trap `.pick` already documents. The badge grid's tracks sized
+  themselves to the longest unbreakable word ("Multiculturalism") and ran
+  391px wide inside a 375px phone. **The screenshots did not show it**,
+  because the overflow scrolls sideways rather than clipping; the sweep
+  did, and only because the Profile tabs were added to `SCREENS`.
+- **`SCREENS` entries may carry arguments** (`"showProfile('badges')"`).
+  Profile is five tabs and a bare `showProfile()` lays out only one of
+  them, so four fifths of that screen had no gate at all.
+
+---
+
 ## Shipping a change
 
 `APP_BUILD` in `index.html` and `build` in `version.json` **must be bumped
@@ -973,9 +1059,24 @@ re-evaluated on the next check.
   "Finished" and goes to the test Setup screen, which no tab reaches, and the
   end-of-test summary force-hides the tab bar (`window.forceHideBottomTabs`),
   so it has no other exit.
-- **Tabbed screens (Rewards, Profile)** share one pattern: a
+- **Tabbed screens (Rankings, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
+  Profile's five tabs are **Profile, Badges, Stats, Ladder, Unlocks**,
+  driven off one `profileTabDefs` list rather than five hand-written
+  copies of the same four lines — four tabs was already where that shape
+  cost a line per tab in five places. `"achievements"` is still accepted
+  as a tab name so an older link lands on Ladder rather than falling back
+  to Profile. **Five labels wrap to a second row on a phone** unless they
+  are tightened for five specifically (`:has(.iconbtn:nth-child(5))`) and
+  allowed to step just outside the panel's side padding below 26rem;
+  measured, they want 299px where a 375px phone's content column offers
+  295. Wrapping stays underneath as the safety net, and an SE 1st gen
+  still wraps.
+- **Anything that fills or animates on a Profile tab has to fire when the
+  tab is SHOWN, not when it is built.** `showProfile("stats")` builds
+  every panel while another one is visible, so an XP bar that animated on
+  build is a bar nobody saw move.
 - **Shared classes are genuinely shared** (`.sect`, `.slab`, `.iconbtn`,
   `.panel`). A one-screen fix needs a screen-level ancestor scope; editing the
   bare class changes every screen, usually by accident.
@@ -1034,15 +1135,16 @@ re-evaluated on the next check.
   is still in the document before doing anything, so navigating away lets it
   expire harmlessly. It updates the button in place rather than re-rendering
   Home under someone.
-- **The ring round the Rewards tab is the welcome bonus landing.** At the
-  end of the main-menu tour `awardWelcomeBonus()` adds 100 points and
-  `showPointsFlyEffect()` floats a "+100 points for creating an account!"
-  banner, flies it into `#bottomtab-rewards`, and pulses that tab — an
-  `avatar-pulse` ring expanding 0 → 14px while the icon scales to 1.18×
-  and back. **Rewards, not Profile**, deliberately: Rewards is where the
-  Points and Stars boxes actually live. It is the only thing in the app
-  that rings a tab, so an unexplained halo in a screenshot is this and
-  nothing else. **Its removal timeout must match the animation's own
+- **The ring round the Profile tab has two causes now.** The first is the
+  welcome bonus: at the end of the main-menu tour `awardWelcomeBonus()`
+  adds 100 XP and `showPointsFlyEffect()` flies a banner into
+  `#bottomtab-profile` and pulses it — an `avatar-pulse` ring expanding
+  0 → 14px while the icon scales to 1.18× and back. The second is a badge
+  cutscene finishing, which flies the badge to the same tab and pulses it
+  the same way, deliberately: "something new is in there" should be one
+  gesture the app makes, not two. Those are the only two things in the
+  app that ring a tab, so an unexplained halo in a screenshot is one of
+  them and nothing else. **Its removal timeout must match the animation's own
   duration** — it was `500` against a `.8s` animation, left behind when the
   animation was lengthened from `.5s` (to stop it being missed), so the
   class came off at 62% with the icon still at ~1.05 and it snapped back to
@@ -1095,8 +1197,10 @@ re-evaluated on the next check.
   the interaction — judged not worth the regression risk on the most-used
   screen for a nicety, and explicitly declined. Don't quietly retry it; a
   visual shake is the feedback that cannot fail.
-- **"Flares" ≠ "Secret Flares".** Flares are the orbiting badges on the Mastery
-  Ladder. Secret Flares are titan tier's separate mystery-colour hunt
+- **"Flares" ≠ "Secret Flares" ≠ badges.** Flares are the orbiting marks
+  on Home, one per Mastery Ladder tier. Badges are the sixteen unit
+  awards on Profile. The three are separate and the words are not
+  interchangeable in copy. Secret Flares are titan tier's separate mystery-colour hunt
   (`mysteryStars`, `store.mysteryColorsFound`, keys `red`/`orange`/`yellow`).
 - **A solid-coloured child inside a `backdrop-filter` surface can tear on
   iOS** — reported as glitched lines running through the update banner's
@@ -1218,10 +1322,13 @@ missed real bugs that a thirty-second check caught.
 4. `python3 tools/check-sync.py` — the account-integrity gate. Required on
    anything touching the sync code, the rankings, reset, or boot; see
    **Accounts and the sync code**.
-5. `python3 tools/check-positions.py` — did what you positioned land where
+5. `python3 tools/check-behaviour.py` — the behaviour gate: launch,
+   swipe, navigation, badges, cutscene. Required on anything touching
+   those; see **Levels, badges and the ladder**.
+6. `python3 tools/check-positions.py` — did what you positioned land where
    you meant it to, on all 21 devices. A green sweep does not answer this;
    see **Every device, every way in**.
-6. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
+7. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
    Madison, per **Showing the work**.
 
 Serve over HTTP for anything touching `version.json` — `fetch` fails on a
