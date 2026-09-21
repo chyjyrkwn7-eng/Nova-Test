@@ -32,6 +32,17 @@ disagreed, the repo won and the difference is called out.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 
+**Merging to `main` is part of finishing a change, not a separate request.**
+Standing instruction from Madison, given after a whole session's work sat on
+the branch while she opened the app and found nothing had changed: once a
+change passes its checks, merge it to `main` and push, without asking. Pages
+rebuilds in well under a minute, so the test URL is then current and what she
+opens matches the screenshots she was just sent. The failure mode this exists
+to prevent is silent — a branch that is 11 commits ahead looks exactly like a
+branch that is up to date from the Home Screen. **If for any reason a change
+is NOT on `main`, say so in the same message as the screenshots**; never let
+her discover it by opening the app.
+
 **Single file is the deployment model, not accretion.** Even Firebase loads via
 plain `<script src=...compat.js>` rather than an ES module, precisely so no
 bundler is needed. Introducing a build pipeline is a bigger decision than it
