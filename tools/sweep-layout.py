@@ -82,6 +82,8 @@ DEVICES = [
     ("Android phone",           360,  800, "android",    (24, 0, 24, 0), (0, 24, 24, 24)),
     ("Android tablet",          800, 1280, "android",    (24, 0, 24, 0), (24, 0, 24, 0)),
     ("Dell Latitude",          1366,  768, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
+    ("MacBook Pro 14-inch",    1512,  982, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
+    ("MacBook Pro 16-inch",    1728, 1117, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("Dell Latitude FHD",      1920, 1080, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("MacBook Air",            1440,  900, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("small laptop",           1280,  800, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
@@ -111,10 +113,35 @@ SCREENS = [
     "showVirtualRoomChoice", "showVirtualRoomSetup", "showVirtualRoomJoinEntry",
 ]
 
+# Reached only from Welcome, and only before the account exists.
+ONBOARDING_SCREENS = {
+    "showWelcome", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
+    "showWelcomeCodeEntry", "showWelcomeCodeReveal",
+}
+
+# Deliberately a USED account, not a blank one. With empty stats every
+# populated screen - Profile, Rewards, the Leaderboard, the calendar, the
+# review list, test history - renders its empty state, so the sweep was
+# checking the layout of "nothing here yet" on half the app. Real points,
+# a streak, test history and study log make those screens render the
+# content people actually see.
 SEED = """try{
  localStorage.setItem('class26e.synccode','ABCD-2345');
- localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',avatarChar:'a',
-   stats:{},testStats:{},studyLog:{},seenProfileTour:true,seenSettingsTour:true,
+ var today = new Date(); var day = function(d){
+   var t = new Date(today); t.setDate(t.getDate() - d);
+   return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+ };
+ var log = {}; for(var i=0;i<24;i++){ log[day(i)] = { seconds: 600 + i*37, answered: 12 + i }; }
+ var hist = []; for(var j=0;j<9;j++){ hist.push({ date: day(j*2), mode: ['drill','exam','game'][j%3],
+   score: 12 + j, total: 20, pct: Math.round((12+j)/20*100), seconds: 300 + j*20,
+   units: ['Texas Penal Code'] }); }
+ localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',firstName:'Madison',avatarChar:'a',
+   stats:{},testStats:{},studyLog:log,testHistory:hist,onboardingComplete:true,
+   lifetime:{answered:840,correct:712,drillPlays:22,examPlays:9,gamePlays:6,perfectTests:3,
+             currentStreak:11,longestStreak:17,points:6400},
+   leaderboardOptIn:true,
+   seenProfileTour:true,seenSettingsTour:true,
    seenRewardsTour:true,seenHomeTour:true,seenLadderTour:true,
    theme:{mode:'dark',accent:'ink',layout:'modern'}}));}catch(e){}"""
 
@@ -156,8 +183,21 @@ AUDIT = """(inset) => {
     const a = btn.getBoundingClientRect(), b = tabs.getBoundingClientRect();
     if (a.bottom > b.top + 1 && a.right > b.left && a.left < b.right)
       problems.push(`primary button is behind the tab bar by ${Math.round(a.bottom-b.top)}px`);
-    if (a.bottom > vh + 1)
-      problems.push(`primary button is below the fold by ${Math.round(a.bottom-vh)}px`);
+  }
+  /* Outside the tab-bar branch, which is where this check used to live -
+     and that was a real hole: every onboarding screen hides the tab bar,
+     so none of them was ever checked for its button being off the bottom
+     of the screen at all. Unreachable is the defect, not below the fold:
+     a long screen that scrolls to its button is working as intended, so
+     this only fires when the page CANNOT scroll far enough to bring it
+     into view. */
+  if (btn && !buried(btn)) {
+    const a = btn.getBoundingClientRect();
+    const canScroll = document.documentElement.scrollHeight > vh + 1;
+    const reachable = canScroll
+      && a.bottom + window.scrollY <= document.documentElement.scrollHeight + 1;
+    if (a.bottom > vh + 1 && !reachable)
+      problems.push(`primary button is below the fold by ${Math.round(a.bottom-vh)}px and the page cannot scroll to it`);
   }
   if (tabs && !buried(tabs)) {
     const b = tabs.getBoundingClientRect();
@@ -295,6 +335,18 @@ def main():
                         if not page.evaluate(f"typeof {fn}==='function'"):
                             found[fn] = [f"{fn} is not defined"]
                             continue
+                        # An onboarding screen is only ever reached with the
+                        # tab bar already hidden - showWelcome() is what hides
+                        # it, by hiding the nav buttons the bar derives its
+                        # visibility from. Mounting one cold against the seeded
+                        # (finished) account left the bar up, which both put a
+                        # bar on screens that never have one and swapped
+                        # --panel-reserve from 5.5rem to 9rem, shortening every
+                        # onboarding panel. Walking in through Welcome first is
+                        # what the app itself does.
+                        if fn in ONBOARDING_SCREENS:
+                            page.evaluate("showWelcome();")
+                            page.wait_for_timeout(120)
                         page.evaluate(f"{fn}(); scrollTo(0,0);")
                         page.wait_for_timeout(300)
                         hits = page.evaluate(AUDIT, ins)

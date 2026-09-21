@@ -520,9 +520,29 @@
     --panel-reserve: 5.5rem;
   }
   body.has-bottomtabs, body.has-floatbtn{ --panel-reserve: 9rem; }
+  /* Welcome has no tab bar, no floating button and nothing else along the
+     bottom, so the 4rem of .wrap padding under it is reserved for
+     furniture that is not there - and it is the entire reason the hint
+     line sat 82px off the bottom edge on every device with room to spare.
+     Reported as needing to be "much closer to the bottom of the screen".
+     The three values move together and have to: --panel-reserve is
+     .wrap's top padding plus its bottom padding, and --pad-inset-bottom
+     is whatever the inset adds OVER that new bottom baseline. Each one
+     collapses back to the shared value at zero insets, which is the
+     property that makes a change here safe to reason about (see the note
+     on --pad-inset-bottom itself). The +.9rem keeps the hint off an
+     iPhone's home indicator: the inset is 34px and this lands the text
+     28px above it. */
+  body.on-welcome{
+    --panel-reserve: 3.5rem;
+    --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 1.35rem);
+  }
+  body.on-welcome .wrap{
+    padding-bottom: max(2.25rem, calc(env(safe-area-inset-bottom, 0px) + .9rem));
+  }
   :root{ --statusbar-mix2:0%; --statusbar-mix3:0%; }
   [data-layout="modern"]{ --statusbar-mix2:3.3%; --statusbar-mix3:3%; }
-  [data-theme="dark"][data-layout="modern"]{ --statusbar-mix2:5.5%; --statusbar-mix3:5.5%; }
+  [data-theme="dark"][data-layout="modern"]{ --statusbar-mix2:7.4%; --statusbar-mix3:7.25%; }
   [data-layout="modern"] body{ background:transparent; }
   [data-layout="modern"] body::before{
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
@@ -531,10 +551,25 @@
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 6%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
   }
+  /* Reported as dull. Two changes, and only the first one touches the
+     top of the screen: the two existing corner glows come up from
+     10%/11% to 13.5%/14.5% of their theme colors, and a THIRD glow is added
+     along the bottom edge in --theme-c1 (the gold end of Nova's own
+     ramp, the one color of the three that had no presence in the
+     background at all). Anchoring it at 104% keeps its centre off the
+     bottom of the viewport, so what shows is the top of a wide, soft
+     arc rather than a visible blob.
+     The bottom glow is placed where it contributes nothing at the very
+     top edge on purpose: --statusbar-mix2/3 below model the share of
+     glow 1 and glow 2 that survives up in the status bar strip, and a
+     third glow up there would have no token to be counted in. Those two
+     tokens are re-scaled for the new peaks at the same 55%/50% share
+     they were calibrated at (see their own note). */
   [data-theme="dark"][data-layout="modern"] body::before{
     background:
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 10%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 11%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(ellipse 120% 55% at 50% 104%, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
       var(--paper);
   }
   /* A hard, flat-colored bar running the full width of the very top of
@@ -598,10 +633,14 @@
     background-size:100vw 100lvh;
     background-repeat:no-repeat;
   }
+  /* Kept pixel-identical to the body::before stack above - that is the
+     whole point of this rule (see its note), so every layer, every
+     percentage and every position has to be copied, not approximated. */
   html[data-theme="dark"][data-layout="modern"]{
     background:
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 10%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 11%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(ellipse 120% 55% at 50% 104%, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
       var(--paper);
     background-size:100vw 100lvh;
     background-repeat:no-repeat;
@@ -629,8 +668,8 @@
   }
   [data-theme="dark"][data-layout="modern"] body.has-active-question::before{
     background:
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 3%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 3.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 4%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
   }
   /* The status bar has to follow the glow down when a question dims it,
@@ -639,7 +678,7 @@
      Same 55%/50% top-edge share as above, applied to the dimmed peaks
      these two rules use instead of the full ones. */
   [data-layout="modern"] body.has-active-question{ --statusbar-mix2:1.1%; --statusbar-mix3:1%; }
-  [data-theme="dark"][data-layout="modern"] body.has-active-question{ --statusbar-mix2:1.65%; --statusbar-mix3:1.75%; }
+  [data-theme="dark"][data-layout="modern"] body.has-active-question{ --statusbar-mix2:2.2%; --statusbar-mix3:2.35%; }
   /* A structural guarantee, not just a stacking one: as long as
      #splashscreen still exists anywhere earlier in the document, the
      entire rest of the app stays visibility:hidden, full stop \u2014
@@ -734,8 +773,13 @@
     to{ opacity:1; }
   }
 
+  /* z-index 400, not 200. At 200 it tied with .bottomtabs, so the tab bar
+     painted alongside a full-screen loading state and stayed tappable
+     through it - which is how a Settings tour ended up running on top of
+     "GENERATING PROFILE". Above the tour overlay (205) and tooltip (210)
+     as well, so nothing can ever sit over a loading screen. */
   #genprofile-overlay{
-    position:fixed; inset:0; z-index:200; background:#050505;
+    position:fixed; inset:0; z-index:400; background:#050505;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:1.2rem; transition:opacity .3s ease;
   }
@@ -944,6 +988,20 @@
   #tour-next{
     background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px;
     padding:.4rem 1rem; font:inherit; font-weight:700; font-size:.8rem; cursor:pointer;
+  }
+  /* A 14rem bubble of .85rem type is a phone measurement: on an iPad it
+     is a small card floating in a large screen, read from noticeably
+     further away, and was reported as hard to read. Wider box AND bigger
+     type - widening alone only makes the lines shorter. This sits below
+     #tour-text/#tour-next deliberately: all three are single-id rules at
+     equal specificity, so source order is what decides, the same trap
+     this file documents elsewhere. renderStep() positions the bubble
+     from getBoundingClientRect() at render time, so it lays out
+     correctly at whatever size it ends up being. */
+  @media (min-width:40rem){
+    #tour-tooltip{ max-width:23rem; padding:1.3rem 1.5rem; border-radius:16px; }
+    #tour-text{ font-size:1.18rem; line-height:1.5; margin-bottom:1rem; }
+    #tour-next{ font-size:1.02rem; padding:.6rem 1.4rem; }
   }
 
   /* The contextual info popup \u2014 same reverted Liquid Glass recipe as
@@ -2389,11 +2447,138 @@
   /* Tablet sizing. Four phone-sized cards in an 834px column left the
      screen mostly empty; giving them real padding and type fills it and
      makes them read as panels rather than list rows. */
+  /* Sized up again, per explicit follow-up that the descriptions were
+     still small and hard to read on an iPad. .welcomeintro-body is the
+     line that was actually flagged, so it takes the biggest step
+     (1.12 -> 1.3rem); the heading and the padding move with it so the
+     cards keep their proportions rather than just growing their text.
+     Measured against the screen it has to fit: four cards at this size
+     plus the title and the button still clear an iPad Pro 11" in
+     portrait with room over, and the 32rem phone rules are untouched. */
+  /* The gap BETWEEN cards has to beat the padding INSIDE them, or four
+     cards read as one block with odd spacing in it. Measured on an iPad:
+     35px of air above and below the text inside each card against 27px
+     between one card and the next, which is the wrong way round and is
+     what "awkward sized gaps" was pointing at. (A phone was already 15
+     and 15, which is why it only showed on tablets.) Now 29 inside and
+     38 between - and the cards come out slightly SHORTER than before, so
+     this costs no height on a short tablet. */
   @media (min-width:40rem){
-    .welcomeintro-row{ margin-bottom:1.9rem; padding:2.2rem 1.9rem; border-radius:20px; }
-    .welcomeintro-head{ font-size:1.35rem; margin-bottom:.45rem; }
-    .welcomeintro-body{ font-size:1.12rem; line-height:1.55; }
+    .welcomeintro-row{ margin-bottom:2.4rem; padding:1.8rem 2rem; border-radius:20px; }
+    .welcomeintro-head{ font-size:1.55rem; margin-bottom:.55rem; }
+    .welcomeintro-body{ font-size:1.3rem; line-height:1.5; }
     .welcomeintro-title{ font-size:clamp(1.8rem, 5vh, 2.4rem); margin-bottom:1.4rem; }
+  }
+  /* A short-viewport tier for this one screen, and the reason it is
+     height-only where this file normally insists on short AND wide.
+     That rule exists so a tier written for laptop windows does not also
+     fire on a phone held upright - here the phone held upright IS the
+     case. Measured, "What This Actually Is" overflowed its viewport on
+     every short device in the matrix and nowhere else: an SE 2nd/3rd gen
+     by 164px, a 13 mini by 30, an Android phone by 35, and the laptops
+     in a browser window by 172-294. The cost of that is not only a
+     scroll - it is that Continue lands wherever the content happens to
+     end, which is what put it 184px away from where every other
+     onboarding screen puts it on an SE while measuring 0px apart on a
+     Pro Max.
+     56rem is 896px. It started at 52rem, which was only ever about
+     getting the overflowing screens back inside their viewport - but
+     fitting is not the same as looking right, and measured afterwards,
+     Continue sat 3px under the last card on an SE, 33px on a 13 mini and
+     21px on a 14/15/16 while the gap below it is a near-constant 90px on
+     every device. 56rem takes in the 14/15/16 at 852 as well, so all
+     four get a gap above the button in the same range as the one below.
+     An iPhone 16/17 Pro Max is 956px = 59.75rem and is deliberately
+     outside this, as is every iPad in portrait: both already read as
+     intended and were explicitly asked to be left alone.
+     The second condition exists for one reason: a 1920x1080 laptop
+     leaves a 950px viewport in Chrome, which is 59.4rem - past the 56rem
+     line and so getting the full tablet card sizing on a screen with no
+     height for it (measured, Continue 35px under the last card). Raising
+     the plain height line to 60rem would catch it, but it would also
+     catch the 956px Pro Max by 4px, so the wide case is written
+     separately. It is deliberately the SAME declarations, not a third
+     set of values between the other two - a middle tier here overrode
+     this one on every short laptop and made all three of them worse than
+     they had been, pushing a Dell Latitude 77px into overflow.
+     Four cards of real text cannot be made to fit a 320x568 SE 1st gen
+     and this does not pretend otherwise; it gets everything else back
+     inside the viewport. */
+  @media (max-height:56rem), (min-width:40rem) and (max-height:60rem){
+    /* Same rule as the tablet block: the gap outruns the padding. */
+    .welcomeintro-row{ margin-bottom:.7rem; padding:.5rem .9rem; }
+    .welcomeintro-head{ font-size:.9rem; margin-bottom:.1rem; }
+    .welcomeintro-body{ font-size:.8rem; line-height:1.3; }
+    .welcomeintro-title{ font-size:1.25rem; margin-bottom:.5rem; }
+    .panel.home.welcomeintro-panel{ padding-top:.8rem; }
+  }
+  /* One more step for the shortest phones. It started at 44rem, purely to
+     stop an SE 2nd/3rd gen overflowing by 88px, and is now 52rem because
+     fitting was never the whole ask: measured afterwards, a 13 mini left
+     33px between the last card and Continue and an Android phone 28px,
+     against a gap below the button that is a near-constant 90px on every
+     device. 52rem is 832px - over both of those, and under an iPhone
+     14/15/16 at 852 which already sits at 88px and is left alone.
+     Padding and margins only: the body type stays at .8rem because it
+     was raised from that size once already, on an explicit report that
+     these descriptions were too small to read, and winning 20px back by
+     undoing that is a bad trade. Narrow AND short, so a laptop window
+     (wide, and already fitting with room) is not caught by it. */
+  @media (max-width:32rem) and (max-height:52rem){
+    .welcomeintro-row{ margin-bottom:.35rem; padding:.3rem .65rem; }
+    .welcomeintro-title{ font-size:1.15rem; margin-bottom:.25rem; }
+    /* Width, not just height. Every pixel of column this screen gets back
+       is a pixel of text that does not have to wrap, and a wrapped line
+       costs ~17px four times over. The [data-layout="modern"] prefix is
+       required, not decorative: [data-layout="modern"] .panel{padding:
+       1.5rem 1.25rem} sits ~900 lines further down at equal specificity
+       and wins on source order otherwise - the trap this file documents
+       for .opt .box and .bottomtab-label. padding-bottom is deliberately
+       NOT touched, so that once this screen does fit, its button lands on
+       exactly the same floor as every other onboarding screen. */
+    [data-layout="modern"] .panel.home.welcomeintro-panel{
+      padding-top:.5rem; padding-left:.55rem; padding-right:.55rem;
+    }
+  }
+  /* The one case tightening cannot reach. On an SE 2nd/3rd gen the four
+     cards fill the panel exactly - the button's own margin-top:auto has
+     nothing left to absorb, so Continue sits 3px under the last card
+     with 87px of empty reserve below it. Reported as "pushed up against
+     the bottom box".
+     A bottom margin on the last card is the fix precisely because it is
+     self-cancelling: where there IS slack (a 13 mini has 113px) the auto
+     margin simply absorbs it and nothing moves, and where there is none
+     the panel grows past its min-height and carries the button down into
+     that reserve instead. 2.8rem lands an SE at roughly 48 above / 42
+     below - centred between the last card and the bottom of the screen,
+     which is what was asked for.
+     The min-height guard keeps it off an SE 1st gen: that one already
+     overflows this screen by 186px, and 45px more scroll helps nobody. */
+  @media (max-width:32rem) and (max-height:52rem) and (min-height:40rem){
+    .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.8rem; }
+  }
+  /* The two shortest laptop windows were the last ones riding high - a
+     1366x768 Dell leaves 638px in Chrome and measured 49px above the
+     button against 88 below, and a 1280x800 measured 81/88. Wide, so the
+     narrow tier above cannot reach them, and short enough that the cards
+     are still the binding constraint. Same self-cancelling last-card
+     margin, and the same idea in the padding: these are pure spacing
+     reductions, the type is untouched. 44rem is 704px - over both, under
+     a MacBook Air's 770px window, which already sits at 181/88. */
+  @media (min-width:40rem) and (max-height:44rem){
+    /* These have to be SMALLER than the tier above, not smaller than the
+       tablet block - the first attempt set .75rem/1.2rem padding against
+       that tier's .5rem/.9rem and, being later in source, made the two
+       shortest laptops bigger instead of tighter. A Dell Latitude went
+       from 49px above the button to 35 and picked up 23px of overflow
+       doing it. Always diff a new tier against the one that is actually
+       winning, not against the base. */
+    /* gap > padding here too - at .25rem against .35rem of padding the
+       shortest laptops had the same inside-out rhythm the tablets had. */
+    .welcomeintro-row{ margin-bottom:.5rem; padding:.35rem .9rem; }
+    .welcomeintro-head{ margin-bottom:0; }
+    .welcomeintro-title{ margin-bottom:.4rem; }
+    .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.2rem; }
   }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
@@ -3189,7 +3374,14 @@
        instead keeps the pill exactly the shape it is designed to be on
        every device, and the total space it occupies is unchanged, so the
        7.5rem reserved for it above still fits. */
-    bottom:calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    /* Lowered from 1.1rem, per explicit request that the bar sit closer
+       to the bottom edge - "not too close, but closer than what it is".
+       On an iPhone the pill's own bottom edge now clears the home
+       indicator's 34px inset by 10px instead of 18px; on an iPad's 20px
+       inset it clears by the same 10px. The bar only moves DOWN, so the
+       7.5rem .wrap reserves for it (see the padding note there) still
+       covers its whole footprint with more room, not less. */
+    bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
     /* Shrink-to-fit with no ceiling meant the bar was a flat 344px wide
        whatever the screen was, so on a 320px phone (an SE, or a narrow
        desktop window) it ran 12px off BOTH edges - measured. A ceiling
@@ -3723,8 +3915,30 @@
      exists to solve), it sits a layer higher so a toast can't cover it,
      and pointer-events stay live because unlike a toast this one is
      meant to be tapped. */
+  /* Pinned to the TOP of the screen, per explicit request - the bottom
+     of Home and Welcome is crowded (the primary button, the version
+     label, the daily-question button and the tab bar all live down
+     there, which is what positionNotice() grew up measuring around),
+     while the top strip under the status bar is empty on both screens.
+     top: clears the notch and the status bar; positionNotice() still
+     runs, but now measures the TOP furniture rather than the bottom. */
   .update-banner{
-    position:fixed; left:1rem; right:1rem; bottom:max(1rem, env(safe-area-inset-bottom)); z-index:80;
+    /* Side insets as well as the top one: this is a full-width fixed
+       element, and a phone held sideways puts the notch straight through
+       its left or right edge. It is centred by max-width + margin:auto
+       anyway, so on anything without insets these resolve to the same
+       1rem they always were. */
+    position:fixed;
+    left:max(1rem, env(safe-area-inset-left, 0px));
+    right:max(1rem, env(safe-area-inset-right, 0px));
+    /* .5rem, not .75: what sits above this is the status bar, and the
+       banner should read as hanging off the bottom of it rather than
+       floating below it. Reported as "not aligned to the top of screen"
+       from a screenshot, where the inset renders as plain empty space
+       because no status bar is drawn - the gap was real, just smaller
+       than it looked. tools/shoot-flow.py draws the inset now so the
+       next judgement call is made against what the device shows. */
+    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:80;
     max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
     display:flex; align-items:center; gap:.75rem;
     background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
@@ -3733,24 +3947,23 @@
     backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     font-size:.9rem; line-height:1.35;
     box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
-    opacity:0; transform:translateY(8px); transition:opacity .2s ease, transform .2s ease;
+    /* Drops in from above now that it lives up here, rather than rising
+       from the bottom edge it no longer sits on. */
+    opacity:0; transform:translateY(-8px); transition:opacity .2s ease, transform .2s ease;
   }
   .update-banner.show{ opacity:1; transform:translateY(0); }
-  /* Clears the bottom tab bar, exactly as .toast already does - without
-     this it lands on top of the Home/Profile/Rewards/Settings row. This
-     is the starting point only: positionNotice() measures the rest of
-     the bottom furniture on the screen the notice is actually on (the
-     primary button, the version label, the daily-question button) and
-     overrides this inline, because no single offset is right for both
-     screens at both sizes. It stays as the fallback for the frame or
-     two before that measurement lands, and for anything it cannot
-     measure - and a shorthand is deliberately not used here, so the
-     inline bottom is the only thing being overridden. */
-  body.has-bottomtabs .update-banner{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
-  /* Also transitions the measured offset, so a notice already on screen
+  /* There used to be a body.has-bottomtabs override here lifting the
+     banner clear of the tab bar. It went with the move to the top: the
+     tab bar is no longer anywhere near this element, and the top: above
+     already clears the notch on every device. The remaining offset is
+     whatever positionNotice() measures for the CURRENT screen's own top
+     furniture, applied inline, with the top: above as the fallback for
+     the frame or two before that lands - and a shorthand is deliberately
+     not used there, so the inline top is the only thing overridden.
+     Also transitions the measured offset, so a notice already on screen
      when the device rotates slides to its new position instead of
      jumping. */
-  .update-banner{ transition:opacity .2s ease, transform .2s ease, bottom .2s ease; }
+  .update-banner{ transition:opacity .2s ease, transform .2s ease, top .2s ease; }
   .update-banner-text{ flex:1 1 auto; }
   /* Reported on a real device: the action button renders with glitched
      lines running through it. It is a flat var(--accent) fill on a
@@ -3861,7 +4074,17 @@
      (measured content width ~5.5rem at this font) with room to spare,
      on both phone and iPad; the shared rule above still governs the
      username field, which is unaffected. */
-  .synccode-entry-panel .onboarding-input-wrap{ max-width:10rem; }
+  .synccode-entry-panel .onboarding-input-wrap{ max-width:11rem; }
+  /* The text was left-aligned in a box sized for the code, so "XXXX-XXXX"
+     sat against the left edge with the slack pooled on the right and the
+     field read as a text box that happened to be short. Centred, spaced
+     and in the mono face the sync code is shown in everywhere else, it
+     reads as a code slot. Symmetric padding so "centred" is centred
+     against the border box and not just the content box. */
+  .synccode-entry-panel .searchbox{
+    text-align:center; font-family:var(--mono); letter-spacing:.14em;
+    padding-left:.75rem; padding-right:.75rem;
+  }
   .synccode-status{
     font-size:.85rem; margin:.5rem 0 0; min-height:1.2em; opacity:0; transition:opacity .15s ease;
   }
@@ -3920,6 +4143,37 @@
      is present fixes this for every toast everywhere, since they all
      share this one class. */
   body.has-bottomtabs .toast{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
+  /* The daily-question announcement, and the reason it is not a toast.
+     A toast lands in the bottom corner, and on Home that corner is full:
+     at the toast's own height it painted under the "?" button the message
+     tells you to tap, and lifted clear of the "?" it painted over Start
+     Studying instead. There is no free band down there - measured, the
+     gap between Start Studying and the "?" is 26px.
+     So it goes to the top, where both screens a notice can appear on are
+     empty and where the update notices already moved for exactly the same
+     reason. Same glass recipe as .toast, same drop-in-from-above entrance
+     as .update-banner, and a lower z-index than the update banner so that
+     one always wins if both are up (showDailyAlert measures it and parks
+     below it rather than overlapping). */
+  .daily-alert{
+    position:fixed;
+    left:max(1rem, env(safe-area-inset-left, 0px));
+    right:max(1rem, env(safe-area-inset-right, 0px));
+    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:75;
+    max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
+    background:rgba(28,33,40,.55); color:#F3F5F7; border-radius:16px;
+    border:1px solid rgba(255,255,255,.09);
+    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
+    font-size:.9rem; line-height:1.4; text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+    opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
+    pointer-events:none;
+  }
+  .daily-alert.show{ opacity:1; transform:translateY(0); }
+  [data-theme="light"] .daily-alert{
+    background:rgba(255,255,255,.55); color:#1A2027; border-color:rgba(255,255,255,.5);
+    box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
   /* Flag confirmations specifically move to the top \u2014 at the bottom
      they were landing right on top of the floating Next-question
      button, covering the one thing someone would tap next. */
@@ -4407,6 +4661,34 @@
      version tag simply following right after it near the bottom
      rather than being separately pushed even further down on its own. */
   .panel.home .playbtn{ margin-top:auto; }
+  /* A Continue that is not armed yet still holds its slot. Three screens
+     hide their button until something is chosen, and [hidden] means
+     display:none - which also takes away the margin-top:auto above that
+     was holding the layout together, so on a tablet ALL the free space
+     went to the panel's own ::before spacer and the content sank to the
+     bottom of the screen. That is the "everything got pushed to the
+     bottom" on Pick your class, Enter a username and Choose a character,
+     and why "You're all set" - whose button is never hidden - looked
+     right next to them.
+     visibility:hidden is the tool: the box and its auto margin stay, and
+     unlike display:none-plus-an-override it is still out of the
+     accessibility tree, so nothing announces a button that does nothing.
+     It also means the layout does not jump when the button arrives. */
+  .panel.home.classselect-panel .playbtn[hidden],
+  .panel.home.charselect-panel .playbtn[hidden],
+  .panel.home.onboarding-shortform-panel .playbtn[hidden]{
+    display:block; visibility:hidden; pointer-events:none;
+  }
+  /* Home only - not every .panel.home screen. margin-top:auto alone
+     drives the button to the floor of the panel, which put it 23px above
+     the tab bar and 168px below the tagline on an iPhone: hard against
+     the bar with all the slack pooled above it. Per explicit request,
+     "centered between the bottom tab and Master the material" - and two
+     auto margins are exactly that, splitting the leftover space evenly
+     instead of pooling it on one side. The onboarding screens keep the
+     bottom-anchored button they share with each other; this class is on
+     Home's panel and nothing else (see showHome). */
+  .panel.home.screen-home-actual .playbtn{ margin-bottom:auto; }
   /* On a tall tablet viewport, min-height:calc(100dvh - 9rem) above
      becomes a much bigger number than on a phone, so margin-top:auto
      was stretching this exact same gap out into a huge, obviously-
@@ -4423,8 +4705,28 @@
   @media (min-width:40rem){
     .panel.home{ justify-content:center; }
     .panel.home .playbtn{ margin-top:2.5rem; }
+    /* The phone rule said an iPad Pro 11" already lands Start Studying
+       within 9px of the midpoint, so it left the tablet alone. That was
+       true of the 11" and only the 11": measured across the matrix, a
+       12.9" comes out 102 above / 172 below and a 13" 102/177 - the
+       centred group puts its leftover height below the button rather
+       than around it, and the taller the iPad the worse that gets.
+       Three auto margins fix it without giving up the centred look the
+       tablet layout is for: ::before opens the space above the hero, and
+       the button's own two split what is left either side of it, so the
+       free height is divided in thirds instead of halves. The tagline's
+       own fixed bottom margin has to come out of the way for the same
+       reason it does on a phone - a fixed gap under the tagline is a gap
+       the auto margins never get to see. */
+    .panel.home.screen-home-actual::before{ content:""; margin-top:auto; }
+    .panel.home.screen-home-actual .playbtn{ margin-top:auto; margin-bottom:auto; }
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
   }
-  /* Two specific short-content screens — "What This Actually Is" and
+  /* Historical, and only half of it still applies: "Pick your class" has
+     since been moved back to the shared centred treatment (see its own
+     block further down), leaving "What This Actually Is" as the one
+     screen this reasoning is still about.
+     Two specific short-content screens — "What This Actually Is" and
      "Pick your class" — per explicit report, read as too high up with
      the centered-block treatment just above: centering splits the
      leftover tablet-height space evenly above AND below the group, so
@@ -4461,20 +4763,30 @@
      nothing left to actually push against. A real, fixed gap here
      instead guarantees genuine breathing room regardless of how
      close to the viewport edge the content itself happens to land. */
-  /* auto on BOTH sides, so the button sits in the middle of whatever space
-     is left between the last card and the bottom of the panel rather than
-     tucked right under the cards. Reported on a phone: "too close to the
-     bottom box, it needs to be centered between the bottom of the screen
-     and the last box". Two auto margins split the free space evenly, which
-     is exactly that, and it does the right thing on a tablet too. */
-  .panel.home.welcomeintro-panel .playbtn{ margin-top:auto; margin-bottom:auto; }
+  /* Two rounds of trying to find this button its own special position
+     (auto on both sides, then auto plus a fixed 2.25rem) are gone. The
+     answer was never a position of its own: it was reported as "slightly
+     higher than the other continue buttons", and it was - 29px on a
+     phone, 120px on an iPad - because every OTHER onboarding screen
+     lands its button on the panel floor and this one was floating
+     somewhere above it. It uses the same floor as the rest now, which is
+     what "the same location as the other continue buttons" means. The
+     only thing needed to make the numbers line up exactly is this
+     screen's own padding-bottom, which had been trimmed to 1.1rem and
+     is back to the shared 1.5rem below. */
   /* This screen's four cards run tall enough on a phone to scroll the
      page — per explicit report ("scrollable on my iPhone"). Trimming
      this screen's own top/bottom padding a bit (still comfortable,
      just not the same generous padding every other, shorter
      .panel.home screen gets) recovers a little more vertical room
      without touching the shared base rule other screens rely on. */
-  .panel.home.welcomeintro-panel{ padding-top:1.25rem; padding-bottom:1.1rem; }
+  /* padding-bottom back to the 1.5rem every other .panel.home screen
+     uses: the button sits on the panel's content floor now, so anything
+     unique here would put it at a different height from the rest. The
+     top stays trimmed - that is the half of this that was actually
+     buying vertical room. Measured after the change: the tallest phone
+     in the matrix still does not scroll this screen. */
+  .panel.home.welcomeintro-panel{ padding-top:1.25rem; padding-bottom:1.5rem; }
   /* "Pick your class" needs a different treatment than welcomeintro,
      not the same one - per direct follow-up report, flex-end here
      read as "everything at the bottom" with a big empty gap up top.
@@ -4491,9 +4803,29 @@
      Same proven mechanism the phone layout already relies on
      (.panel.home .playbtn{margin-top:auto} above), just re-applied
      here on tablet for this one short-content screen specifically. */
+  /* Superseded, per explicit follow-up: "the pick your class screen
+     needs to be centred". Bottom-anchoring the button left the two
+     cards stranded near the top of a 1194px iPad with the button alone
+     at the floor; centring the whole group is the treatment every other
+     onboarding screen on a tablet now uses, and the one that was asked
+     for by name. Nothing is declared here any more - the base tablet
+     rule (.panel.home{justify-content:center} + .playbtn{margin-top:
+     2.5rem}) is what this screen wants. The cards and their type are
+     scaled up alongside it, since the same report called this screen's
+     text too small to read comfortably at arm's length. */
+  /* Every selector here is scoped to the panel, which is not cosmetic:
+     the base .classselect-cards rules and [data-layout="modern"]
+     .modecard both sit ~1000 lines further down at equal specificity
+     and win on source order - the trap this file documents for
+     .opt .box, .bottomtab-label and .panel padding. The panel scope
+     puts these a class ahead so they actually apply. */
   @media (min-width:40rem){
-    .panel.home.classselect-panel{ justify-content:flex-start; }
-    .panel.home.classselect-panel .playbtn{ margin-top:auto; }
+    .panel.home.classselect-panel .welcomeintro-title{ margin-bottom:1rem; }
+    .panel.home.classselect-panel .classselect-sub{ font-size:1.12rem; line-height:1.5; margin-bottom:1.8rem; }
+    .panel.home.classselect-panel .classselect-cards{ gap:1.6rem; }
+    .panel.home.classselect-panel .modecard{ padding:2.2rem 1.7rem; border-radius:20px; min-height:12rem; justify-content:center; }
+    .panel.home.classselect-panel .modecardtitle{ font-size:1.5rem; min-height:auto; }
+    .panel.home.classselect-panel .modecarddesc{ font-size:1.12rem; line-height:1.5; margin-top:.7rem; }
   }
   /* Same bottom-anchored treatment as classselect just above, for the
      other short, single-field onboarding screens (Enter your code,
@@ -4516,17 +4848,50 @@
        already is and leaves even margins instead of one huge gap.
        Pick your class keeps its own bottom-anchored button below - that
        screen has enough content to earn it. */
-    /* Top-aligned, not centred. Choose a character is a title, one line
-       and a grid of eight faces - centring it on a 1194px-tall iPad
-       floated the whole thing into the middle of the screen with nothing
-       above or below it, reported as "centered to the screen and isn't at
-       the top like it should". */
-    .panel.home.charselect-panel{ justify-content:flex-start; }
+    /* Back to centred, per explicit follow-up reverting the top-aligned
+       version above it: "the choose a character screen needs to be
+       reverted, it should actually be how it was, it needs to be centred
+       to the middle of the screen like the other iPad screenshots". So
+       no justify-content is declared here at all - the base tablet rule
+       (.panel.home{justify-content:center}) is what this screen wants,
+       and it is what puts this screen's Continue button in the same
+       centred-group position as the one on "You're all set". */
     .panel.home.charselect-panel .hometitle{ font-size:clamp(1.9rem, 5vh, 2.6rem); }
     .panel.home.charselect-panel .hometagline{ font-size:1.15rem; }
     .panel.home.charselect-panel .avatarchar-grid{ margin-top:1.4rem; }
-    .panel.home.onboarding-shortform-panel{ justify-content:center; }
-    .panel.home.onboarding-shortform-panel .playbtn{ margin-top:2.2rem; }
+    /* One button position for all four short onboarding screens on a
+       tablet, per explicit request that Continue land in "the same spot
+       that the Got it, let's go button is at" - and the same across
+       devices, which it already was on a phone (all four measure 816px
+       there). On a tablet they did not: centring each screen as a group
+       put the button wherever that screen's own content height happened
+       to leave it, a 125px spread between "You're all set" at 665 and
+       "Choose a character" at 743.
+       An auto margin in the main axis takes all the free space before
+       justify-content is consulted, so this uses two of them rather than
+       justify-content: ::before opens the space above the content and
+       the button's own margin-top:auto opens an equal gap below it, so
+       the group still reads as floating in the middle of the screen
+       while the button itself lands at the floor of the panel - the same
+       floor on every one of these screens, and the same mechanism the
+       phone layout has always used to put it there. */
+    .panel.home.onboarding-shortform-panel,
+    .panel.home.charselect-panel,
+    .panel.home.classselect-panel{ justify-content:flex-start; }
+    .panel.home.onboarding-shortform-panel::before,
+    .panel.home.charselect-panel::before,
+    .panel.home.classselect-panel::before{ content:""; margin-top:auto; }
+    .panel.home.onboarding-shortform-panel .playbtn,
+    .panel.home.charselect-panel .playbtn,
+    .panel.home.classselect-panel .playbtn,
+    .panel.home.welcomeintro-panel .playbtn{ margin-top:auto; }
+    /* welcomeintro takes the button rule but NOT the ::before spacer the
+       three above it get. Those are short screens that would otherwise
+       strand their content at the top of a 1194px iPad; this one is four
+       full-height cards plus a title and has no spare height to float
+       into. Floating it anyway pushed the back link 137px down the
+       screen for nothing. Same floor for the button, content left where
+       it is. */
     .panel.home.onboarding-shortform-panel .hometitle{ font-size:clamp(1.9rem, 5vh, 2.6rem); }
     .panel.home.onboarding-shortform-panel .hometagline{ font-size:1.15rem; }
     .panel.home.onboarding-shortform-panel .searchbox{ font-size:1.1rem; padding-top:.9rem; padding-bottom:.9rem; }
@@ -4547,7 +4912,16 @@
        the min-height target \u2014 min-height is a floor, not a cap, so
        oversized padding here overflows regardless of what it's set to. */
     min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
-    box-sizing:border-box; justify-content:center; gap:.34rem;
+    /* flex-start with auto margins, at every width - this used to be
+       phone-only, and the tablets kept justify-content:center. Centring
+       a five-item column on a 1194px iPad left the group floating in the
+       middle with ~40px of slack under the hint AND above the sphere,
+       which is what "the stuff underneath the planet system needs to be
+       moved down or spaced out" was describing. The autos below put the
+       leftover height where it reads as layout: some above the sphere,
+       the rest between the text and the actions, with the actions
+       sitting at the bottom of the panel on every device. */
+    box-sizing:border-box; justify-content:flex-start; gap:.34rem;
   }
   /* clamp() against viewport height, not just width, so this
      actually shrinks on a short screen instead of holding a fixed
@@ -4616,7 +4990,20 @@
      read as a phone layout that had been stretched. It is the one element
      that can actually take up a tablet's room, so it does: 36rem is 576px,
      which still clears the 44rem content column comfortably. */
-  @media (min-width:40rem) and (min-height:60rem){
+  /* The second condition is for laptops. 60rem of height is 960px, which
+     a tablet in portrait clears easily and a laptop browser window
+     usually does not - a MacBook Pro 14" leaves 852px once Chrome's own
+     chrome is gone, so it was falling through to the PHONE sizing:
+     measured, a 368px sphere and a 15.2px tagline centred in a 1512px
+     viewport, which is exactly the "stretched phone layout" this block
+     exists to stop. Width is the safe way to let it in - the height gate
+     protects short iPads in landscape, which are 834px tall at 40-52rem
+     WIDE, so requiring 64rem (1024px) of width excludes every one of
+     them while taking in every laptop. 46rem of height is still required,
+     because the thing being protected against is a hero and a type ramp
+     that grow into the bottom tab bar. */
+  @media (min-width:40rem) and (min-height:60rem),
+         (min-width:64rem) and (min-height:46rem){
     /* 48vh, not 56. The flat 36rem cap plus a generous vh share fits an
        834x1194 iPad beautifully and does not fit a 768x1024 one, or any
        iPad in landscape - measured, it put Start Studying up to 28px
@@ -4925,8 +5312,17 @@
     line-height:1.5;
   }
   .cosmic-welcome-btn{ width:100%; max-width:22rem; }
+  /* The two buttons and the line explaining them, as one block - see
+     showWelcome. The gap here is the real spacing between them, and
+     because this is a single flex child of .cosmic-welcome it is the
+     only thing that decides it; the parent's space-between can no
+     longer push them apart on a phone. */
+  .cosmic-welcome-actions{
+    display:flex; flex-direction:column; align-items:center;
+    width:100%; gap:.55rem;
+  }
   .cosmic-welcome-hint{
-    font-size:.78rem; color:var(--soft); margin:clamp(.5rem, 2.5vh, 1rem) 0 0; max-width:20rem; line-height:1.5;
+    font-size:.78rem; color:var(--soft); margin:.35rem 0 0; max-width:20rem; line-height:1.5;
   }
 
   /* position:absolute + top:0 puts this flush with the TOP of its
@@ -5007,6 +5403,26 @@
     transform:translate(-50%,-50%);
     z-index:-1;
   }
+  /* Reported as "a faint white glow coming around it all" that could be
+     less subtle and better. It was literally that: .homeglow's base is a
+     single var(--accent) ellipse, and on the default accent --accent is
+     var(--ink), so the sphere sat in a grey wash. Behind the one element
+     the whole screen is built around, the halo should be the app's own
+     ramp instead - gold close in, magenta further out, on the same
+     --theme-c tokens every accent already redefines, so this re-themes
+     with the rest of the app rather than pinning one hardcoded pair of
+     colors. Opacity carries the "less subtle" half: .12 -> .3, which is
+     still a glow rather than a second light source, because the two
+     stops now stack where they overlap.
+     Only the hero variant. The plain .homeglow on the username and
+     character screens is a top-of-panel wash with no sphere in it and no
+     complaint against it. */
+  [data-theme="dark"] .homeglow.homeglow-hero{
+    background:
+      radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--theme-c1) 70%, transparent) 0%, transparent 38%),
+      radial-gradient(ellipse at 50% 54%, color-mix(in srgb, var(--theme-c3) 62%, transparent) 0%, transparent 52%);
+    opacity:.3;
+  }
 
   .hometitle-wrap{ position:relative; z-index:1; margin-bottom:1.6rem; }
   .homegreeting{
@@ -5051,7 +5467,8 @@
      staying at its original size) was enough to push Start Studying
      into the bottom tab bar on a short/landscape iPad, so it only
      applies where there's actually enough vertical room for it. */
-  @media (min-width:40rem) and (min-height:60rem){
+  @media (min-width:40rem) and (min-height:60rem),
+         (min-width:64rem) and (min-height:46rem){
     /* Scaled up alongside the bigger sphere - the greeting and title were
        phone-sized under a 576px hero, which is what made the whole screen
        read as stretched rather than designed for the device. */
@@ -5063,6 +5480,44 @@
     .hometagline{ font-size:1.25rem; }
     .cosmic-welcome-title{ font-size:clamp(2rem, 6vh, 2.8rem); }
     .cosmic-welcome-sub{ font-size:1.2rem; }
+    /* Per explicit request, the block under the sphere sits a little
+       lower on a tablet. .cosmic-welcome is centred here, so the extra
+       space is shared - the text group moves down by half of it and the
+       sphere lifts by the other half, which is exactly the "just
+       slightly" separation that was asked for rather than a shove. */
+    .cosmic-welcome-title{ margin-top:2.4rem; }
+    /* And the group itself is spaced out, per the follow-up that
+       everything under the sphere "seems very much bunched together".
+       It was: the flex gap here is the base .34rem (5px) and the title,
+       the sub and the two buttons were stacked at phone spacing on a
+       1194px screen. The gap does the work - it applies between all four
+       children at once, and it spends the 155px this screen was holding
+       as empty margin above and below the group instead. The actions
+       block gets its own, looser internal gap for the same reason. */
+    .cosmic-welcome{ gap:1.5rem; }
+    .cosmic-welcome-actions{ gap:1rem; }
+    /* .78rem is a phone size and read as fine print on a 1194px screen,
+       the same complaint the intro cards and Pick your class got. */
+    .cosmic-welcome-hint{ margin-top:.6rem; font-size:1rem; max-width:28rem; }
+  }
+  /* Letting laptops into the block above was right for Home and too much
+     for Welcome. Home gained real clearance (a MacBook Pro 14" sits 34px
+     above the tab bar), but Welcome is a hero, a title, a sub and two
+     buttons stacked in a column, and at tablet SPACING - a 1.5rem flex
+     gap and a 2.4rem margin under the sphere - that column ran 34px off
+     the bottom of a 1512x852 window, with a 1920x1080 Dell down to 20px
+     of clearance. The type stays enlarged, which is what a laptop
+     actually needed; only the spacing comes back to something a short
+     viewport can carry. 64rem of height is 1024px, which takes in every
+     laptop window in the matrix including a MacBook Pro 16"; paired with
+     64rem of WIDTH it still cannot reach an iPad, because the only one
+     that is 1024px tall is 768px wide and the only one that is 1024px
+     wide is 1366px tall. */
+  @media (min-width:64rem) and (max-height:64rem){
+    .cosmic-welcome{ gap:.55rem; }
+    .cosmic-welcome-title{ margin-top:1.1rem; }
+    .cosmic-welcome-actions{ gap:.6rem; }
+    .cosmic-welcome-hint{ margin-top:.3rem; }
   }
   /* The mirror image of the tall-tablet block above, and the reason it
      exists: on a SHORT viewport Home does not fit, and the Start
@@ -5198,15 +5653,86 @@
     .panel.home .cosmic-hero-wrap{ max-width:min(25.5rem, 52vh); }
     .panel.home .homegreeting{ margin-top:2.1rem; }
     .panel.home .hometitle-wrap{ margin-bottom:2.7rem; }
+    /* Home only, and only alongside the two auto margins on its button
+       above. That 2.7rem is a fixed gap UNDER the tagline, so the auto
+       margins never get to see it: they split what is left after it,
+       which put the button 118px below the tagline and 82px above the
+       tab bar - measurably not the centre that was asked for. Folding it
+       into the pool the auto margins divide lands it at 100/100.
+       Every other .panel.home screen keeps the 2.7rem above. */
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
   }
-  /* Phone: spread the welcome screen's own leftover height into its gaps
-     instead of leaving it in one lump under the last line. The hero is
-     already as wide as the column allows, so there is nothing to grow -
-     but distributing ~40px across five gaps closes the hole and keeps
-     every proportion intact. The tablet is centred and already balanced,
-     so it is left alone. */
+  /* Phone. This was justify-content:space-between, to spread the leftover
+     height into the gaps rather than leave it in one lump under the last
+     line - which it did, but it spread it into EVERY gap, including the
+     one between the two buttons, and they were reported as too far apart
+     (11px of styling measuring 41px on screen). Grouping the buttons into
+     .cosmic-welcome-actions took that gap out of the distribution, and
+     with only four children left the remaining three each collected ~50px
+     - three obvious holes instead of one. Centring with a slightly more
+     generous gap is what actually reads as a filled screen: the group
+     sits in the middle with even margins above and below it, and every
+     gap inside it is one that was designed. */
+  /* The two auto margins themselves, unscoped. The hero takes one so the
+     sphere is not jammed under the status bar, the actions block takes
+     the other so it lands on the panel floor; everything between them
+     rides along. */
+  .cosmic-welcome .cosmic-hero-wrap,
+  .cosmic-welcome-actions{ margin-top:auto; }
   @media (max-width:32rem){
-    .cosmic-welcome{ justify-content:space-between; }
+    /* Three auto margins rather than justify-content, per explicit
+       follow-up: "everything underneath the planet system could be
+       lowered", with the hint line "pretty close to the bottom of the
+       screen". Centring split the leftover 141px into 76 above the hero
+       and 65 below the hint, which held the whole group up in the middle.
+       Auto margins on the hero, the title and the actions block spend it
+       in three places instead: the hero keeps roughly the spot it already
+       had (the first margin replaces the top half of the centring), and
+       everything below it drops - the title and sub by ~30px, the buttons
+       and the hint by ~42px. The actions block is the last child, so all
+       of the free space ends up above it however it is divided; splitting
+       it three ways is what keeps the sphere from sliding up to the notch
+       while the buttons go down. */
+    .cosmic-welcome{ gap:1.1rem; }
+    /* A real gap under the sphere, not an auto one. A third auto margin
+       here divided the free space evenly and opened a 100px hole between
+       the sphere and the title - looked at, and it read as a gap in the
+       screen rather than as spacing. A fixed 1.6rem is spacing; it also
+       comes off the pool the two autos divide, so the title lands ~19px
+       lower than it did and the hero barely moves. */
+    .cosmic-welcome-title{ margin-top:1.6rem; }
+  }
+  /* The non-Max phones only. A Pro Max leaves 84px between the sub and
+     the buttons; a 14/15/16 leaves 48 and a 13 mini 42, because there is
+     simply less height to divide - so the text block reads as sitting
+     higher under the sphere than it does on the phone this was tuned on.
+     The gap under the sphere is the one lever that moves it down without
+     moving the buttons, which are already pinned near the bottom edge
+     (the hint clears it by the same 82px on all three). Bounded top and
+     bottom: over 46rem so an SE, where this screen is already full, is
+     left alone, and under 56rem so the Pro Max at 59.75rem keeps exactly
+     the spacing that was signed off. */
+  @media (max-width:32rem) and (min-height:46rem) and (max-height:56rem){
+    /* 2.6rem, not 3: at 3rem a 13 mini picked up 5px of overflow and its
+       hint closed to 56px off the bottom edge. This keeps the gap under
+       the sphere at 68px against a Pro Max's 51 - the block does sit
+       lower - without either. */
+    .cosmic-welcome-title{ margin-top:2.6rem; }
+  }
+  /* The complement of the (min-height:46rem) block above, and the reason
+     that floor exists: everything in it is affordable on a phone with
+     height to spare and overflows one without. Measured on an iPhone SE
+     (2nd/3rd gen, 375x667): the roomier gap and the title's own margin
+     together cost 62px, and the screen was 56px too tall for the
+     viewport - so the hint sat 20px below the fold on a screen with
+     nothing to scroll to. Handing both back fits it with room over.
+     Deliberately paired with max-width:32rem rather than left as a bare
+     height query: a laptop in a browser window is also short, and this
+     screen is comfortable there (measured 86-129px of clearance under
+     the hint) because it has the width to lay out in. */
+  @media (max-width:32rem) and (max-height:46rem){
+    .cosmic-welcome{ gap:.34rem; }
+    .cosmic-welcome-title{ margin-top:0; }
   }
   .homeversion .homeversion-long{ display:none; }
   .homeversion .homeversion-short{ display:inline; }
@@ -5250,13 +5776,60 @@
     right:max(1.8rem, calc(50% - 22rem + 1.8rem)); z-index:150;
     /* 2.6rem is 41.6px - under the 44px minimum tap target, on a control
        that sits alone in a corner with nothing to aim at but itself. The
-       tablet override below already uses 4rem. */
-    width:2.9rem; height:2.9rem; border-radius:999px; font-size:1.3rem; font-weight:800;
+       tablet override below already uses 4rem. Raised again to 3.4rem
+       (54px) per explicit follow-up that it still reads small; it is a
+       daily action worth noticing, not an afterthought. */
+    width:3.4rem; height:3.4rem; border-radius:999px; font-size:1.5rem; font-weight:800;
     color:#F3F5F7; background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.14);
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer;
   }
   .daily-question-fab.is-done{ opacity:.4; color:var(--soft); cursor:default; }
+  /* Two states, per explicit request: a quiet "this is here and you have
+     not done it" and a louder "it just reset in front of you".
+
+     is-ready is the quiet one - a single ring that grows out of the
+     button and fades, once every few seconds. It is a ::after rather
+     than an animation on the button itself so nothing about the
+     button's own size, blur or hit area moves: a pulsing tap target
+     that changes size under a finger is worse than no animation at all.
+     pointer-events:none for the same reason.
+
+     is-fresh is the loud one, and it is deliberately finite - five
+     cycles, about six seconds, then it stops on its own and leaves
+     is-ready running. A light-up that never ends stops being news and
+     starts being a distraction on the screen people look at most.
+
+     Both are covered by the global [data-reduce-motion="true"] *
+     {animation:none} rule near the top of this file, so the Reduce
+     motion toggle switches them off without either being named. */
+  .daily-question-fab.is-ready::after{
+    content:""; position:absolute; inset:-3px; border-radius:999px;
+    border:1.5px solid var(--theme-c1); opacity:0; pointer-events:none;
+    animation:daily-ready 3.6s ease-out infinite;
+  }
+  @keyframes daily-ready{
+    0%{ transform:scale(.9); opacity:0; }
+    12%{ opacity:.5; }
+    55%{ transform:scale(1.35); opacity:0; }
+    100%{ transform:scale(1.35); opacity:0; }
+  }
+  .daily-question-fab.is-fresh{ animation:daily-fresh 1.2s ease-in-out 5; }
+  @keyframes daily-fresh{
+    0%, 100%{
+      border-color:rgba(255,255,255,.14); color:#F3F5F7;
+      box-shadow:0 4px 14px rgba(0,0,0,.3);
+    }
+    50%{
+      border-color:var(--theme-c1); color:var(--theme-c1);
+      box-shadow:0 4px 14px rgba(0,0,0,.3),
+                 0 0 0 5px color-mix(in srgb, var(--theme-c1) 16%, transparent),
+                 0 0 26px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+    }
+  }
+  /* A reset is news whether or not the button itself is animating, so
+     the ring runs faster and brighter for those few seconds too. */
+  .daily-question-fab.is-fresh.is-ready::after{ animation-duration:1.2s; border-width:2px; }
   /* Genuinely bigger on a tablet-width screen, not just repositioned \u2014
      per explicit report that it renders "way too small" on an iPad.
      Phone keeps its existing 2.6rem size untouched. */
@@ -5273,7 +5846,7 @@
          of a lone button floating above the tab bar with nothing to
          visually relate it to. Sized up again too now that it has
          real room in an actual corner to grow into. */
-      width:4rem; height:4rem; font-size:1.8rem;
+      width:4.6rem; height:4.6rem; font-size:2rem;
       /* Positioned beside the bottom tab bar itself now, not floating
          alone in the far corner - per explicit report that an earlier
          screenshot showing it "to the right of the bottom tab" looked
@@ -5432,6 +6005,7 @@
      natural fit here. Centered titles for the same reason \u2014 with no
      body text anchoring them left, centered is what actually looks
      intentional for a card this short. */
+  .classselect-sub{ text-align:left; margin-bottom:1.2rem; }
   .classselect-cards{ flex-direction:row; }
   .classselect-cards .modecard{ flex:1 1 0; text-align:center; }
   /* min-height added specifically to fix a real, confirmed
@@ -23973,23 +24547,41 @@ function showWelcome(){
   sub.textContent = "Practice, track your mastery, and walk into test day ready.";
   wrap.appendChild(sub);
 
+  /* One flex child, not three. .cosmic-welcome is justify-content:
+     space-between on a phone, which spreads the leftover height evenly
+     into EVERY gap between its children - including the gap between
+     these two buttons, which measured 41px on an iPhone against the
+     11px they are actually styled to have. Reported as the two buttons
+     needing to be closer together. Grouping them (and the hint that
+     explains them) into a single child takes that gap out of the
+     distribution entirely: the free space still fills the screen, it
+     just lands between the text block and the actions instead of
+     between two buttons that belong together. */
+  const actions = document.createElement("div");
+  actions.className = "cosmic-welcome-actions";
+
   const startFreshBtn = document.createElement("button");
   startFreshBtn.type = "button"; startFreshBtn.className = "next playbtn cosmic-welcome-btn";
-  startFreshBtn.textContent = "Get started";
+  /* "Get started" was flagged as vague - it does not say what happens
+     next, and it sat directly above "Sign in with a code", which does.
+     Naming the actual outcome makes the pair read as the two halves of
+     one choice: make an account, or sign in to one you already have. */
+  startFreshBtn.textContent = "Create an account";
   startFreshBtn.addEventListener("click", showWhatsNew);
-  wrap.appendChild(startFreshBtn);
+  actions.appendChild(startFreshBtn);
 
   const haveCodeBtn = document.createElement("button");
   haveCodeBtn.type = "button"; haveCodeBtn.className = "next ghost cosmic-welcome-btn";
-  haveCodeBtn.style.marginTop = ".7rem";
   haveCodeBtn.textContent = "Sign in with a code";
   haveCodeBtn.addEventListener("click", showWelcomeCodeEntry);
-  wrap.appendChild(haveCodeBtn);
+  actions.appendChild(haveCodeBtn);
 
   const hint = document.createElement("p");
   hint.className = "cosmic-welcome-hint";
-  hint.textContent = "First time here? Choose Get started \u2014 a code is only for signing in on a second device.";
-  wrap.appendChild(hint);
+  hint.textContent = "First time here? Choose Create an account \u2014 a code is only for signing in on a second device.";
+  actions.appendChild(hint);
+
+  wrap.appendChild(actions);
 
   /* Tagged so the update notices can tell which screen is actually on
      display. Marking the element that goes INTO #stage rather than
@@ -24088,7 +24680,9 @@ function showClassSelection(){
   panel.appendChild(title);
 
   const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.cssText = "text-align:left; margin-bottom:1.2rem;";
+  /* A class rather than an inline style, so the tablet block can size
+     this line up without having to out-specify an inline declaration. */
+  sub.className = "cal-sub classselect-sub";
   sub.textContent = "This is your currently enrolled class \u2014 you won't be able to change this later.";
   panel.appendChild(sub);
 
@@ -24108,7 +24702,12 @@ function showClassSelection(){
      "No other classes available yet." right next to it, per explicit
      request for something a bit more than a bare two-word fragment. */
   const classDesc = document.createElement("span");
-  classDesc.className = "modecarddesc"; classDesc.textContent = "For police academy cadets.";
+  /* Third wording, and the shortest. "For police academy cadets" never
+     said which class; "The Class 26E police academy class" said class
+     twice; "The police academy class this app was built for" was flagged
+     for talking about the app instead of the class. What is left is the
+     thing itself. */
+  classDesc.className = "modecarddesc"; classDesc.textContent = "Class 26E police academy.";
   classCard.append(classTitle, classDesc);
   cards.appendChild(classCard);
 
@@ -24605,6 +25204,14 @@ function showWelcomeCodeEntry(){
           "> finalizing sync..."
         ], 3200, () => {
           showHome();
+          /* The same pause the create-account path gets, and for the same
+             reason. That one is covered by holdNoticesAfterTour() firing
+             at the end of the main-menu tour - but signing in with a code
+             deliberately skips that tour (the person already knows the
+             app from their other device), so without this an update or
+             re-add banner could land on the very first frame of Home, on
+             top of the "welcome back" toast. */
+          holdNoticesAfterTour();
           showToast("Welcome back \u2014 your progress is here.");
         });
       } else {
@@ -24631,7 +25238,34 @@ function showWelcomeCodeEntry(){
    this drifted out of sync with each other). onComplete, if given,
    fires once when the tour finishes, whether that's stepping through
    every step normally or the person navigating away early. */
-function startSimpleTour(steps, onComplete){
+/* How long a tour will wait for a loading screen to clear before giving
+   up. The longest one in the app is "GENERATING PROFILE" at 10s. */
+const TOUR_OVERLAY_WAIT_MS = 14000;
+
+function startSimpleTour(steps, onComplete, _waitedMs){
+  /* Never over a loading screen. Confirmed from a screenshot: the
+     Settings tour ran on top of "GENERATING PROFILE", because the tab
+     bar tied with that overlay on z-index and stayed tappable through
+     it. The z-index is fixed too, but this is the rule that matters -
+     a tour has no business starting while the app is still working,
+     whatever route got it there.
+     It waits rather than abandoning, because every caller sets its own
+     seenXTour flag to true BEFORE calling this, so a tour dropped here
+     is a tour that person never sees. It abandons only if the screen
+     it was called for has been replaced in the meantime, or if the
+     overlay outlasts the budget. */
+  const loading = () => document.getElementById("genprofile-overlay")
+                      || document.getElementById("splashscreen");
+  if(loading()){
+    const waited = _waitedMs || 0;
+    if(waited >= TOUR_OVERLAY_WAIT_MS) return;
+    const screenAtCall = stage.firstElementChild;
+    setTimeout(() => {
+      if(stage.firstElementChild !== screenAtCall) return;
+      startSimpleTour(steps, onComplete, waited + 250);
+    }, 250);
+    return;
+  }
   const overlay = document.createElement("div");
   overlay.id = "tour-overlay";
   document.body.appendChild(overlay);
@@ -24822,6 +25456,9 @@ function startSimpleTour(steps, onComplete){
     tooltip.remove();
     line.remove();
     lineDot.remove();
+    /* Before onComplete, which on the main-menu tour is the send-off and
+       can itself change the screen. */
+    if(typeof holdNoticesAfterTour === "function") holdNoticesAfterTour();
     if(typeof onComplete === "function") onComplete();
   }
 
@@ -24941,7 +25578,14 @@ function showPointsFlyEffect(message){
         banner.remove();
         if(avatarBtn){
           avatarBtn.classList.add("avatar-pulse");
-          setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 500);
+          /* 800, matching .avatar-pulse's own .8s. It was 500, left behind
+             when the animation was lengthened from .5s to .8s to stop it
+             being missed - so the class came off at 62% of the way
+             through, while the icon was still scaled to ~1.05, and it
+             snapped back to size instead of settling. Measured: the ring
+             had already faded to transparent by then, so the visible cost
+             was purely that snap. */
+          setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
         }
         if(statsPopoverOpen) renderStatsPopoverContent();
       }, 500);
@@ -25188,6 +25832,87 @@ function startDailyQuestion(){
   cfg.source = "all";
   beginRun([qi], "Daily question");
 }
+/* The last daily period this device was actually SHOWN on Home. Compared
+   against dailyPeriodKey() to tell "a new question is out since you last
+   looked" apart from "you are looking at the same one again", which is
+   the whole basis of the reset announcement below. A localStorage key,
+   not a field on store: it describes this device's own viewing history,
+   not the account's progress, so it must not sync to a second device and
+   announce a reset there that already happened here. Per the convention,
+   class26e.<thing> and wrapped in try/catch. */
+const DAILY_SEEN_KEY = "class26e.daily.seen";
+function dailySeenPeriod(){
+  try{ return localStorage.getItem(DAILY_SEEN_KEY); }catch(e){ return null; }
+}
+function markDailySeen(key){
+  try{ localStorage.setItem(DAILY_SEEN_KEY, key); }catch(e){}
+}
+/* Lives outside showHome so a rebuild of Home replaces the pending timer
+   rather than stacking a second one on top of it. */
+let dailyResetTimer = null;
+
+/* Parks the alert below the update notice when one is up, and at its own
+   CSS top when one is not. Called from three places because the two can
+   arrive in either order: the notice is fetched asynchronously, so it
+   routinely appears a second or two AFTER the alert did, and positioning
+   once at creation left them overlapping - measured, both at y=74 on a
+   phone. showNoticeBar() is the hook for the late-notice case, the
+   resize listener for rotation, and showDailyAlert() for the case where
+   the notice was already there. */
+function positionDailyAlert(){
+  const el = document.getElementById("dailyalert");
+  if(!el) return;
+  const notice = document.getElementById("updatebanner");
+  const r = notice ? notice.getBoundingClientRect() : null;
+  el.style.top = (r && r.height > 0) ? Math.round(r.bottom + 10) + "px" : "";
+}
+
+/* A short, self-dismissing line at the top of the screen (see
+   .daily-alert). It parks below the update notice when one is already up
+   rather than overlapping it - the same measure-what-is-actually-there
+   approach positionNotice() uses, and for the same reason: no fixed
+   offset is right, since the notice's own height depends on which of the
+   two it is and how its text wraps. */
+function showDailyAlert(msg){
+  const old = document.getElementById("dailyalert");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "dailyalert"; el.className = "daily-alert";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  positionDailyAlert();
+  /* Cleared by a screen change as well as by its own timer. This is
+     appended to <body>, not to #stage (it is position:fixed, and #stage
+     animates - a transform on an ancestor re-parents a fixed element's
+     containing block, which is the documented cause of the daily
+     button's own old positioning glitch). Anything on <body> has to
+     clear itself on navigation or it sits over whatever comes next,
+     which is exactly how showTourSendoff's overlay used to get stuck. */
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
+  onNavigate.observe(stage, { childList: true });
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => { onNavigate.disconnect(); el.remove(); }, 300);
+  }, 4200);
+}
+
+/* Everything the button does when a new period starts, in one place,
+   because it happens two ways: on arriving at Home after a reset that
+   happened while the app was closed or elsewhere, and live at 5pm with
+   Home already on screen. Both should look the same. */
+function announceDailyReset(btn){
+  if(!btn) return;
+  btn.classList.remove("is-done");
+  btn.classList.add("is-ready", "is-fresh");
+  btn.title = "Today's daily question \u2014 one quick question, no retakes.";
+  /* 6s covers the five animation cycles; removing the class rather than
+     letting the animation sit finished keeps the element clean and lets
+     the next reset re-trigger it. */
+  setTimeout(() => btn.classList.remove("is-fresh"), 6000);
+  showDailyAlert("Today's daily question is out \u2014 tap the ? to take it.");
+}
+
 function showDailyQuestionLockedPopup(){
   const ms = nextDailyResetMs();
   const h = Math.floor(ms / 3600000);
@@ -25315,6 +26040,43 @@ function showHome(){
     ? "Daily question \u2014 " + (store.dailyQuestionCorrect ? "correct today" : "done for today") + ". Resets at 5pm."
     : "Today's daily question \u2014 one quick question, no retakes.";
   dailyBtn.addEventListener("click", startDailyQuestion);
+
+  /* Three separate things, in the order they can happen:
+
+     1. Not done yet -> the quiet ready ring runs the whole time Home is
+        up, so there is something to notice rather than a grey circle
+        that looks the same whether or not it has been used.
+     2. The period changed since this device last saw Home, and it has
+        seen Home at least once before -> the reset announcement. The
+        seenBefore guard is what stops a brand-new install from being
+        told a question it has never seen has just "reset"; a first run
+        records the period silently and announces from then on.
+     3. Home is still up when 5pm arrives -> the same announcement, live,
+        without re-rendering the screen underneath it. The timer is
+        cleared on every rebuild of Home and checks that this exact
+        button is still in the document before firing, so navigating away
+        simply lets it expire harmlessly. */
+  const dailyPeriod = dailyPeriodKey();
+  const seenBefore = dailySeenPeriod();
+  if(!doneToday){
+    dailyBtn.classList.add("is-ready");
+    /* Deferred by a tick on purpose: this runs before the
+       stage.replaceChildren() below, and showDailyAlert() clears itself
+       on the next stage mutation - announcing here directly would create
+       the alert and then have this screen's own mount immediately remove
+       it. A timeout puts it after the mount. */
+    if(seenBefore && seenBefore !== dailyPeriod){
+      setTimeout(() => announceDailyReset(dailyBtn), 0);
+    }
+  }
+  markDailySeen(dailyPeriod);
+
+  clearTimeout(dailyResetTimer);
+  dailyResetTimer = setTimeout(() => {
+    if(!document.body.contains(dailyBtn)) return;
+    announceDailyReset(dailyBtn);
+    markDailySeen(dailyPeriodKey());
+  }, nextDailyResetMs() + 1500);
 
   /* NOT panel.appendChild \u2014 the actual, confirmed cause of the
      reported glitch/jump every time Home re-renders (most noticeable
@@ -27644,7 +28406,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-20-42";
+const APP_BUILD = "2026-09-21-53";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -27666,10 +28428,37 @@ let frameSnoozed = false;
    test - and a banner sliding in over that is an interruption of
    something, however politely worded. These two are the resting points,
    which is exactly where "there's an update" belongs. */
+/* Set when any tour finishes, so a notice cannot land on the frame after
+   the last "Got it" is tapped. Per explicit request: neither banner may
+   appear while the main-menu tooltips are running, and there has to be a
+   pause afterwards rather than the banner arriving the instant the tour
+   clears. */
+const TOUR_NOTICE_QUIET_MS = 3500;
+let tourQuietUntil = 0;
+
+/* Both notices are gated to Welcome and Home and nowhere else - that is
+   what dataset.screen is for, and only those two screens set it (see
+   showWelcome/showHome), so every other screen in the app fails this
+   test by construction rather than by being listed. A tour on screen
+   also blocks: #tour-overlay is the full-screen dim every tour puts up,
+   so testing for it covers the main-menu tour and every other one
+   without each of them having to say so. */
 function noticeAllowedHere(){
   const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
   const screen = el && el.dataset ? el.dataset.screen : "";
-  return screen === "home" || screen === "welcome";
+  if(screen !== "home" && screen !== "welcome") return false;
+  if(document.getElementById("tour-overlay")) return false;
+  if(Date.now() < tourQuietUntil) return false;
+  return true;
+}
+
+/* Called by every tour's cleanup. Nothing else re-checks after a tour
+   ends - a tour is not a screen change, so syncNoticeVisibility() would
+   never run again on its own and a held notice would simply stay held
+   until the next navigation. */
+function holdNoticesAfterTour(){
+  tourQuietUntil = Date.now() + TOUR_NOTICE_QUIET_MS;
+  setTimeout(syncNoticeVisibility, TOUR_NOTICE_QUIET_MS + 80);
 }
 
 /* Called both when a check produces a notice and on every screen change,
@@ -27689,19 +28478,17 @@ function syncNoticeVisibility(){
   else showFrameNotice(pendingNotice.info);
 }
 
-/* Everything that already lives along the bottom of the two screens a
-   notice can appear on. The CSS default only knows about the tab bar, so
-   the banner landed in the middle of all of this - overlapping the Start
-   Studying button, with the version label showing through it and the
-   daily-question "?" button beside it, which is exactly the squashed look
-   reported. Rather than add a taller hardcoded offset (there is no single
-   right number: Home and Welcome differ, phone and tablet differ, and
-   .homeversion and .daily-question-fab each move themselves at the
-   tablet breakpoint), this measures whatever is actually on screen.
-   #nextbtn covers Home's Start Studying; .next.playbtn also catches
-   Welcome's own primary button, which carries no id. */
-const NOTICE_OBSTRUCTIONS = ["#nextbtn", ".next.playbtn", ".homeversion",
-                             ".daily-question-fab", ".bottomtabs"];
+/* The notice sits along the TOP of the screen now (see .update-banner),
+   so what it has to keep clear of is whatever the current screen puts up
+   there, not the crowd of furniture along the bottom that the previous
+   version measured. On Welcome and Home - the only two screens a notice
+   is allowed on - that is the back link and the screen header, either of
+   which may or may not be present. Still measured rather than hardcoded,
+   for the same reason as before: the two screens differ, phone and tablet
+   differ, and the safe-area inset differs per device. Anything new added
+   along the top of Home or Welcome belongs in this list, or the banner
+   will sit on top of it. */
+const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link"];
 
 /* Shared by both notices. The measured offset is applied with transitions
    suppressed, so the banner is simply already in the right place when it
@@ -27718,6 +28505,9 @@ function showNoticeBar(bar){
   requestAnimationFrame(() => {
     bar.style.transition = "";
     bar.classList.add("show");
+    /* A daily alert may already be on screen - the notice is fetched
+       asynchronously and routinely lands after it. */
+    positionDailyAlert();
   });
 }
 
@@ -27725,7 +28515,7 @@ function positionNotice(){
   const bar = document.getElementById("updatebanner");
   if(!bar) return;
   const vh = window.innerHeight;
-  let top = Infinity;
+  let bottomOf = -Infinity;
   NOTICE_OBSTRUCTIONS.forEach(sel => {
     document.querySelectorAll(sel).forEach(el => {
       if(el === bar || bar.contains(el)) return;
@@ -27733,32 +28523,34 @@ function positionNotice(){
       /* Zero-sized means hidden (display:none, or not laid out yet), and
          anything already off the bottom of the screen is not in the way. */
       if(r.width <= 0 || r.height <= 0 || r.top >= vh) return;
-      if(r.top < top) top = r.top;
+      if(r.bottom > bottomOf) bottomOf = r.bottom;
     });
   });
-  /* Nothing measurable - mid-transition, or a screen with none of this
-     furniture. Clearing the inline value hands it back to the CSS rule
-     rather than freezing whatever the last screen happened to need. */
-  if(top === Infinity){ bar.style.bottom = ""; return; }
+  /* Nothing measurable - mid-transition, or a screen with nothing along
+     its top at all, which is the normal case on both Welcome and Home.
+     Clearing the inline value hands it back to the CSS rule (the safe-area
+     inset plus a small gap) rather than freezing whatever the last screen
+     happened to need. */
+  if(bottomOf === -Infinity){ bar.style.top = ""; return; }
 
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  /* Enough to read as a separate surface sitting above the button rather
-     than as something stuck to it - the same gap the button keeps from
-     the tab bar below it. */
-  let bottom = vh - top + rem * 0.85;
-  /* A ceiling, so this can never float up into the middle of the screen
-     if the primary button happens to sit high (a very short landscape
-     window, say). Past that point it stops tracking and just stays put. */
-  const ceiling = vh * 0.55;
-  if(bottom > ceiling) bottom = ceiling;
-  bar.style.bottom = Math.round(bottom) + "px";
+  /* Enough to read as a separate surface below the header rather than as
+     something stuck to it. */
+  let top = bottomOf + rem * 0.6;
+  /* A ceiling, so this can never drift into the middle of the screen if
+     something tall is measured up there. Past that point it stops
+     tracking and just stays put. */
+  const ceiling = vh * 0.35;
+  if(top > ceiling) top = ceiling;
+  bar.style.top = Math.round(top) + "px";
 }
 
 /* Rotating an iPad changes every one of those measurements at once, and
    the notice persists across screen changes, so it has to re-measure
    rather than keep the position it was first shown at. */
-window.addEventListener("resize", positionNotice);
-window.addEventListener("orientationchange", positionNotice);
+function repositionTopNotices(){ positionNotice(); positionDailyAlert(); }
+window.addEventListener("resize", repositionTopNotices);
+window.addEventListener("orientationchange", repositionTopNotices);
 
 async function checkForUpdate(){
   if(document.getElementById("updatebanner")) return;
@@ -28827,6 +29619,29 @@ function showAppearance(){
   extraLab.className = "slab motion-summary"; extraLab.textContent = "Motion & interaction";
   motionDetails.appendChild(extraLab);
 
+  /* Seven toggles under one header had visibly piled up - reported as
+     needing a section header to break them apart. They split cleanly
+     along what they actually change: how the app MOVES and how you
+     drive it (scrolling, animation, swiping), versus what it does for
+     you during a study session or a test (staying awake, advancing,
+     flagging, banners). Same .slab.motion-summary header treatment as
+     the first group, so the two read as a matched pair rather than one
+     real header and one afterthought. Built up here, appended after the
+     motion group below - the rows themselves are still created in their
+     original order, only their destination changes. */
+  const studyDetails = document.createElement("div");
+  studyDetails.className = "motion-details";
+  const studyLab = document.createElement("p");
+  studyLab.className = "slab motion-summary section-divider";
+  /* "While you study" was reported as not reading official enough.
+     "Studying & tests" is built the same way as "Motion & interaction"
+     above it - two nouns, an ampersand, no second person - so the two
+     headers read as a set, and it covers all four toggles under it
+     (keeping the screen awake and auto-advance are mid-question, muting
+     the achievement banners is end-of-test). */
+  studyLab.textContent = "Studying & tests";
+  studyDetails.appendChild(studyLab);
+
   const smoothRow = document.createElement("label");
   smoothRow.className = "opt";
   const smoothCb = document.createElement("input");
@@ -28904,7 +29719,7 @@ function showAppearance(){
     awakeHint.textContent = "Stops your screen from locking while this tab is open, so it doesn't dim out mid-question.";
     awakeWrap.appendChild(awakeHint);
     awakeRow.append(awakeCb, awakeBox, awakeWrap);
-    motionDetails.appendChild(awakeRow);
+    studyDetails.appendChild(awakeRow);
   }
 
   const swipeRow = document.createElement("label");
@@ -28954,7 +29769,7 @@ function showAppearance(){
   autoAdvHint.textContent = "Moves on by itself when you're finished with a question.";
   autoAdvWrap.appendChild(autoAdvHint);
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
-  motionDetails.appendChild(autoAdvRow);
+  studyDetails.appendChild(autoAdvRow);
 
   const bannerRow = document.createElement("label");
   bannerRow.className = "opt";
@@ -28975,7 +29790,7 @@ function showAppearance(){
   bannerHint.textContent = "Skips the level-up and unlock banners at the end of a test.";
   bannerWrap.appendChild(bannerHint);
   bannerRow.append(bannerCb, bannerBox, bannerWrap);
-  motionDetails.appendChild(bannerRow);
+  studyDetails.appendChild(bannerRow);
 
   const autoFlagRow = document.createElement("label");
   autoFlagRow.className = "opt";
@@ -29000,9 +29815,10 @@ function showAppearance(){
   autoFlagHint.textContent = "Flags questions you keep getting wrong, so they're saved for review.";
   autoFlagWrap.appendChild(autoFlagHint);
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
-  motionDetails.appendChild(autoFlagRow);
+  studyDetails.appendChild(autoFlagRow);
 
   extraSect.appendChild(motionDetails);
+  extraSect.appendChild(studyDetails);
   panel.appendChild(extraSect);
 
   /* The leaderboard section \u2014 opting in shares only name, avatar,
@@ -32668,9 +33484,26 @@ function applyGlassRefraction(el, mapImgId){
        including the one summarize() itself triggers by replacing the
        stage's content. Checking a flag here, in the one place that
        actually decides the value, is what makes it stick. */
-    const show = isModern && oldNavVisible && !window.forceHideBottomTabs;
+    /* store.onboardingComplete is a hard floor under the other two
+       conditions, not a refinement of them. The bar has never actually
+       appeared during onboarding - walked from a fresh install, both the
+       create-account and the sign-in-with-a-code paths report it hidden
+       with zero height on every screen - but it was reported as doing so
+       from a screenshot, because a harness that MOUNTS an onboarding
+       screen against a finished account leaves the legacy nav visible and
+       the bar follows it. This makes it impossible rather than merely
+       untrue: the same flag decides, at boot, whether the app shows
+       onboarding at all (see the !store.onboardingComplete branch at the
+       bottom of this file), so the two can never disagree. */
+    const show = isModern && oldNavVisible && !window.forceHideBottomTabs
+                 && !!(typeof store !== "undefined" && store && store.onboardingComplete);
     bar.hidden = !show;
     document.body.classList.toggle("has-bottomtabs", show);
+    /* Toggled here for the same reason has-bottomtabs is: this function
+       already recalculates on every stage mutation, so the class clears
+       itself when the screen changes instead of relying on each screen to
+       undo it. */
+    document.body.classList.toggle("on-welcome", !!stage.querySelector(".cosmic-welcome"));
     /* On screens with their own floating action button (Setup's Start,
        a question's Next), the tab bar stacks above it rather than
        disappearing \u2014 losing the only way to reach Settings/Profile from
