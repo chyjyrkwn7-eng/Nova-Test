@@ -7622,6 +7622,207 @@
     .unitoptions-modal-sheet{ padding-bottom:calc(1.6rem + env(safe-area-inset-bottom)); }
   }
 
+  /* ---------- Profile: identity, level, badges -----------------------
+     The shine. One animation, two palettes, used on the level number,
+     the badge count and the unlock names. It paints a moving highlight
+     THROUGH the text (background-clip:text), so it reads as polished
+     metal rather than as something blinking - and the app's global
+     [data-reduce-motion="true"] *{animation:none} switches it off
+     without this having to know that rule exists. */
+  @keyframes stat-shine{
+    0%{ background-position:-140% 0; }
+    55%, 100%{ background-position:240% 0; }
+  }
+  .shine-blue, .shine-silver{
+    background-size:240% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+    animation:stat-shine 4.5s ease-in-out infinite;
+  }
+  .shine-blue{
+    background-image:linear-gradient(100deg, #3F7FD0 0%, #6FB4FF 32%, #EAF4FF 46%,
+      #6FB4FF 60%, #3F7FD0 100%);
+  }
+  /* A real silver, not grey: the highlight has to reach white and the
+     shadow has to stay cool, or it reads as disabled text. */
+  .shine-silver{
+    background-image:linear-gradient(100deg, #7C8794 0%, #C6D1DD 30%, #FFFFFF 46%,
+      #C6D1DD 62%, #7C8794 100%);
+  }
+
+  .profile-hero, .profile-level{
+    border-radius:18px; padding:1rem 1.05rem; margin-bottom:.9rem;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+  }
+  .profile-hero-top{ display:flex; align-items:center; gap:.9rem; }
+  .profile-hero-avatar{ width:4.4rem; height:4.4rem; flex-shrink:0; }
+  .profile-hero-avatar svg{ width:100%; height:100%; display:block; }
+  .profile-hero-id{ flex:1; min-width:0; }
+  .profile-hero-meta{ margin-top:.45rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+  .profile-hero-meta:empty{ display:none; }
+  .profile-edit-btn{ padding:.4rem .85rem; font-size:.78rem; flex-shrink:0; }
+  /* One line, not a section. It replaced a headed block with two
+     buttons in it, which was reported as not belonging on this screen. */
+  .profile-classline{
+    display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+    width:100%; margin-top:.9rem; min-height:2.75rem;
+    padding:.6rem .85rem; border-radius:13px; cursor:pointer;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+    color:var(--soft); font:inherit; font-size:.85rem; font-weight:600;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .profile-classline:active{ background:rgba(255,255,255,.1); }
+  .profile-classline-arrow{ font-size:1.2rem; line-height:1; opacity:.7; }
+
+  .profile-level-row{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:1rem; margin-bottom:.85rem;
+  }
+  .profile-level-num{ display:flex; align-items:baseline; gap:.45rem; min-width:0; }
+  .profile-level-word{
+    font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+  }
+  .profile-level-value{ font-size:2.7rem; font-weight:900; line-height:.9; }
+  .profile-badgestat{
+    display:flex; flex-direction:column; align-items:flex-end; gap:.1rem;
+    background:none; border:none; padding:.35rem 0 .35rem .5rem; margin:-.35rem 0;
+    cursor:pointer; font:inherit; text-align:right;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .profile-badgestat-value{ font-size:1.5rem; font-weight:900; line-height:1; }
+  .profile-badgestat-word{
+    font-size:.7rem; font-weight:700; letter-spacing:.06em; color:var(--soft);
+  }
+
+  /* The bar. It is supposed to look like a game loading in, so it
+     fills from empty on arrival and carries a travelling sheen rather
+     than sitting as a flat blue block. */
+  .xpbar-track, .badges-progress-track{
+    position:relative; height:.95rem; border-radius:999px; overflow:hidden;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.45);
+  }
+  .xpbar-fill, .badges-progress-fill{
+    height:100%; border-radius:999px; position:relative; overflow:hidden;
+    transition:width 1.15s cubic-bezier(.2,.8,.25,1);
+  }
+  .xpbar-fill{
+    background:linear-gradient(180deg, #9CCEFF 0%, #3E8AE0 52%, #2663B4 100%);
+    box-shadow:0 0 14px rgba(70,140,230,.5), inset 0 1px 0 rgba(255,255,255,.55);
+  }
+  .badges-progress-fill{
+    background:linear-gradient(180deg, #F2F6FA 0%, #B9C5D2 52%, #7E8B99 100%);
+    box-shadow:0 0 12px rgba(200,214,228,.35), inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .xpbar-fill::after, .badges-progress-fill::after{
+    content:""; position:absolute; inset:0;
+    background-image:linear-gradient(100deg, rgba(255,255,255,0) 34%,
+      rgba(255,255,255,.5) 50%, rgba(255,255,255,0) 66%);
+    background-size:220% 100%;
+    animation:xp-sheen 2.8s linear infinite;
+  }
+  @keyframes xp-sheen{ from{ background-position:-120% 0; } to{ background-position:220% 0; } }
+  .profile-xp-line{
+    margin:.6rem 0 0; font-size:.82rem; font-weight:600; color:var(--soft);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- the badge case ---------------------------------------- */
+  .badges-head{
+    border-radius:18px; padding:1rem 1.05rem; margin-bottom:1rem;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+  }
+  .badges-count{ display:flex; align-items:baseline; gap:.5rem; margin:0 0 .7rem; }
+  .badges-count-num{ font-size:1.9rem; font-weight:900; line-height:1; }
+  .badges-count-word{
+    font-size:.78rem; font-weight:700; letter-spacing:.06em; color:var(--soft);
+  }
+  .badges-blurb{
+    margin:.75rem 0 0; font-size:.82rem; line-height:1.5; color:var(--soft);
+  }
+  .badge-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:.7rem; }
+  .badge-tile{
+    display:flex; flex-direction:column; align-items:center; gap:.4rem;
+    padding:.75rem .45rem .65rem; border-radius:16px; cursor:pointer;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    font:inherit; -webkit-tap-highlight-color:transparent;
+    transition:transform .15s ease, background-color .15s ease;
+  }
+  .badge-tile:active{ transform:scale(.96); }
+  .badge-tile.is-earned{ background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.16); }
+  .badge-tile-art{ display:block; width:100%; max-width:4.6rem; aspect-ratio:1; }
+  .badge-tile-art svg{ width:100%; height:100%; display:block; }
+  .badge-tile.is-earned .badge-tile-art svg{ filter:drop-shadow(0 4px 9px rgba(0,0,0,.45)); }
+  /* Three lines, not two. Half these unit names are long enough that
+     two clipped them mid-word - "Fitness, Wellness, an...", "US and
+     Texas Constitution..." - and a badge case whose labels do not say
+     which unit they are is not a badge case. */
+  .badge-tile-name{
+    font-size:.65rem; font-weight:700; line-height:1.24; text-align:center;
+    color:var(--ink); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+    overflow:hidden; hyphens:auto;
+  }
+  /* Four on a phone, where a three-column grid leaves about nineteen
+     characters a line and two unit names are twice that. Measured per
+     device rather than guessed: three lines still clipped "Fitness,
+     Wellness, and Stress Management" on every phone in the matrix. */
+  @media (max-width:40rem){ .badge-tile-name{ -webkit-line-clamp:4; } }
+  .badge-tile.is-locked .badge-tile-name{ color:var(--soft); }
+  .badge-tile-prog{
+    font-size:.66rem; font-weight:800; letter-spacing:.04em; color:var(--soft);
+    font-variant-numeric:tabular-nums;
+  }
+  .badge-tile.is-earned .badge-tile-prog{ color:#D8E2EC; }
+
+  /* Characters were 4.6rem against 2.9rem colour circles - reported as
+     one too big and the other too small. They are within a quarter of
+     a rem of each other now, and the circle stays well clear of the
+     44px tap minimum at both sizes. */
+  .avatarchar-option{ max-width:3.7rem; }
+  .swatch{ width:3.4rem; height:3.4rem; }
+  .swatch .dot{ width:2.25rem; height:2.25rem; }
+  @media (min-width:40rem){
+    .avatarchar-option{ max-width:4.5rem; }
+    .swatch{ width:4.2rem; height:4.2rem; }
+    .swatch .dot{ width:2.8rem; height:2.8rem; }
+    .badge-grid{ grid-template-columns:repeat(4, 1fr); gap:1rem; }
+    .badge-tile-art{ max-width:5.6rem; }
+    .badge-tile-name{ font-size:.76rem; }
+    .badge-tile-prog{ font-size:.74rem; }
+    .profile-hero-avatar{ width:5.4rem; height:5.4rem; }
+    .profile-level-value{ font-size:3.2rem; }
+    .badges-count-num{ font-size:2.2rem; }
+  }
+
+  /* Five tabs. The strip wraps rather than overflows by design (see
+     .navsegment.profiletabs), and with five that safety net was firing
+     on a phone: four across and "Unlocks" alone on a second row, which
+     reads as broken rather than as wrapped. Measured, five labels this
+     short DO fit one row at 375px once they stop being padded for
+     three - so they are tightened only when there are five of them,
+     and wrap is left in place underneath for anything narrower. */
+  .profiletabs:has(.iconbtn:nth-child(5)){ gap:.1rem; column-gap:.1rem; }
+  /* The last 16px. Measured on a 375px phone the five-tab strip wants
+     299px and the panel's content column offers 295, so it wrapped for
+     the sake of four pixels. The strip steps very slightly outside the
+     panel's side padding rather than the labels going below 11px, and
+     only where it has to. */
+  @media (max-width:26rem){
+    .profiletabs:has(.iconbtn:nth-child(5)){
+      margin-left:-.55rem; margin-right:-.55rem; max-width:calc(100% + 1.1rem);
+    }
+  }
+  .profiletabs:has(.iconbtn:nth-child(5)) .iconbtn{
+    padding:.55rem .42rem; font-size:.7rem; letter-spacing:0;
+  }
+  @media (min-width:40rem){
+    .profiletabs:has(.iconbtn:nth-child(5)) .iconbtn{
+      padding:.55rem 1rem; font-size:.86rem;
+    }
+  }
+
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -33523,7 +33724,13 @@ function showAnswerReview(units){
 
 /* defaultTab exists so a future link can drop someone straight onto
    Stats; every current call site passes nothing and lands on Profile. */
-const PROFILE_TABS = ["profile", "stats", "achievements", "unlocks"];
+/* Five now: Badges is new, and Achievements is Ladder - the tab was
+   named after the idea, and the thing on it is the Mastery Ladder. */
+const PROFILE_TABS = ["profile", "badges", "stats", "ladder", "unlocks"];
+/* "achievements" is still accepted so an older link or a stored value
+   lands on the tab it means rather than silently falling back to
+   Profile. */
+const PROFILE_TAB_ALIASES = { achievements: "ladder" };
 
 function showProfile(defaultTab){
   /* Validated, not just defaulted, and that is the whole of a real bug:
@@ -33536,7 +33743,8 @@ function showProfile(defaultTab){
      takes an argument and is used as a handler has this waiting for it;
      checking the value rather than its truthiness is what closes it,
      wherever the call comes from. */
-  const initialTab = PROFILE_TABS.indexOf(defaultTab) !== -1 ? defaultTab : "profile";
+  const asked = PROFILE_TAB_ALIASES[defaultTab] || defaultTab;
+  const initialTab = PROFILE_TABS.indexOf(asked) !== -1 ? asked : "profile";
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
      to the cutscene no matter which tab was actually tapped from
@@ -33560,121 +33768,100 @@ function showProfile(defaultTab){
      avatar, theme colour) with personal stats (study time, testing
      stats, test review); this splits those without changing how any of
      the sections themselves are built. */
+  /* Driven off one list rather than five hand-written copies of the
+     same four lines. Four tabs was already the point where the old
+     shape started costing a line per tab in five places; five would
+     have been the edit where one of them got missed. */
   const profileTabSeg = document.createElement("div");
   profileTabSeg.className = "navsegment profiletabs";
-  const identityTabBtn = document.createElement("button");
-  identityTabBtn.type = "button"; identityTabBtn.className = "iconbtn" + (initialTab === "profile" ? " active" : "");
-  identityTabBtn.textContent = "Profile";
-  /* .profile-stats-tab-btn is not decorative - the Profile tour points at
-     it. See the tour's third step at the end of this function. */
-  const statsTabBtn = document.createElement("button");
-  statsTabBtn.type = "button"; statsTabBtn.className = "iconbtn profile-stats-tab-btn" + (initialTab === "stats" ? " active" : "");
-  statsTabBtn.textContent = "Stats";
-  /* Achievements and Unlocks, moved here from the Rewards tab now
-     that that tab is Rankings. Four tabs is more than this strip has
-     carried before, so the labels are kept short and .profiletabs
-     scrolls sideways below the width where four stop fitting rather
-     than squashing them - a squashed strip was the exact failure the
-     Rewards switcher had, where three nowrap labels overlapped instead
-     of the page scrolling. */
-  const achTabBtn = document.createElement("button");
-  achTabBtn.type = "button"; achTabBtn.className = "iconbtn" + (initialTab === "achievements" ? " active" : "");
-  achTabBtn.textContent = "Achievements";
-  const unlocksTabBtn = document.createElement("button");
-  unlocksTabBtn.type = "button"; unlocksTabBtn.className = "iconbtn" + (initialTab === "unlocks" ? " active" : "");
-  unlocksTabBtn.textContent = "Unlocks";
-  profileTabSeg.append(identityTabBtn, statsTabBtn, achTabBtn, unlocksTabBtn);
-  panel.appendChild(profileTabSeg);
 
   const identityTab = document.createElement("div");
-  identityTab.hidden = initialTab !== "profile";
+  const badgesTab = buildBadgesTab();
   const statsTab = document.createElement("div");
   statsTab.className = "profile-stats-tab";
-  statsTab.hidden = initialTab !== "stats";
-  /* Built once, here, rather than inside selectProfileTab: the
-     achievements content animates its ladder connectors on build, and
-     rebuilding it on every tab change would replay that animation
-     each time someone swiped past. */
+  /* Built once, here, rather than inside the selector: the ladder
+     animates its connectors on build, and rebuilding it on every tab
+     change would replay that animation each time someone swiped past. */
   const rewardTabs = buildRewardTabs();
-  const achievementsTab = rewardTabs.achievements;
+  const ladderTab = rewardTabs.achievements;
   const unlocksTab = rewardTabs.unlocks;
-  achievementsTab.hidden = initialTab !== "achievements";
-  unlocksTab.hidden = initialTab !== "unlocks";
-  panel.append(identityTab, statsTab, achievementsTab, unlocksTab);
+
+  const profileTabDefs = [
+    { key: "profile", label: "Profile", node: identityTab, cls: "" },
+    { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
+    /* .profile-stats-tab-btn is not decorative - the Profile tour
+       points at it. See the tour at the end of this function. */
+    { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
+    { key: "ladder",  label: "Ladder",  node: ladderTab,   cls: "" },
+    { key: "unlocks", label: "Unlocks", node: unlocksTab,  cls: "" }
+  ];
+  const profileTabBtns = {};
+  profileTabDefs.forEach(t => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "iconbtn" + t.cls + (initialTab === t.key ? " active" : "");
+    btn.textContent = t.label;
+    btn.addEventListener("click", () => selectProfileTab(t.key));
+    profileTabBtns[t.key] = btn;
+    profileTabSeg.appendChild(btn);
+    t.node.hidden = initialTab !== t.key;
+  });
+  panel.appendChild(profileTabSeg);
+  panel.append(...profileTabDefs.map(t => t.node));
 
   const profileTabOrder = PROFILE_TABS;
   let profileTabKey = initialTab;
   function selectProfileTab(which){
     profileTabKey = which;
-    identityTab.hidden = which !== "profile";
-    statsTab.hidden = which !== "stats";
-    achievementsTab.hidden = which !== "achievements";
-    unlocksTab.hidden = which !== "unlocks";
-    identityTabBtn.classList.toggle("active", which === "profile");
-    statsTabBtn.classList.toggle("active", which === "stats");
-    achTabBtn.classList.toggle("active", which === "achievements");
-    unlocksTabBtn.classList.toggle("active", which === "unlocks");
+    profileTabDefs.forEach(t => {
+      t.node.hidden = t.key !== which;
+      profileTabBtns[t.key].classList.toggle("active", t.key === which);
+    });
+    /* The XP bar fills on arrival, not on build - the Profile tab can
+       be built while another tab is showing, and a bar that animated
+       in a hidden panel is a bar nobody sees move. */
+    if(which === "profile") runXpBarFill();
+    if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
     toTop();
   }
-  identityTabBtn.addEventListener("click", () => selectProfileTab("profile"));
-  statsTabBtn.addEventListener("click", () => selectProfileTab("stats"));
-  achTabBtn.addEventListener("click", () => selectProfileTab("achievements"));
-  unlocksTabBtn.addEventListener("click", () => selectProfileTab("unlocks"));
   /* Swipeable, per explicit request, using the same helper the Rankings
      tab uses. */
   attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab);
 
-  /* The avatar and name used to live in a persistent top bar on every
-     screen \u2014 now that the bar itself is gone (redundant once the same
-     avatar started appearing in the bottom tab), this is where that
-     identity actually belongs: right at the top of the one screen
-     that's specifically about the person's own profile. */
-  const nameSect = document.createElement("div");
-  nameSect.className = "sect";
+  /* ---------- identity header ----------------------------------------
+     One card: the character you chose, your name, the day streak, and
+     one line for Class 26E. The class calendar and "class days
+     remaining" used to be a boxed section of their own down here with
+     its own header and two buttons, and were reported as not fitting
+     this layout - they were a second, competing block of furniture on
+     a screen about who you are. One tappable line says the same thing
+     and opens the same calendar. */
+  const heroSect = document.createElement("div");
+  heroSect.className = "profile-hero";
 
-  const nameWrap = document.createElement("div");
-  nameWrap.style.cssText = "margin-bottom:.4rem;";
+  const heroTop = document.createElement("div");
+  heroTop.className = "profile-hero-top";
+
+  const heroAvatar = document.createElement("div");
+  heroAvatar.className = "profile-hero-avatar";
+  if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
+  heroAvatar.appendChild(buildAvatarCharSVGSafe(store.avatarChar));
+
+  const heroId = document.createElement("div");
+  heroId.className = "profile-hero-id";
 
   const nameDisplayRow = document.createElement("div");
   nameDisplayRow.className = "namedisplay-row";
-  nameDisplayRow.style.cssText = "justify-content:flex-start; gap:.7rem;";
+  nameDisplayRow.style.cssText = "justify-content:flex-start; gap:.6rem;";
   const nameDisplayText = document.createElement("span");
-  /* The name is the single most personal thing on this screen \u2014 gets
-     the same Nova gradient treatment as the app's own wordmark instead
-     of plain default-colored text, so it actually feels like it
-     belongs to the identity of the app rather than looking like an
-     unstyled placeholder. */
+  /* The name is the single most personal thing on this screen - gets
+     the same Nova gradient treatment as the app's own wordmark. */
   nameDisplayText.className = "profile-name-display";
   nameDisplayText.textContent = store.firstName || "No name set";
   const nameEditBtn = document.createElement("button");
-  nameEditBtn.type = "button"; nameEditBtn.className = "next ghost";
-  nameEditBtn.style.cssText = "padding:.35rem .8rem; font-size:.78rem; flex-shrink:0;";
+  nameEditBtn.type = "button"; nameEditBtn.className = "next ghost profile-edit-btn";
   nameEditBtn.textContent = "Edit";
   nameDisplayRow.append(nameDisplayText, nameEditBtn);
-
-  /* The day-streak badge relocated here, per explicit request \u2014 it
-     used to sit as its own centered, full-width pill much further
-     down the screen; now it lives right beside the name, offset to
-     the right, exactly at the top where a running streak is most
-     immediately relevant. Its color changed too: it previously
-     inherited the theme's own accent color for its border, which
-     defaults to a near-white neutral \u2014 exactly why it looked like a
-     stray white outline. It now matches the fire icon's own warm
-     tone instead, consistent regardless of theme. */
-  const streakBadge = buildStreakBadge();
-  if(streakBadge){
-    /* A dedicated text-align:right wrapper, not margin-left:auto
-       directly on the badge itself \u2014 the badge is inline-flex sitting
-       inside a plain block container (nameWrap), and margin:auto only
-       reliably pushes a block-level or flex-item box, not an inline-
-       level one; this was verified directly (measured a 179px gap
-       from the right edge instead of the intended alignment) rather
-       than assumed to work. */
-    const streakWrap = document.createElement("div");
-    streakWrap.style.cssText = "text-align:right;";
-    streakWrap.appendChild(streakBadge);
-    nameWrap.appendChild(streakWrap);
-  }
 
   const nameInput = document.createElement("input");
   nameInput.type = "text"; nameInput.className = "searchbox searchbox-plain";
@@ -33701,7 +33888,7 @@ function showProfile(defaultTab){
   function saveNameEdit(){
     const trimmed = nameInput.value.trim();
     if(!trimmed){
-      showToast("A name is needed \u2014 restoring your previous one.");
+      showToast("A name is needed — restoring your previous one.");
       nameInput.value = store.firstName || "";
     } else {
       store.firstName = trimmed.slice(0, 40);
@@ -33718,46 +33905,99 @@ function showProfile(defaultTab){
   nameSaveBtn.addEventListener("click", saveNameEdit);
   nameInput.addEventListener("keydown", (e) => { if(e.key === "Enter") saveNameEdit(); });
 
-  nameWrap.append(nameDisplayRow, nameInput, nameSaveBtn);
-  nameSect.appendChild(nameWrap);
-  identityTab.appendChild(nameSect);
+  const heroMeta = document.createElement("div");
+  heroMeta.className = "profile-hero-meta";
+  const streakBadge = buildStreakBadge();
+  if(streakBadge) heroMeta.appendChild(streakBadge);
 
-  /* The "Enrolled in Class 26E" line that used to sit here is gone \u2014
-     explicit report that it was redundant directly above a section
-     whose own header, right below, already says "Class 26E." */
+  heroId.append(nameDisplayRow, nameInput, nameSaveBtn, heroMeta);
+  heroTop.append(heroAvatar, heroId);
+  heroSect.appendChild(heroTop);
 
-  /* Both "class days remaining" and the full calendar deliberately
-     tucked behind their own buttons here rather than shown inline \u2014
-     per explicit request, this is meant to feel like a small, clearly
-     optional detail to check in on, not something taking up
-     permanent space on the main Profile view. Given its own "Class
-     26E" glass-card header, per explicit request, matching the same
-     header treatment Motion & Interaction/Leaderboard already have in
-     Settings \u2014 previously this whole row sat with no section label
-     of its own at all. */
-  const classSect = document.createElement("div");
-  classSect.className = "sect";
-  const classLab = document.createElement("p");
-  classLab.className = "slab motion-summary"; classLab.textContent = "Class 26E";
-  classSect.appendChild(classLab);
-  const calRow = document.createElement("div");
-  calRow.className = "cal-profile-row";
-  const daysBtn = document.createElement("button");
-  daysBtn.type = "button"; daysBtn.className = "cal-profile-btn";
-  daysBtn.textContent = "Class days remaining";
-  daysBtn.addEventListener("click", () => {
-    const remaining = classDaysRemaining();
-    showContextualInfo(daysBtn, remaining > 0
-      ? remaining + " class " + (remaining === 1 ? "day" : "days") + " left until graduation."
-      : "The course calendar has wrapped \u2014 congratulations!");
-  });
-  const calBtn = document.createElement("button");
-  calBtn.type = "button"; calBtn.className = "cal-profile-btn";
-  calBtn.textContent = "View class calendar";
-  calBtn.addEventListener("click", showCalendar);
-  calRow.append(daysBtn, calBtn);
-  classSect.appendChild(calRow);
-  identityTab.appendChild(classSect);
+  const classLine = document.createElement("button");
+  classLine.type = "button";
+  classLine.className = "profile-classline";
+  const classLineText = document.createElement("span");
+  const remainingDays = classDaysRemaining();
+  classLineText.textContent = "Class 26E · " + (remainingDays > 0
+    ? remainingDays + " class " + (remainingDays === 1 ? "day" : "days") + " left"
+    : "course complete");
+  const classLineArrow = document.createElement("span");
+  classLineArrow.className = "profile-classline-arrow";
+  classLineArrow.setAttribute("aria-hidden", "true");
+  classLineArrow.textContent = "›";
+  classLine.append(classLineText, classLineArrow);
+  classLine.addEventListener("click", showCalendar);
+  heroSect.appendChild(classLine);
+  identityTab.appendChild(heroSect);
+
+  /* ---------- level and badges ----------------------------------------
+     The level bar, per explicit request, and it is the reason this
+     screen exists as anything other than a settings page. Level in
+     blue, badges in silver, both with the same shine, and a bar that
+     fills on arrival rather than appearing already full. */
+  const prog = levelProgress(store.lifetime.points || 0);
+  const badgeCount = badgeCountOf(store);
+  const totalUnitsForBadges = topicsIn(QUESTIONS).length;
+
+  const levelSect = document.createElement("div");
+  levelSect.className = "profile-level";
+
+  const levelRow = document.createElement("div");
+  levelRow.className = "profile-level-row";
+  const levelNum = document.createElement("div");
+  levelNum.className = "profile-level-num shine-blue";
+  const levelNumWord = document.createElement("span");
+  levelNumWord.className = "profile-level-word";
+  levelNumWord.textContent = "Level";
+  const levelNumValue = document.createElement("span");
+  levelNumValue.className = "profile-level-value";
+  levelNumValue.textContent = String(prog.level);
+  levelNum.append(levelNumWord, levelNumValue);
+
+  const badgeStat = document.createElement("button");
+  badgeStat.type = "button";
+  badgeStat.className = "profile-badgestat";
+  const badgeStatValue = document.createElement("span");
+  badgeStatValue.className = "profile-badgestat-value shine-silver";
+  badgeStatValue.textContent = badgeCount + "/" + totalUnitsForBadges;
+  const badgeStatWord = document.createElement("span");
+  badgeStatWord.className = "profile-badgestat-word";
+  badgeStatWord.textContent = badgeCount === 1 ? "badge earned" : "badges earned";
+  badgeStat.append(badgeStatValue, badgeStatWord);
+  badgeStat.addEventListener("click", () => selectProfileTab("badges"));
+
+  levelRow.append(levelNum, badgeStat);
+  levelSect.appendChild(levelRow);
+
+  const xpTrack = document.createElement("div");
+  xpTrack.className = "xpbar-track";
+  const xpFill = document.createElement("div");
+  xpFill.className = "xpbar-fill";
+  xpFill.style.width = "0%";
+  xpFill.dataset.target = String(Math.round(prog.fraction * 1000) / 10);
+  xpTrack.appendChild(xpFill);
+  levelSect.appendChild(xpTrack);
+
+  const xpLine = document.createElement("p");
+  xpLine.className = "profile-xp-line";
+  xpLine.textContent = prog.atCap
+    ? prog.total.toLocaleString() + " XP · level " + LEVEL_CAP + ", the top of the ladder"
+    : prog.total.toLocaleString() + " XP · " + prog.toNext.toLocaleString() +
+      " to level " + (prog.level + 1);
+  levelSect.appendChild(xpLine);
+  identityTab.appendChild(levelSect);
+
+  /* Kicked off when the Profile tab is actually SHOWN, not when it is
+     built - showProfile("stats") builds this panel hidden, and a bar
+     that animated there is a bar nobody saw move. rAF twice so the
+     0% width is a committed style before the transition target lands
+     on it; one frame is not reliably enough for that. */
+  function runXpBarFill(){
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      xpFill.style.width = xpFill.dataset.target + "%";
+    }));
+  }
 
   const avatarSect = document.createElement("div");
   avatarSect.className = "sect";
@@ -33943,6 +34183,8 @@ function showProfile(defaultTab){
 
   stage.replaceChildren(panel);
   toTop();
+  if(initialTab === "profile") runXpBarFill();
+  if(initialTab === "badges" && badgesTab.runFill) badgesTab.runFill();
   if(!store.seenProfileTour){
     store.seenProfileTour = true;
     saveStore();
@@ -34278,6 +34520,97 @@ function showRankings(defaultBoard){
         text: "Find me jumps to your own row and flashes it. Everybody's numbers here update live \u2014 there is nothing to refresh." }
     ]);
   }
+}
+
+/* ---------- the badge case ----------------------------------------------
+   A detached node, like the Ladder and Unlocks tabs beside it, so the
+   Profile scaffold can create all of them together and only their
+   contents differ.
+
+   Deliberately a CASE and not a list: sixteen slots, always all
+   sixteen, in the same order every time. A grid that only showed what
+   you had earned would be empty for weeks and would never show you
+   what you were working towards, which is the entire appeal of the
+   thing this is modelled on. */
+function buildBadgesTab(){
+  const tab = document.createElement("div");
+  tab.className = "badges-tab";
+
+  const units = topicsIn(QUESTIONS);
+  const earned = units.filter(unitBadgeEarned);
+
+  const head = document.createElement("div");
+  head.className = "badges-head";
+  const count = document.createElement("p");
+  count.className = "badges-count";
+  const countNum = document.createElement("span");
+  countNum.className = "badges-count-num shine-silver";
+  countNum.textContent = earned.length + "/" + units.length;
+  const countWord = document.createElement("span");
+  countWord.className = "badges-count-word";
+  countWord.textContent = earned.length === 1 ? "badge earned" : "badges earned";
+  count.append(countNum, countWord);
+  head.appendChild(count);
+
+  const track = document.createElement("div");
+  track.className = "badges-progress-track";
+  const fill = document.createElement("div");
+  fill.className = "badges-progress-fill";
+  fill.style.width = "0%";
+  fill.dataset.target = String(units.length ? Math.round((earned.length / units.length) * 1000) / 10 : 0);
+  track.appendChild(fill);
+  head.appendChild(track);
+
+  const blurb = document.createElement("p");
+  blurb.className = "badges-blurb";
+  blurb.textContent = "Every unit has a badge, and no two look alike. Earn one by mastering its unit — " +
+    BADGE_THRESHOLD + " hundos in that unit. Badges replace stars. Tap one you have not earned to see what it takes.";
+  head.appendChild(blurb);
+  tab.appendChild(head);
+
+  const grid = document.createElement("div");
+  grid.className = "badge-grid";
+  units.forEach(unit => {
+    const has = unitBadgeEarned(unit);
+    const done = Math.min(BADGE_THRESHOLD, store.unitPerfects[unit] || 0);
+
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "badge-tile" + (has ? " is-earned" : " is-locked");
+
+    const art = document.createElement("span");
+    art.className = "badge-tile-art";
+    art.appendChild(buildUnitBadgeSVG(unit, has));
+    tile.appendChild(art);
+
+    const name = document.createElement("span");
+    name.className = "badge-tile-name";
+    name.textContent = unit;
+    tile.appendChild(name);
+
+    const prog = document.createElement("span");
+    prog.className = "badge-tile-prog";
+    prog.textContent = has ? "Mastered" : done + "/" + BADGE_THRESHOLD;
+    tile.appendChild(prog);
+
+    tile.addEventListener("click", () => {
+      showContextualInfo(tile, has
+        ? "Earned for mastering " + unit + "."
+        : "Master " + unit + " to earn this badge — " + done + " of " +
+          BADGE_THRESHOLD + " hundos so far.");
+    });
+    grid.appendChild(tile);
+  });
+  tab.appendChild(grid);
+
+  /* Same reason the XP bar waits: this panel is built while another
+     tab is showing, so filling on build is filling out of sight. */
+  tab.runFill = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fill.style.width = fill.dataset.target + "%";
+    }));
+  };
+  return tab;
 }
 
 /* Achievements and Unlocks, built as two detached nodes for whoever

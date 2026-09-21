@@ -105,6 +105,11 @@ SCREENS = [
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
     "showHome", "showAppearance", "showProfile", "showRankings",
+    # Profile is five tabs and only the one it opens on is laid out by
+    # a bare showProfile(). The Badges case in particular is a sixteen
+    # tile grid the sweep would otherwise never look at.
+    "showProfile('badges')", "showProfile('stats')",
+    "showProfile('ladder')", "showProfile('unlocks')",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
     "showExamOptions", "showCalendar", "showTestReviewList",
     # the rest
@@ -332,7 +337,10 @@ def main():
                 found = {}
                 for fn in SCREENS:
                     try:
-                        if not page.evaluate(f"typeof {fn}==='function'"):
+                        # An entry may carry arguments ("showProfile('badges')"),
+                        # so the existence check has to look at the name alone.
+                        fname = fn.split("(")[0]
+                        if not page.evaluate(f"typeof {fname}==='function'"):
                             found[fn] = [f"{fn} is not defined"]
                             continue
                         # An onboarding screen is only ever reached with the
@@ -347,7 +355,8 @@ def main():
                         if fn in ONBOARDING_SCREENS:
                             page.evaluate("showWelcome();")
                             page.wait_for_timeout(120)
-                        page.evaluate(f"{fn}(); scrollTo(0,0);")
+                        call = fn if fn.endswith(")") else fn + "()"
+                        page.evaluate(f"{call}; scrollTo(0,0);")
                         page.wait_for_timeout(300)
                         hits = page.evaluate(AUDIT, ins)
                         if hits:
