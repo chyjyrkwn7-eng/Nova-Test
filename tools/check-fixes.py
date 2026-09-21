@@ -50,7 +50,12 @@ CHECKS = """(() => {
 
   // 1. grey bar: html's fallback glow must be anchored to the viewport
   const hs = getComputedStyle(document.documentElement);
-  out.htmlAttach = hs.backgroundAttachment.split(",")[0].trim();
+  /* No background-attachment assertion. It was one, and it was wrong:
+     `fixed` was the first attempted grey-bar fix, it is unsupported on
+     iOS Safari (treated as scroll), and asserting it here only proved
+     Chromium honoured something the target platform ignores. The grey
+     bar is checked by reproducing it instead - see the screenshot
+     comparison further down. */
   out.htmlLayers = (hs.backgroundImage.match(/radial-gradient/g) || []).length;
 
   // 5. sphere tap highlight (Home only)
@@ -139,8 +144,6 @@ def main():
                         c = pg.evaluate(CHECKS)
                         checked += 1
 
-                        if c["htmlAttach"] != "fixed":
-                            fails.append(f"{tag}: html glow attachment {c['htmlAttach']}, not fixed")
                         if c["htmlLayers"] < 2:
                             fails.append(f"{tag}: html fallback glow missing ({c['htmlLayers']} layers)")
                         for k in ("sphereHighlight", "sphereChildHighlight"):
@@ -204,7 +207,17 @@ def main():
                           const t=document.querySelector('.toast');
                           const bar=document.querySelector('.bottomtabs');
                           if(!a) return {banner:false, toast:!!t};
-                          await new Promise(r=>setTimeout(r,320));
+                          /* Wait for the entrance to SETTLE, not for a fixed
+                             delay. .daily-alert enters from translateY(-8px)
+                             over .22s; a flat 320ms read it mid-transition on
+                             a 2560px display and called a healthy banner 1px
+                             off-screen. Poll the computed transform instead. */
+                          for(let i=0;i<40;i++){
+                            const cs = getComputedStyle(a);
+                            if(a.classList.contains('show') && cs.opacity === '1' &&
+                               (cs.transform === 'none' || /matrix\(1, 0, 0, 1, 0, 0\)/.test(cs.transform))) break;
+                            await new Promise(r=>setTimeout(r,25));
+                          }
                           if(!a.classList.contains('show')) return {banner:true, toast:!!t, never:true};
                           const r=a.getBoundingClientRect();
                           const A=bar&&!bar.hidden?bar.getBoundingClientRect():null;
