@@ -2455,8 +2455,16 @@
      Measured against the screen it has to fit: four cards at this size
      plus the title and the button still clear an iPad Pro 11" in
      portrait with room over, and the 32rem phone rules are untouched. */
+  /* The gap BETWEEN cards has to beat the padding INSIDE them, or four
+     cards read as one block with odd spacing in it. Measured on an iPad:
+     35px of air above and below the text inside each card against 27px
+     between one card and the next, which is the wrong way round and is
+     what "awkward sized gaps" was pointing at. (A phone was already 15
+     and 15, which is why it only showed on tablets.) Now 29 inside and
+     38 between - and the cards come out slightly SHORTER than before, so
+     this costs no height on a short tablet. */
   @media (min-width:40rem){
-    .welcomeintro-row{ margin-bottom:1.7rem; padding:2.1rem 2rem; border-radius:20px; }
+    .welcomeintro-row{ margin-bottom:2.4rem; padding:1.8rem 2rem; border-radius:20px; }
     .welcomeintro-head{ font-size:1.55rem; margin-bottom:.55rem; }
     .welcomeintro-body{ font-size:1.3rem; line-height:1.5; }
     .welcomeintro-title{ font-size:clamp(1.8rem, 5vh, 2.4rem); margin-bottom:1.4rem; }
@@ -2497,7 +2505,8 @@
      and this does not pretend otherwise; it gets everything else back
      inside the viewport. */
   @media (max-height:56rem), (min-width:40rem) and (max-height:60rem){
-    .welcomeintro-row{ margin-bottom:.45rem; padding:.5rem .9rem; }
+    /* Same rule as the tablet block: the gap outruns the padding. */
+    .welcomeintro-row{ margin-bottom:.7rem; padding:.5rem .9rem; }
     .welcomeintro-head{ font-size:.9rem; margin-bottom:.1rem; }
     .welcomeintro-body{ font-size:.8rem; line-height:1.3; }
     .welcomeintro-title{ font-size:1.25rem; margin-bottom:.5rem; }
@@ -2516,7 +2525,7 @@
      undoing that is a bad trade. Narrow AND short, so a laptop window
      (wide, and already fitting with room) is not caught by it. */
   @media (max-width:32rem) and (max-height:52rem){
-    .welcomeintro-row{ margin-bottom:.2rem; padding:.3rem .65rem; }
+    .welcomeintro-row{ margin-bottom:.35rem; padding:.3rem .65rem; }
     .welcomeintro-title{ font-size:1.15rem; margin-bottom:.25rem; }
     /* Width, not just height. Every pixel of column this screen gets back
        is a pixel of text that does not have to wrap, and a wrapped line
@@ -2564,7 +2573,9 @@
        from 49px above the button to 35 and picked up 23px of overflow
        doing it. Always diff a new tier against the one that is actually
        winning, not against the base. */
-    .welcomeintro-row{ margin-bottom:.25rem; padding:.35rem .9rem; }
+    /* gap > padding here too - at .25rem against .35rem of padding the
+       shortest laptops had the same inside-out rhythm the tablets had. */
+    .welcomeintro-row{ margin-bottom:.5rem; padding:.35rem .9rem; }
     .welcomeintro-head{ margin-bottom:0; }
     .welcomeintro-title{ margin-bottom:.4rem; }
     .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.2rem; }
@@ -28388,7 +28399,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-51";
+const APP_BUILD = "2026-09-21-52";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -93,7 +93,7 @@ def main():
 
                 def shot(n, name, bar_ok=False):
                     page.wait_for_timeout(350)
-                    page.screenshot(path=f"{OUT}/{label}-{n:02d}-{name}.png")
+                    page.screenshot(path=f"{OUT}/{label}-{n:04.1f}-{name}.png")
                     bad = page.evaluate("""()=>{
                         const t = document.querySelector('.bottomtabs');
                         const loading = document.getElementById('genprofile-overlay')
@@ -120,8 +120,13 @@ def main():
                 page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)
                 page.click(".classselect-panel .next.playbtn");       shot(6, "enter-a-username")
                 page.fill(".searchbox", "Madison"); page.wait_for_timeout(250)
+                # The armed state as well as the gated one: these two screens
+                # hide Continue until something is chosen, and where it lands
+                # once it appears is the thing worth looking at.
+                shot(6.5, "enter-a-username-filled")
                 page.click(".onboarding-shortform-panel .next.playbtn"); shot(7, "choose-a-character")
                 page.click(".avatarchar-option"); page.wait_for_timeout(250)
+                shot(7.5, "choose-a-character-picked")
                 page.click(".charselect-panel .next.playbtn");        shot(8, "youre-all-set")
                 page.click(".onboarding-shortform-panel .next.playbtn")
                 # Wait for the loading overlay to actually finish rather than

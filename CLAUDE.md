@@ -500,6 +500,18 @@ buttons"* — 29px on a phone, 120px on an iPad. There is nothing to tune
 here: the answer is the shared floor, plus the same `padding-bottom:1.5rem`
 every other `.panel.home` screen uses, or the floors themselves differ.
 
+**The gap BETWEEN the intro cards has to beat the padding INSIDE them, or the
+four of them read as one slab.** Reported as "awkward sized gaps" on an iPad,
+and it was: measured, each card carried 35px of padding and only 27px of
+margin below it, so the air inside each box outweighed the air separating
+them. Phones never showed it — there they were 15/15 — which is why it
+survived several passes. Each tier sets both numbers together
+(tablet `margin-bottom:2.4rem` / `padding:1.8rem 2rem`, and so on down), and
+the table in **Where things currently land** records the pair per device so
+the relationship can be checked rather than eyeballed. The last card's margin
+is cancelled by the shared-floor rule above, so raising it costs nothing at
+the bottom of the panel.
+
 **An auto margin only ever moves the things ABOVE it.** All the free space
 in a column ends up above the last child no matter how many auto margins
 divide it, so where the *other* children land is the only thing the split
@@ -951,12 +963,47 @@ re-evaluated on the next check.
 — phone and tablet.** Not one or the other, and not only when a change "looks
 layout-related": this app is used on both, and a change that reads fine at
 390px can be adrift at 1024px (the Pause button sat 88px from the edge on an
-iPad while looking perfectly normal on a phone). Use 390×844 for phone and
-1024×834 for tablet, or 834×1112 for portrait tablet where the screen is tall.
+iPad while looking perfectly normal on a phone). Madison's own two are an
+**iPhone 17 Pro Max (440×956)** and an **iPad Pro 11" (834×1194)** — those are
+the reference devices, and a change that moves them needs saying out loud.
+
+**Use `tools/shoot-flow.py`, do not mount screens.** It clicks through from a
+fresh install on seven devices and fails loudly on a tab bar during
+onboarding, a missing tab bar on Home, or a tooltip over a loading screen. It
+also draws the status bar, because a screenshot with an unexplained black band
+at the top has now been misread twice — once as a tab-bar bug, once as the
+update banner "not aligned to the top".
 
 Fixed-position elements render oddly in Playwright `fullPage` screenshots, so
 screenshot the viewport and scroll, and measure with `getBoundingClientRect()`
 rather than trusting a tall capture.
+
+### Where things currently land
+
+Regenerate with `python3 tools/check-positions.py`; these are the numbers to
+check a change against, not to trust forever. Measured installed, portrait.
+
+| | iPhone SE 2/3 | 13 mini | 14/15/16 | **17 Pro Max** | iPad mini | **iPad Pro 11"** | iPad Pro 12.9" | Dell Latitude | MBP 14" |
+|---|---|---|---|---|---|---|---|---|---|
+| viewport | 375×667 | 375×812 | 393×852 | **440×956** | 744×1133 | **834×1194** | 1024×1366 | 1366×638 | 1512×852 |
+| onboarding Continue, y | 527 | 672 | 712 | **816** | 993 | **1055** | 1227 | 502 | 716 |
+| …spread across the 6 screens | 47¹ | 0 | 0 | **0** | 0 | **1** | 1 | 1 | 0 |
+| Home: tagline→button / button→tab bar | 50/33 | 61/68 | 68/75 | **96/103** | 82/83 | **93/93** | 148/149 | 45/63 | 34/51 |
+| Welcome: hint off the bottom edge | 42 | 62 | 62 | **62** | 50 | **49** | 50 | 46 | 46 |
+| intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 29/38 | **29/38** | 29/38 | 6/8 | 8/11 |
+| daily question button | 54px | 54 | 54 | **54** | 74 | **74** | 74 | 74 | 74 |
+
+¹ The one deliberate exception: on an SE the intro screen's four cards fill
+the panel exactly, so its Continue is carried ~47px lower by the
+self-cancelling last-card margin rather than sitting on the shared floor.
+An **SE 1st gen (320×568)** is the one device that does not fit this screen at
+all and is not expected to.
+
+Rules those numbers encode, worth keeping: the gap **between** intro cards
+always beats the padding **inside** them; Home's button sits within a few px
+of the midpoint between the tagline and the tab bar; every onboarding
+Continue lands on one line per device; and the Welcome hint clears the bottom
+edge by ~50px, or ~62px where there is a home indicator inside that.
 
 ---
 
@@ -975,7 +1022,11 @@ missed real bugs that a thirty-second check caught.
    both orientations, installed and in a browser. This is required on every
    change, not just layout ones; a JS error only thrown on one screen shows
    up here too. It exits non-zero on any failure.
-4. Screenshots at both sizes for Madison, per **Showing the work**.
+4. `python3 tools/check-positions.py` — did what you positioned land where
+   you meant it to, on all 21 devices. A green sweep does not answer this;
+   see **Every device, every way in**.
+5. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
+   Madison, per **Showing the work**.
 
 Serve over HTTP for anything touching `version.json` — `fetch` fails on a
 `file://` path, and the update check swallows that silently by design.
