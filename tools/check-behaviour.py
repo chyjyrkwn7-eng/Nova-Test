@@ -332,6 +332,90 @@ def check_cutscene(br):
         ctx.close()
 
 
+# --------------------------------------------------------------------------
+def check_ranks(br):
+    """The Ranks tab, which replaced the Mastery Ladder and Unlocks.
+
+    Written against the build where it did not exist, so every check
+    here fails on --against. The one that matters most is the fill: the
+    whole point of the rewrite is that a rank part-way earned is
+    part-way lit, and a clip-path that never moves off its CSS default
+    looks identical to one that works until you measure it.
+    """
+    print("\n6. ranks: held, next, and part-way lit")
+    # Level 23 (12,400 XP on the 300 @ +5% curve) and 4 badges reaches
+    # Veteran (20 / 4) and leaves Vanguard (30 / 6) as the next one.
+    seed = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
+            '"lastModified":1700000000000,"seenProfileTour":true,'
+            '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
+            '"TCOLE Rules":35,"Penal Code":35},'
+            '"lifetime":{"points":12400,"correct":4980,"perfectTests":141}}')
+    ctx, pg = booted(br, 834, 1194, seed=seed)
+    got = pg.evaluate("""()=>({level:levelOf(store), badges:badgeCountOf(store),
+                              rank:rankOf(store)})""")
+    check("the seed holds the rank its numbers earn",
+          got["level"] == 23 and got["badges"] == 4 and got["rank"] == "veteran", got)
+
+    # Boundary behaviour, cheap and worth having: one short of a rank is
+    # the rank below, and both halves have to be met.
+    edges = pg.evaluate("""()=>({
+      exact: rankOfStats(20, 4, 0), levelShort: rankOfStats(19, 4, 0),
+      badgeShort: rankOfStats(20, 3, 0), nothing: rankOfStats(1, 0, 0),
+      titanNoFlares: rankOfStats(70, 14, 0), titan: rankOfStats(70, 14, 3)})""")
+    check("a rank needs BOTH halves, and Titan needs the flares too",
+          edges["exact"] == "veteran" and edges["levelShort"] == "ranger" and
+          edges["badgeShort"] == "ranger" and edges["nothing"] is None and
+          edges["titanNoFlares"] == "elite" and edges["titan"] == "titan", edges)
+
+    pg.evaluate("()=>showProfile('ranks')")
+    pg.wait_for_timeout(1500)
+    tabs = pg.evaluate("""()=>[...document.querySelectorAll('.profiletabs .iconbtn')]
+                              .map(b=>b.textContent)""")
+    check("Ladder and Unlocks are one tab now",
+          tabs == ["Profile", "Badges", "Stats", "Ranks"], tabs)
+
+    cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
+      name:c.querySelector('.rankcard-name').textContent,
+      state:c.className.match(/is-\\w+/)[0],
+      fill:getComputedStyle(c.querySelector('.rankcard-art')).getPropertyValue('--rank-fill').trim(),
+      rewards:c.querySelectorAll('.rankcard-rewards li').length}))""")
+    check("seven ranks, named as ranks and not as flares",
+          [c["name"] for c in cards] ==
+          ["Rookie", "Ranger", "Veteran", "Vanguard", "Sentinel", "Elite", "Titan"],
+          [c["name"] for c in cards])
+    check("held, next and locked are marked apart",
+          [c["state"] for c in cards] ==
+          ["is-held", "is-held", "is-held", "is-next", "is-locked", "is-locked", "is-locked"],
+          [c["state"] for c in cards])
+    fills = [c["fill"] for c in cards]
+    def pct(v):
+        try: return float(str(v).replace("%", ""))
+        except ValueError: return -1
+    check("a reached rank is fully lit", all(pct(f) >= 100 for f in fills[:3]), fills)
+    # Vanguard: min(23/30, 4/6) = 0.666 -> 67%. Part-way, not 0 and not 100.
+    check("a rank part-way earned is part-way lit",
+          0 < pct(fills[3]) < 100 and 0 < pct(fills[4]) < pct(fills[3]), fills)
+    check("every rank lists what it hands over",
+          all(c["rewards"] == 3 for c in cards), [c["rewards"] for c in cards])
+
+    # The rank has to show up where people are listed, or it is a tab
+    # nobody else ever sees.
+    row = pg.evaluate("""()=>{const a=document.createElement('span');
+      a.className='lb-avatar'; a.appendChild(buildAvatarCharSVGSafe('ninja'));
+      decorateAvatar(a, 34, 6, 0);
+      const m=a.querySelector('.lb-rankmark'), l=a.querySelector('.vroom-level');
+      const un=document.createElement('span'); un.className='lb-avatar';
+      decorateAvatar(un, 1, 0, 0);
+      return {rank:m&&m.title, level:l&&l.textContent,
+              unranked:!un.querySelector('.lb-rankmark'),
+              unrankedLevel:(un.querySelector('.vroom-level')||{}).textContent};}""")
+    check("a person's row carries their rank and their level",
+          row["rank"] == "Vanguard" and row["level"] == "34", row)
+    check("somebody below Rookie gets a level and no emblem",
+          row["unranked"] and row["unrankedLevel"] == "1", row)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -341,6 +425,7 @@ def main():
             check_navigation(br)
             check_badges(br)
             check_cutscene(br)
+            check_ranks(br)
         finally:
             br.close()
     SERVER.shutdown()

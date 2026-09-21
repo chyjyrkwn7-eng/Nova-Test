@@ -109,7 +109,7 @@ SCREENS = [
     # a bare showProfile(). The Badges case in particular is a sixteen
     # tile grid the sweep would otherwise never look at.
     "showProfile('badges')", "showProfile('stats')",
-    "showProfile('ladder')", "showProfile('unlocks')",
+    "showProfile('ranks')",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
     "showExamOptions", "showCalendar", "showTestReviewList",
     # the rest

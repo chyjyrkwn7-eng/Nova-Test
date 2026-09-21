@@ -874,9 +874,9 @@ Everything below follows from that.
 
 ---
 
-## Levels, badges and the ladder
+## Levels, badges and ranks
 
-The three things the app now measures are **XP → level**, **badges**, and
+The three things the app measures are **XP → level**, **badges**, and
 **hundos**, and every screen that shows progress is built on those three.
 
 - **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (35)
@@ -893,11 +893,82 @@ The three things the app now measures are **XP → level**, **badges**, and
   the ceiling Madison asked for was unreachable until the curve moved.
   **Check that a curve change cannot lower anybody's level** before
   making one — that property is what made this one safe.
-- **The Mastery Ladder climbs on level and badges**, not on XP and stars.
-  `tierShortfall(rule)` words what is missing, once; the flares on Home,
-  the ladder nodes, the note under the ladder and the Unlocks rows all
-  call it, and they used to each do their own arithmetic and phrase the
-  result differently.
+
+### Ranks
+
+**A rank and a flare are two different things, and they used to be one.**
+The tiers were named after the flares — Spark, Ember, Comet — so the
+Mastery Ladder and the Home screen's orbit were two names for one thing,
+and climbing gave you nothing to be *given*. The ranks have their own
+names now (`RANK_DISPLAY_NAME`) and the flare is one of the things a rank
+**hands over**. Reaching Ranger lights the Ember flare and unlocks the
+Ember colour; the rank is not called Ember. Keep that distinction in any
+copy you write: `ACCENT_DISPLAY_NAME` is the flare/colour, `RANK_DISPLAY_NAME`
+is the rank.
+
+- **The thresholds did not move.** `TIER_UNLOCKS` is the same table with
+  the same level-and-badges pairs; the keys are the same too, which is
+  what kept this a rename rather than a migration — `ACCENTS`,
+  `ACCENT_SWATCH` and a theme somebody already has selected are all keyed
+  by them. **`adept` displays as "Sentinel"** and that is the one place a
+  display name does not match its key: `adept` reads as a beginner's word
+  sitting between Vanguard and Elite, and renaming the key would have
+  touched a stored preference for a cosmetic gain.
+- **`rankOfStats(level, badges, mystery)` is the single definition of who
+  holds what**, and it takes the numbers rather than a store, because the
+  rankings and the Virtual Room ask it about *other people* from a
+  published document. `rankOf(store)` is the wrapper for yourself.
+- **`mystery` is published to the leaderboard and to the room.** Titan
+  needs all three Secret Flares, so without it every remote person is
+  capped at Elite however far they have actually got. An older document
+  lacking the field reads as 0 and self-heals on that person's next push.
+- **One emblem set, one table.** `RANK_EMBLEM_PARTS` lists which pieces
+  each rank's emblem is built from, in paint order; reading down it *is*
+  the escalation. Every rank shares the same core mark — the V from the
+  app's own icon — and gains furniture as it climbs, which is how the
+  reference set Madison sent works too: one triangle, eight frames around
+  it. **Centred parts are drawn once and are symmetric by construction;
+  side parts are drawn on the RIGHT only and mirrored**, the same
+  guarantee the badges get from generating half a silhouette.
+  **The core has to stay well inside the box** — the first pass gave the
+  shield most of the width and every wing after it painted underneath,
+  so Vanguard and Sentinel came out the same drawing in two colours.
+- **A rank part-way earned is part-way lit.** The emblem is drawn twice
+  and the lit copy is clipped from the bottom (`--rank-fill` on
+  `.rankcard-art`, a `clip-path:inset()` on the layer inside it), so the
+  card fills like a gauge and a reached rank glows. The property is set
+  on the **wrapper**, not on the clipped layer: a custom property
+  inherits down, and the waterline is an `::after` on the wrapper that
+  has to read it.
+- **The hero bar measures the STEP, not the next rank from zero.**
+  `rankPct()` measures from nothing, so arriving at Veteran showed the
+  bar already two thirds of the way to Vanguard — which reads as having
+  climbed a rank and lost ground. Each requirement is normalised against
+  the rank below and the two are **averaged**; the card meters keep the
+  slower-of-the-two, which is the right answer to "what is gating me" and
+  the wrong one for a bar between two ranks, where it sits at zero for
+  the whole first half of every step.
+- **Seven is prime, so the track is flex and not grid.** A grid leaves
+  the last row ragged at every column count that is not seven — 3+3+1 on
+  a phone, 4+3 on an iPad — with the orphans jammed left and a hole
+  beside them. Wrapped flex plus `justify-content:center` puts the short
+  row in the middle. `min-width:0` on the card does the job
+  `minmax(0,1fr)` does in a grid.
+- **Only list rewards that exist.** Each card names three: the flare on
+  Home, the theme colour, and the rank's emblem beside your name. The
+  reference lists four per tier and it would have been easy to pad;
+  a reward that does not exist is worse than a short list.
+- **A person's rank and level hang off their character, not beside it.**
+  `decorateAvatar()` is the one builder — the three rankings boards, the
+  Virtual Room lobby and the Virtual Room results all call it, so a
+  classmate looks the same wherever they turn up. Emblem top-left on a
+  dark coin (Rookie's is grey by design and vanished against a dark
+  avatar), level bottom-right. In the flow they would not fit: a row
+  already carries a place marker, a name and a stat line, and a 320px
+  phone has no spare width.
+
+### Badges
+
 - **Badge detection diffs the real list either side of the recording
   calls** in `summarize()`, rather than trusting any one of them to
   report it. `recordMultiUnitPerfectsIfEligible` does return a
@@ -923,13 +994,41 @@ The three things the app now measures are **XP → level**, **badges**, and
   note rather than the spin, because the global
   `[data-reduce-motion="true"] *{animation:none}` would otherwise strip
   the keyframes and leave a badge sitting motionless behind a dim.
-- **Badges are drawn, not hashed.** `UNIT_BADGE_SPECS` assigns a
-  silhouette, a colour pair and an emblem per unit by name. A hash gives
-  sixteen *different* badges and not sixteen *designed* ones — the shape
-  landing on "Victims of Crime" would be whatever the hash said. There is
-  still a deterministic fallback for an unknown unit, and that is not
-  padding: the leaderboard lost three classmates to `buildAvatarCharSVG`
-  returning null for an id it did not know.
+- **Badges are GROWN from the unit name, and the shape is mirror-symmetric
+  by construction.** Vertices sit at even angles starting straight up, and
+  that angle set is already closed under a reflection in the vertical axis
+  (reflecting `-90 + i*360/n` gives `-90 + (n-i)*360/n`, another vertex of
+  the same set) — so the only thing that can break the mirror is unequal
+  radii, and the half is generated and copied across, jitter included.
+  **The free rotation the first version applied is gone**: it is exactly
+  what stopped the shapes reading as designed rather than found.
+- **Every pattern carries at least one near radius.** The all-far pattern
+  draws a regular polygon, which is the one shape a seed can land on that
+  looks like nothing was designed — it produced three plain pentagons out
+  of sixteen. **A wide near/far ratio is most of the shape variety there
+  is**; at 0.54–0.82 every badge came out a pentagon-ish blob with a dent
+  in it.
+- **Colours are DEALT, not hashed.** A hash into a sixteen-entry table is
+  sixteen independent draws from sixteen slots, which lands about six of
+  them on a colour another badge already has — reported as "a lot of
+  repeating colours", and it was. `badgeColourFor()` deals one palette
+  entry per unit in **sorted name order**, which is what keeps it
+  independent of the bank's order the way the shapes already are. Adding
+  a unit does re-deal, and that is the honest behaviour.
+  The palette is twenty **named families** rather than twenty even steps
+  round the hue wheel: even steps is the obvious answer and it produces
+  four greens out of sixteen, because green occupies about a sixth of the
+  wheel and reads as one colour whatever the spacing says.
+- **Every badge carries a design on its face**, drawn about the badge's
+  own vertical axis so it cannot break the mirror, and sized against the
+  table rather than at a fixed radius — a mark that reads as an inclusion
+  on the widest stone is a speck on the narrowest. Eight of them,
+  deliberately geometric: the first set was a bar and a double rule and
+  they read as a capital I and an equals sign, which is a meaning where
+  there is supposed to be none. **None of them is a picture of anything
+  either** — no crowns, no eyes, no shields — because the shapes were
+  already asked not to represent the unit they belong to, and a motif that
+  did it instead would only move the problem inside the badge.
 - **What makes sixteen shapes read as a COLLECTION is the setting, not
   the shapes.** Drawn against Madison's reference (a Sinnoh badge case):
   every badge there is set in the same pale metal, as a thick rim
@@ -940,8 +1039,7 @@ The three things the app now measures are **XP → level**, **badges**, and
   dark rim and a glossy dome and read as sixteen icons.
 - **Enamel, not glass.** The reference's interiors are nearly flat, with
   a soft light across the top third; the first pass used a full dome
-  highlight. The palette is pulled back from jewel tones too — the
-  deepest stops went muddy against a pale setting.
+  highlight.
 - **An unearned badge is a SOLID silhouette** — a flat fill, no rim, no
   interior, a shade off the tray. Both earlier guesses (an outline, then
   an empty setting) were wrong, and a second reference photo showing a
@@ -954,11 +1052,10 @@ The three things the app now measures are **XP → level**, **badges**, and
 - **There are no slots and no tile boxes.** The badges sit straight on a
   flat tray. What looked like a recess in the first photo was each
   badge's own setting, and adding a ring behind it gave every tile a
-  circle the artwork already provided; a highlight box on earned tiles
-  made the rows read as ragged when the artwork says it louder anyway.
-  `.badge-grid` is the tray; `.badge-tile-prog` takes `margin-top:auto`
-  so every progress line sits on its tile's floor, since names run one to
-  four lines and otherwise the numbers stepped up and down across a row.
+  circle the artwork already provided. `.badge-grid` is the tray;
+  `.badge-tile-prog` takes `margin-top:auto` so every progress line sits
+  on its tile's floor, since names run one to four lines and otherwise
+  the numbers stepped up and down across a row.
 - **Two columns on a narrow phone, three from 27rem, four from 40rem.**
   Three across a 375px screen leaves each name 72px and
   "Professionalism" alone is 89px, so `overflow-wrap:anywhere` was
@@ -968,14 +1065,13 @@ The three things the app now measures are **XP → level**, **badges**, and
 - **Gradient ids inside a generated SVG must be unique per instance.**
   Sixteen badges on one screen referencing `url(#badge-grad)` is one
   shared definition and fifteen wrong fills; `badgeSvgSeq` exists for
-  that.
+  that, and `rankEmblemSeq` does the same job for the rank emblems.
 - **Look at a generated shape before believing its name.** Four of the
-  sixteen silhouettes did not draw what they were called — the wings
-  rendered as an arrow, the crescent as a hairline, the bloom as a
-  shield, and the scroll was indistinguishable from the speech bubble —
-  and two emblems read as a medical cross on units that are not medical.
-  `tools/badgepreview`-style rendering of all sixteen at once is a
-  thirty-second check.
+  sixteen hand-written silhouettes did not draw what they were called —
+  the wings rendered as an arrow, the crescent as a hairline, the bloom
+  as a shield, and the scroll was indistinguishable from the speech
+  bubble. Rendering all sixteen at once is a thirty-second check and it
+  is the only reason any of this got fixed.
 - **A grid of cards needs `minmax(0, 1fr)`, never a bare `1fr`** — the
   same trap `.pick` already documents. The badge grid's tracks sized
   themselves to the longest unbreakable word ("Multiculturalism") and ran
@@ -983,8 +1079,8 @@ The three things the app now measures are **XP → level**, **badges**, and
   because the overflow scrolls sideways rather than clipping; the sweep
   did, and only because the Profile tabs were added to `SCREENS`.
 - **`SCREENS` entries may carry arguments** (`"showProfile('badges')"`).
-  Profile is five tabs and a bare `showProfile()` lays out only one of
-  them, so four fifths of that screen had no gate at all.
+  Profile is four tabs and a bare `showProfile()` lays out only one of
+  them, so three quarters of that screen had no gate at all.
 
 ---
 
@@ -1137,17 +1233,18 @@ re-evaluated on the next check.
 - **Tabbed screens (Rankings, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
-  Profile's five tabs are **Profile, Badges, Stats, Ladder, Unlocks**,
-  driven off one `profileTabDefs` list rather than five hand-written
-  copies of the same four lines — four tabs was already where that shape
-  cost a line per tab in five places. `"achievements"` is still accepted
-  as a tab name so an older link lands on Ladder rather than falling back
-  to Profile. **Five labels wrap to a second row on a phone** unless they
-  are tightened for five specifically (`:has(.iconbtn:nth-child(5))`) and
-  allowed to step just outside the panel's side padding below 26rem;
-  measured, they want 299px where a 375px phone's content column offers
-  295. Wrapping stays underneath as the safety net, and an SE 1st gen
-  still wraps.
+  Profile's four tabs are **Profile, Badges, Stats, Ranks**, driven off
+  one `profileTabDefs` list rather than four hand-written copies of the
+  same four lines. `"achievements"`, `"ladder"` and `"unlocks"` are all
+  still accepted as tab names, so every name this tab has ever had lands
+  on it rather than falling back to Profile.
+  It was five for a while, and five labels only ever fitted a 375px phone
+  by being tightened for five specifically (`:has(.iconbtn:nth-child(5))`)
+  and allowed to step just outside the panel's side padding below 26rem;
+  measured, they wanted 299px where a 375px phone's content column offers
+  295. Those rules are still there, guarded by that `:has()`, and they
+  match nothing at four — which is the point: they are a safety net keyed
+  on the tab count, not leftovers from a retired feature.
 - **Anything that fills or animates on a Profile tab has to fire when the
   tab is SHOWN, not when it is built.** `showProfile("stats")` builds
   every panel while another one is visible, so an XP bar that animated on
