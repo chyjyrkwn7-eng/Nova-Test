@@ -23,6 +23,9 @@ disagreed, the repo won and the difference is called out.
   local testing. See **Verifying**.
 - `tools/sweep-layout.py` — every main screen on every supported form
   factor. See **Every device, every way in**. Exits non-zero on a failure.
+- `tools/check-positions.py` — the companion to it: not "is anything
+  broken" but "did what I just positioned land where I meant it to", on
+  every device. See **Every device, every way in**.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 
@@ -324,6 +327,21 @@ run state (`showBankProblems`, `showAnswerReview`) or rendering nothing on
 its own (`showGeneratingProfile`) is excluded; **anything else new belongs
 in `SCREENS`.** A green sweep is only worth what it looked at.
 
+**The sweep is an AUDIT, not a look.** It answers "is anything broken on
+this device" — overflow, collisions, insets, JS errors. It does not answer
+"did the thing I just positioned land where I meant it to", and a green
+sweep says nothing about that. Both questions need asking on the whole
+matrix. Asked properly the second time round, after a session whose
+screenshots had only ever been taken at 440×956 and 834×1194, it found
+three real defects a 66/66 sweep had sailed past: Start Studying 70–75px
+off-centre on an iPad Pro 12.9"/13" (the fix for it was inside a phone
+media query), the Welcome hint 20px below the fold on an SE 2nd/3rd gen,
+and "What This Actually Is" overflowing its viewport on *every* short
+device in the matrix — which in turn put its Continue button 184px away
+from where every other onboarding screen puts it, while measuring 0px
+apart on a Pro Max. `tools/check-positions.py` is that check: measure the specific decisions, on every device, and flag the
+outliers rather than eyeballing two.
+
 ### Why this matrix and not a smaller one
 
 Every bug below was invisible at 390×844 in a desktop browser, which is where
@@ -398,6 +416,22 @@ full-width row in that column needs `width:100%` explicitly.
 **Two `auto` margins centre an item in the leftover space.** That is the
 right tool when a button should sit *between* the content and the bottom of
 the panel rather than tucked under the content or jammed at the floor.
+
+**A screen that overflows its viewport cannot honour a shared button
+position, so making it fit IS the fix.** "What This Actually Is" is the
+one onboarding screen with enough content to overflow, and wherever it
+did, its Continue landed after the content instead of on the panel floor.
+Two height tiers bring it back inside: `(max-height:52rem)` — height-only
+on purpose, because here the upright phone *is* the case the rule exists
+for — and a narrower `(max-width:32rem) and (max-height:44rem)` that also
+trims the panel's side padding, since every pixel of column width is text
+that does not have to wrap and a wrapped line costs ~17px four times over.
+The body type stays at `.8rem` throughout: it was raised from that size
+once already on an explicit report that it was too small to read, and
+buying 20px back by undoing that is a bad trade.
+An iPhone SE **1st gen** (320×568) still scrolls this screen and is not
+expected to stop — four cards of real text do not fit a 4-inch display,
+and hiding a card would be worse than a scroll.
 
 **Every onboarding Continue button sits on its panel's content floor, and
 that is the point.** Two separate attempts to give "What This Actually Is"
