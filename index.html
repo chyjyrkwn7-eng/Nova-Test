@@ -20630,6 +20630,13 @@ function persistLocally(){
     catch(e){ storageOK = false; }
   }
   idbSave(store);
+  /* The mirror has to follow the code that is ALREADY on the device, not
+     just one being set for the first time: setSyncCode() does not run on
+     an ordinary launch, so an install predating the mirror would have had
+     its progress recovered under a brand-new code and quietly become a
+     different account. Guarded on a change, so this is one write when the
+     code appears and nothing at all on every save after it. */
+  idbSaveCode(syncCode);
 }
 
 /* ---------- cross-device sync (optional, code-based, no accounts) --------
@@ -20761,14 +20768,55 @@ function generateSyncCode(){
   return out;
 }
 
-function setSyncCode(code){
-  syncCode = code;
-  try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
+/* Set only by "Stop syncing this device". It is what separates "this
+   device has no code because someone chose that" from "this device has
+   no code and something went wrong", which the boot self-heal below
+   cannot tell apart on its own - and getting it wrong either strands an
+   account off the rankings or hands a code back to someone who just
+   turned sync off. */
+const SYNC_OFF_KEY = "class26e.syncoff";
+let syncOff = false;
+try { syncOff = window.localStorage.getItem(SYNC_OFF_KEY) === "1"; } catch(e){ syncOff = false; }
+
+/* Takes a code off the rankings. Deliberately ONLY the rankings row -
+   never the progress document, which may still belong to a device that
+   is happily syncing under that code. That makes this safe to fire
+   whenever a code is abandoned: if nobody owns it the row goes for good,
+   and if somebody still does their next push puts it straight back. */
+function retireLeaderboardEntry(code){
+  if(!fbDb || !code) return;
+  try { fbDb.collection("leaderboard").doc(code).delete().catch(() => {}); } catch(e){}
 }
 
-function clearSyncCode(){
+function setSyncCode(code){
+  /* Swapping codes - linking this device to another account, from
+     Settings or from the sign-in screen - used to abandon the old code's
+     rankings row with nothing left pointing at it: an entry on everyone
+     else's board, with the old numbers, that no device could ever clear.
+     Retiring it here rather than at each call site is what makes every
+     path that changes a code cover it, including any added later. */
+  const previous = syncCode;
+  syncCode = code;
+  syncOff = false;
+  if(previous && previous !== code) retireLeaderboardEntry(previous);
+  try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
+  try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
+  idbSaveCode(code);
+}
+
+/* `disable` means a deliberate "stop syncing this device" and is the only
+   thing that holds off the boot self-heal. A reset deliberately does NOT
+   pass it: a reset also clears onboardingComplete, so the self-heal
+   cannot fire, and the sign-up that follows issues a code of its own. */
+function clearSyncCode(disable){
   syncCode = null;
   try { window.localStorage.removeItem(SYNC_CODE_KEY); } catch(e){}
+  idbDeleteCode();
+  syncOff = !!disable;
+  try {
+    if(disable) window.localStorage.setItem(SYNC_OFF_KEY, "1");
+    else window.localStorage.removeItem(SYNC_OFF_KEY);
+  } catch(e){}
 }
 
 /* A true factory reset \u2014 everything back to a never-used-this-app state:
@@ -21049,6 +21097,7 @@ function onLiveUpdateApplied(){
 const IDB_NAME = "class26e-drill-backup";
 const IDB_STORE = "kv";
 const IDB_KEY = "store";
+const IDB_CODE_KEY = "synccode";
 
 function idbOpen(){
   return new Promise((resolve, reject) => {
@@ -21071,6 +21120,40 @@ function idbLoad(){
   return idbOpen().then(db => new Promise((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, "readonly");
     const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  })).catch(() => null);
+}
+
+/* The sync code gets the same mirror the progress store has, and it
+   matters more than the store does. Progress that is lost with
+   localStorage comes back from this mirror; a code that is lost with it
+   used to be gone for good - nothing left to link the device to its
+   cloud copy, nothing to hand back to anyone who asked for it, and a
+   brand-new account waiting on the Welcome screen to overwrite what was
+   still sitting in the mirror. */
+let mirroredCode = null;
+function idbSaveCode(code){
+  if(!code || code === mirroredCode) return;
+  mirroredCode = code;
+  idbOpen().then(db => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put(String(code), IDB_CODE_KEY);
+  }).catch(() => {});
+}
+
+function idbDeleteCode(){
+  mirroredCode = null;
+  idbOpen().then(db => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).delete(IDB_CODE_KEY);
+  }).catch(() => {});
+}
+
+function idbLoadCode(){
+  return idbOpen().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const req = tx.objectStore(IDB_STORE).get(IDB_CODE_KEY);
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => reject(req.error);
   })).catch(() => null);
@@ -26439,7 +26522,16 @@ function positionDailyAlert(){
   if(!el) return;
   const notice = document.getElementById("updatebanner");
   const r = notice ? notice.getBoundingClientRect() : null;
-  el.style.top = (r && r.height > 0) ? Math.round(r.bottom + 10) + "px" : "";
+  if(r && r.height > 0){ el.style.top = Math.round(r.bottom + 10) + "px"; return; }
+  /* With no notice up, the only thing left that can be in the way is
+     whatever the current screen puts along its own top. This used to
+     assume there was nothing - true while the alert only ever appeared on
+     Home, and wrong the moment "Find me" started answering with one on
+     Rankings, where it landed squarely on the screen title. It asks
+     topNoticeOffset() rather than guessing a second time at a question
+     the update banner already measures. */
+  const top = topNoticeOffset(el);
+  el.style.top = top === null ? "" : Math.round(top) + "px";
 }
 
 /* A short, self-dismissing line at the top of the screen (see
@@ -28990,7 +29082,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-64";
+const APP_BUILD = "2026-09-21-65";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -29072,7 +29164,13 @@ function syncNoticeVisibility(){
    differ, and the safe-area inset differs per device. Anything new added
    along the top of Home or Welcome belongs in this list, or the banner
    will sit on top of it. */
-const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link"];
+/* Everything a top-pinned banner has to clear. `.panel > .navsegment` is
+   the Rankings/Profile tab switcher: the update banner never meets one
+   (it is gated to Welcome and Home, neither of which has one), but the
+   daily alert does now that "Find me" answers with one, and it was
+   landing on Level/Badges/Hundos. */
+const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
+                             ".panel > .navsegment"];
 
 /* Shared by both notices. The measured offset is applied with transitions
    suppressed, so the banner is simply already in the right place when it
@@ -29098,6 +29196,17 @@ function showNoticeBar(bar){
 function positionNotice(){
   const bar = document.getElementById("updatebanner");
   if(!bar) return;
+  const top = topNoticeOffset(bar);
+  bar.style.top = top === null ? "" : Math.round(top) + "px";
+}
+
+/* Where a banner pinned to the top of the screen has to start so it clears
+   whatever that screen puts up there. Shared by both top banners: they are
+   the same measurement, and having two copies of it is how one of them
+   ends up not making it. Returns null for "nothing is in the way", which
+   hands the position back to the CSS rule (the safe-area inset plus a
+   small gap) rather than freezing whatever the last screen needed. */
+function topNoticeOffset(bar){
   const vh = window.innerHeight;
   let bottomOf = -Infinity;
   NOTICE_OBSTRUCTIONS.forEach(sel => {
@@ -29111,11 +29220,8 @@ function positionNotice(){
     });
   });
   /* Nothing measurable - mid-transition, or a screen with nothing along
-     its top at all, which is the normal case on both Welcome and Home.
-     Clearing the inline value hands it back to the CSS rule (the safe-area
-     inset plus a small gap) rather than freezing whatever the last screen
-     happened to need. */
-  if(bottomOf === -Infinity){ bar.style.top = ""; return; }
+     its top at all, which is the normal case on both Welcome and Home. */
+  if(bottomOf === -Infinity) return null;
 
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   /* Enough to read as a separate surface below the header rather than as
@@ -29125,8 +29231,7 @@ function positionNotice(){
      something tall is measured up there. Past that point it stops
      tracking and just stays put. */
   const ceiling = vh * 0.35;
-  if(top > ceiling) top = ceiling;
-  bar.style.top = Math.round(top) + "px";
+  return top > ceiling ? ceiling : top;
 }
 
 /* Rotating an iPad changes every one of those measurements at once, and
@@ -30545,8 +30650,14 @@ function showAppearance(){
       stopBtn.textContent = "Stop syncing this device";
       stopBtn.addEventListener("click", () => {
         if(!window.confirm("Stop syncing? This device will keep its progress, but will no longer update or be updated by other devices using this code.")) return;
+        /* The rankings entry is a separate document keyed by this same
+           code, and stopping sync was walking away from it: the row stayed
+           on everyone else's board with whatever numbers it had, and this
+           device had just thrown away the only key that could ever delete
+           it. Dead rows on the live board were exactly this. */
+        retireLeaderboardEntry(syncCode);
         detachLiveListener();
-        clearSyncCode();
+        clearSyncCode(true);
         renderSyncBody();
         showToast("Sync turned off for this device.");
       });
@@ -33552,9 +33663,20 @@ function showRankings(defaultBoard){
     if(search.value){ search.value = ""; paint(); }
     const mine = rows.querySelector('[data-me="1"]');
     if(!mine){
-      showDailyAlert(loaded
-        ? "You are not in the rankings yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings."
-        : "Still loading the rankings \u2014 try that again in a moment.");
+      /* Three different reasons your row can be missing, and naming the
+         wrong one is how this was reported: a device with no sync code
+         was told to turn on a setting that was already on. A brand-new
+         account with no data at all is NOT one of the three - it has a
+         row, at zero, synthesised by liveEntries() - so nothing here
+         should ever say "not in the rankings yet" to someone who simply
+         has not answered a question. */
+      showDailyAlert(!loaded
+        ? "Still loading the rankings \u2014 try that again in a moment."
+        : !store.leaderboardOptIn
+          ? "You\u2019re hidden from the rankings \u2014 turn on \u201cShow me in the rankings\u201d in Settings."
+          : !syncCode
+            ? "This device isn\u2019t syncing, so it has no rankings entry \u2014 turn sync on in Settings."
+            : "Still loading the rankings \u2014 try that again in a moment.");
       return;
     }
     mine.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -34804,6 +34926,19 @@ else if(!store.onboardingComplete){
    away \u2014 e.g. progress made on another device since this one was last
    opened. Only refreshes the screen if nothing's happened here yet, same
    caution as the IndexedDB recovery check below. */
+/* An onboarded account always has a sync code - it is issued at sign-up.
+   But it lives in localStorage, which iOS is free to evict on its own,
+   and a device that has lost it is off the rankings, cannot be linked to
+   another device, and cannot be recovered by anyone, because the code IS
+   the account. So a device that is past onboarding and has no code is
+   given one, unless sync was turned off on purpose. "Find me" answering
+   that you are not in the rankings was this: no code, so no row, and a
+   message blaming the one setting that was not the problem. */
+if(store.onboardingComplete && !syncCode && !syncOff){
+  setSyncCode(generateSyncCode());
+  onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
+}
+
 if(syncCode){
   const localTimeAtBoot = store.lastModified || 0;
   pullFromCloud(syncCode, (ok) => {
@@ -34819,13 +34954,34 @@ if(syncCode){
    background and quietly recover if it still has a copy. Only refreshes
    the screen if the person hasn't already started doing something. */
 if(!storageHadData){
-  idbLoad().then(data => {
-    if(data && applyLoadedData(data)){
-      saveStore();
-      applySaved();
-      loadTheme();
-      applyTheme();
-      if(document.querySelector(".picks")) showSetup();
+  Promise.all([idbLoad(), idbLoadCode()]).then(([data, code]) => {
+    if(!data || !applyLoadedData(data)) return;
+    saveStore();
+    applySaved();
+    loadTheme();
+    applyTheme();
+    /* Recovery used to restore the store and then leave the person
+       sitting on the Welcome screen boot had already drawn, because the
+       only screen it knew how to put right was Setup. That is the
+       "I hit update, came back, and it was at the welcome screen" report,
+       and it is worse than it reads: creating an account from that screen
+       overwrites the progress that had just been recovered behind it.
+       Recovery now restores the code too, reconnects, and lands on Home. */
+    if(code && !syncCode) setSyncCode(code);
+    else if(store.onboardingComplete && !syncCode && !syncOff) setSyncCode(generateSyncCode());
+    if(syncCode) onFirebaseReady(() => {
+      pullFromCloud(syncCode, () => {
+        updateHeaderTitle();
+        if(stage.querySelector(".panel.home")) showHome();
+      });
+      attachLiveListener(syncCode);
+    });
+    updateHeaderTitle();
+    const onWelcome = stage.querySelector('[data-screen="welcome"]');
+    if(document.querySelector(".picks")) showSetup();
+    else if(store.onboardingComplete && onWelcome){
+      showHome();
+      showToast("Welcome back \u2014 your progress was restored on this device.");
     }
   });
 }

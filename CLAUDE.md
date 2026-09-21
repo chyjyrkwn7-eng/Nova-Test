@@ -41,6 +41,19 @@ disagreed, the repo won and the difference is called out.
   which is not the bar. Exits non-zero and names the device. Extend it
   when a fix is worth holding to across the matrix; delete a check when
   the thing it guards is gone.
+- `tools/check-sync.py` — the question none of the three layout tools can
+  answer: **does this build still keep people's accounts?** The sync code
+  surviving, recovery landing somewhere that isn't Welcome, a rankings row
+  being retired when its code is abandoned, and Find me naming the right
+  reason. Device-independent, so it runs once rather than 63 times. Every
+  check in it was written against a build where it failed; `--against
+  old-index.html` re-runs it there, which is the only thing that makes a
+  green run mean anything. See **Accounts and the sync code**.
+- `tools/firestore-admin.py` — `list`, `find <username>` and
+  `purge --yes` against the live Firestore over the plain REST API, no SDK
+  and no credentials (the rules are open). `find` is the "someone lost
+  their code" lookup. **It is a tool and not a screen on purpose** — see
+  **Accounts and the sync code**.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 
@@ -754,6 +767,66 @@ doesn't work", but there is no fix short of a rewrite.
 
 ---
 
+## Accounts and the sync code
+
+**The sync code IS the account.** Both Firestore collections are keyed by
+it as the document id, there is no sign-in of any kind, and anybody holding
+a code can link a device and read or overwrite that person's progress.
+Everything below follows from that.
+
+- **Never put a username → code lookup in the app.** The collection is
+  world-readable, so a lookup shipped in `index.html` is a lookup all ~40
+  classmates can run against each other. `tools/firestore-admin.py find`
+  exists for the one person with the repo. Handing a code to somebody who
+  asks for it is handing over their account — check their level/hundos
+  against what they tell you first; usernames are not unique.
+- **An onboarded account always has a code, and boot enforces it.** It is
+  issued at sign-up, but it lives in `localStorage`, which iOS can evict on
+  its own — and a device that has lost it is off the rankings, cannot be
+  linked to, and cannot be recovered by anyone. So `store.onboardingComplete
+  && !syncCode && !syncOff` issues one. `class26e.syncoff` is the only
+  thing that holds that off, and only "Stop syncing this device" sets it —
+  a reset deliberately does not, because a reset also clears
+  `onboardingComplete` and the sign-up that follows issues its own.
+- **The code is mirrored into IndexedDB beside the progress store**, and the
+  mirror is written from `persistLocally()`, not only from `setSyncCode()`.
+  `setSyncCode()` does not run on an ordinary launch, so mirroring only
+  there would have recovered an existing install's progress under a
+  brand-new code — the same person, quietly become a different account.
+- **Recovery has to finish the job.** `if(!storageHadData)` used to restore
+  the store from the mirror and then leave the person on the Welcome screen
+  boot had already drawn, because the only screen it knew how to put right
+  was Setup. That is the reported *"I hit update, came back, and it was at
+  the welcome screen"* — and it is worse than it reads, because creating an
+  account from that screen overwrites the progress sitting right behind it.
+  Recovery now restores the code, reconnects, and lands on Home.
+- **Abandoning a code must take its rankings row with it**, and that lives
+  in `setSyncCode()` rather than at each call site, so every path that
+  changes a code is covered including any added later. Linking this device
+  to another account used to strand the old row on everyone else's board
+  with nobody left holding the key to delete it. `retireLeaderboardEntry()`
+  deletes **only** the rankings row, never the progress document, which may
+  still belong to a device happily syncing under that code — which also
+  makes it safe to fire speculatively: unowned, the row goes for good;
+  owned, the next push puts it straight back.
+- **Two synced devices are one row by construction**, because the row's
+  document id is the shared code. Duplicates on the board are not two
+  devices — they are separate sign-ups, each of which minted a code of its
+  own, plus the orphans above.
+- **Find me has three reasons to fail and naming the wrong one is how this
+  was reported**: a device with no code was told to turn on a setting that
+  was already on. Not loaded / hidden (`leaderboardOptIn`) / not syncing
+  (`!syncCode`) are separate messages. A brand-new account with no data is
+  **not** one of them — `liveEntries()` synthesises your row at zero — so
+  nothing there may ever say "not in the rankings yet" to somebody who
+  simply has not answered a question.
+- **Safari and the installed app are separate storage jars on iOS.** The
+  re-add notice's `x-safari-https:` hand-off lands in a jar with no
+  progress in it, showing Welcome. Signing in with the code is the way
+  back; creating an account there is a second profile on the board.
+
+---
+
 ## Shipping a change
 
 `APP_BUILD` in `index.html` and `build` in `version.json` **must be bumped
@@ -783,7 +856,15 @@ puts up there (`NOTICE_OBSTRUCTIONS`, now `.wrap > .top`, `.wrap > .count`,
 `.back-link`) and parks the banner below the lowest of them. On Welcome and
 Home none of those is showing, so the CSS value is what you get. Anything
 new added along the TOP of Home or Welcome needs its selector in
-`NOTICE_OBSTRUCTIONS` or the banner will sit on top of it. The entrance
+`NOTICE_OBSTRUCTIONS` or the banner will sit on top of it.
+**Both top banners share that measurement**, via `topNoticeOffset()`.
+`.daily-alert` used to skip it entirely — it only ever knew how to park
+below the update banner, and assumed nothing else was up there, which was
+true while it only appeared on Home. The moment "Find me" started
+answering with one on Rankings it landed squarely on the screen title, and
+then on the Level/Badges/Hundos switcher. `.panel > .navsegment` is in the
+list for that; the update banner never meets one, since it is gated to
+Welcome and Home. The entrance
 animation is `translateY(-8px)` for the same reason — it drops in from
 above now rather than rising from an edge it no longer sits on.
 
@@ -1134,10 +1215,13 @@ missed real bugs that a thirty-second check caught.
    both orientations, installed and in a browser. This is required on every
    change, not just layout ones; a JS error only thrown on one screen shows
    up here too. It exits non-zero on any failure.
-4. `python3 tools/check-positions.py` — did what you positioned land where
+4. `python3 tools/check-sync.py` — the account-integrity gate. Required on
+   anything touching the sync code, the rankings, reset, or boot; see
+   **Accounts and the sync code**.
+5. `python3 tools/check-positions.py` — did what you positioned land where
    you meant it to, on all 21 devices. A green sweep does not answer this;
    see **Every device, every way in**.
-5. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
+6. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
    Madison, per **Showing the work**.
 
 Serve over HTTP for anything touching `version.json` — `fetch` fails on a
