@@ -7570,7 +7570,7 @@
       "> loading Drill, Game & Exam modes...",
       "> syncing unit progress...",
       "> initializing achievement engine...",
-      "> calibrating point system...",
+      "> calibrating XP system...",
       "> indexing question bank...",
       "> connecting to cloud sync...",
       "> verifying local profile...",
@@ -19672,7 +19672,7 @@ function renderStatsPopoverContent(){
     r.appendChild(buildCoinIcon());
     const num = document.createElement("span");
     num.className = "statspopover-num"; num.textContent = store.lifetime.points.toLocaleString();
-    r.append(num, document.createTextNode(" points"));
+    r.append(num, document.createTextNode(" XP"));
     rows.push(r);
   }
   {
@@ -21495,19 +21495,19 @@ const TIER_UNLOCKS = {
      scaled by the same 25/16 increase in total available material,
      since points accumulate from answering questions across every
      unit and there are now proportionally more of them to earn from. */
-  rookie:   { stars: 2,  points: 5000,   label: "Reach 2 stars and 5,000 points" },
-  ranger:   { stars: 7,  points: 19000,  label: "Reach 7 stars and 19,000 points" },
-  veteran:  { stars: 13, points: 39000,  label: "Reach 13 stars and 39,000 points" },
-  vanguard: { stars: 20, points: 66000,  label: "Reach 20 stars and 66,000 points" },
-  adept:    { stars: 28, points: 101000, label: "Reach 28 stars and 101,000 points" },
-  elite:    { stars: 38, points: 148000, label: "Reach 38 stars and 148,000 points" },
+  rookie:   { stars: 2,  points: 5000,   label: "Reach 2 stars and 5,000 XP" },
+  ranger:   { stars: 7,  points: 19000,  label: "Reach 7 stars and 19,000 XP" },
+  veteran:  { stars: 13, points: 39000,  label: "Reach 13 stars and 39,000 XP" },
+  vanguard: { stars: 20, points: 66000,  label: "Reach 20 stars and 66,000 XP" },
+  adept:    { stars: 28, points: 101000, label: "Reach 28 stars and 101,000 XP" },
+  elite:    { stars: 38, points: 148000, label: "Reach 38 stars and 148,000 XP" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
      "Secret Flares" for display, distinct from the Mastery Ladder's
      own "Flares" (the orbiting badges) since these are a different,
      hidden thing to find rather than a tier to climb. */
-  titan:    { stars: 50, points: 226000, mysteryStars: 3, label: "Reach 50 stars, 226,000 points, and find all 3 Secret Flares" }
+  titan:    { stars: 50, points: 226000, mysteryStars: 3, label: "Reach 50 stars, 226,000 XP, and find all 3 Secret Flares" }
 };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
@@ -21571,17 +21571,17 @@ function hundosOf(st){
 const RANKING_BOARDS = [
   { key: "level",  tab: "Level",  field: "level",
     unit: (n) => "Level " + n,
-    blurb: "Ranked by level. Level comes from total points, so it climbs with everything you do \u2014 every question answered, every test finished." },
+    blurb: "Ranked by level. Level comes from total XP, so it climbs with everything you do \u2014 every question answered, every test finished." },
   { key: "badges", tab: "Badges", field: "badges",
     unit: (n) => n + (n === 1 ? " badge" : " badges"),
-    blurb: "Ranked by how many badges you have earned. Badges are one-off awards \u2014 you either have one or you do not \u2014 so this rewards range rather than volume." },
+    blurb: "Ranked by how many badges you have earned. A badge is what you get for mastering a unit, so this board is about how much of the material you have taken all the way rather than how much time you have put in." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam or Game alike. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos, two perfect bonuses, and mastery progress on both. The daily question does not count." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam or Game alike. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos." }
 ];
 
 
@@ -25501,7 +25501,7 @@ function showGeneratingProfile(){
     "> generating unique sync key...",
     "> provisioning cloud namespace...",
     "> linking achievement engine...",
-    "> calibrating point system...",
+    "> calibrating XP system...",
     "> indexing unit database...",
     "> finalizing profile..."
   ], 10000, showHome);
@@ -25764,7 +25764,7 @@ function showWelcomeCodeEntry(){
           "> connecting to your other device...",
           "> verifying progress data...",
           "> merging achievement history...",
-          "> syncing points and streaks...",
+          "> syncing XP and streaks...",
           "> finalizing sync..."
         ], 3200, () => {
           showHome();
@@ -26080,7 +26080,7 @@ function startMainMenuTour(){
        through the tour when it's a natural continuation of the
        screen the person is already looking at. */
     { target: ".daily-question-fab", align: "right", vplacement: "above",
-      text: "This is your daily question \u2014 one a day, one attempt, worth 100 points. No retakes, so take your time." },
+      text: "This is your daily question \u2014 one a day, one attempt, worth 100 XP. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
       text: "Those circles orbiting the sphere are your Flares \u2014 one for each Mastery Ladder tier. They light up as you climb, and you can tap any of them to see exactly what is left to unlock." },
     { target: "#nextbtn", align: "left", vplacement: "above",
@@ -26159,7 +26159,7 @@ function showPointsFlyEffect(message){
 function awardWelcomeBonus(){
   store.lifetime.points += 100;
   saveStore();
-  showPointsFlyEffect("+100 points for creating an account!");
+  showPointsFlyEffect("+100 XP for creating an account!");
 }
 
 /* The Supernova cutscene \u2014 plays once, the very first time the
@@ -28978,7 +28978,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-62";
+const APP_BUILD = "2026-09-21-63";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -29659,7 +29659,7 @@ function summarize(){
     }
     const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
     if(totalEarned > 0){
-      showPointsFlyEffect("+" + totalEarned + " points!");
+      showPointsFlyEffect("+" + totalEarned + " XP!");
     }
     return;
   }
@@ -29759,7 +29759,7 @@ function summarize(){
       ptsRow2.className = "points-line";
       ptsRow2.append(
         Object.assign(document.createElement("span"), { className: "points-label",
-          textContent: hundosEarned > 1 ? hundosEarned + " perfect bonuses" : "Perfect bonus" }),
+          textContent: hundosEarned > 1 ? hundosEarned + " hundo bonuses" : "Hundo bonus" }),
         Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + perfectBonusEarned })
       );
       ptsWrap.appendChild(ptsRow2);
@@ -29777,7 +29777,7 @@ function summarize(){
     const ptsTotal = document.createElement("p");
     ptsTotal.className = "points-total";
     ptsTotal.append(
-      Object.assign(document.createElement("span"), { className: "points-label", textContent: "Points earned" }),
+      Object.assign(document.createElement("span"), { className: "points-label", textContent: "XP earned" }),
       Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned) })
     );
     ptsWrap.appendChild(ptsTotal);
@@ -30058,7 +30058,7 @@ function summarize(){
   actions.firstChild.focus({ preventScroll: true });
   const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
   if(totalEarned > 0){
-    showPointsFlyEffect("+" + totalEarned + " points!");
+    showPointsFlyEffect("+" + totalEarned + " XP!");
   }
   if(!store.seenFirstResultsTour){
     store.seenFirstResultsTour = true;
@@ -30172,7 +30172,7 @@ function showResetWarning(){
 
   const body = document.createElement("p");
   body.className = "hometagline";
-  body.textContent = "Clears your progress, points, and settings on every synced device. Your code stops working and you'll get a new one. This can't be undone.";
+  body.textContent = "Clears your progress, XP, and settings on every synced device. Your code stops working and you'll get a new one. This can't be undone.";
   panel.appendChild(body);
 
   let armed = false;
@@ -30838,7 +30838,7 @@ function showAppearance(){
       const clearWrap = document.createElement("span");
       clearWrap.style.cssText = "display:inline-flex; align-items:center;";
       clearWrap.appendChild(clearBtn);
-      clearWrap.appendChild(buildInfoIcon(hasAnalytics ? "Clears your recorded study time and past test results. Your unit progress, stars, and points are untouched." : "Nothing recorded yet \u2014 this becomes available once you've completed at least one test."));
+      clearWrap.appendChild(buildInfoIcon(hasAnalytics ? "Clears your recorded study time and past test results. Your unit progress, stars, and XP are untouched." : "Nothing recorded yet \u2014 this becomes available once you've completed at least one test."));
       resetBar.appendChild(clearWrap);
     }
     advBodyInner.appendChild(resetBar);
@@ -33482,10 +33482,40 @@ function showRankings(defaultBoard){
   let entries = [];
   let loaded = false;
 
+  /* Your own row is rendered from LIVE LOCAL STATE, never from the
+     document you last published. saveStore() debounces its cloud push by
+     2.5s, so finishing a test and opening Rankings inside that window
+     showed your old numbers - and worse, showed them disagreeing with the
+     stats screen you had just come from. Everyone else still comes
+     straight from the snapshot, which is what keeps the board live.
+
+     The substitution happens BEFORE sorting, so your position is right
+     too, not just the number printed on your row. And if you are opted in
+     but nothing has been published yet - a genuinely fresh account - your
+     row is synthesised so you can see where you stand immediately rather
+     than waiting for the first push to come back to you. */
+  function liveEntries(){
+    if(!syncCode) return entries;
+    const mine = {
+      code: syncCode,
+      firstName: store.firstName || "Anonymous",
+      avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id,
+      level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store)
+    };
+    let found = false;
+    const out = entries.map(e => {
+      if(e.code !== syncCode) return e;
+      found = true;
+      return Object.assign({}, e, mine);
+    });
+    if(!found && store.leaderboardOptIn) out.push(mine);
+    return out;
+  }
+
   function paint(){
     const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
     blurb.textContent = board.blurb || "";
-    renderRankingRows(rows, entries, board, { query: search.value });
+    renderRankingRows(rows, liveEntries(), board, { query: search.value });
   }
 
   function selectBoard(key){
@@ -33495,6 +33525,11 @@ function showRankings(defaultBoard){
   }
 
   search.addEventListener("input", paint);
+  /* Repaint when the tab is returned to. Coming back from a test is the
+     one moment your own numbers are most likely to have changed, and a
+     snapshot only arrives when the CLOUD changes - which, for your own
+     row, is exactly what this screen no longer waits for. */
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) paint(); });
 
   /* Scrolls your own row into view and flashes it. The flash is a
      class removed on animationend rather than a timer, so pressing
@@ -33618,7 +33653,7 @@ function buildRewardTabs(){
     ladderSect.appendChild(ladderHead);
     const ladderNote = document.createElement("p");
     ladderNote.className = "tierladder-note";
-    ladderNote.textContent = "Each tier takes both stars (mastering units) and points (studying overall) together \u2014 not either one alone.";
+    ladderNote.textContent = "Each tier takes both stars (mastering units) and XP (studying overall) together \u2014 not either one alone.";
     ladderSect.appendChild(ladderNote);
     /* Collected here, then animated in one requestAnimationFrame batch
        right before this section returns \u2014 the fill elements start at
@@ -33754,7 +33789,7 @@ function buildRewardTabs(){
   const pointsSect = document.createElement("div");
   pointsSect.className = "points-progress-sect";
   const pointsHead = document.createElement("p");
-  pointsHead.className = "slab motion-summary"; pointsHead.textContent = "Points";
+  pointsHead.className = "slab motion-summary"; pointsHead.textContent = "XP";
   pointsSect.appendChild(pointsHead);
 
   /* Each gets its own distinct Liquid Glass box, side by side, rather
@@ -33769,7 +33804,7 @@ function buildRewardTabs(){
   pointsTotal.className = "points-progress-total";
   pointsTotal.textContent = store.lifetime.points.toLocaleString();
   const pointsLabel = document.createElement("p");
-  pointsLabel.className = "points-stat-label"; pointsLabel.textContent = "Points";
+  pointsLabel.className = "points-stat-label"; pointsLabel.textContent = "XP";
   pointsBox.append(pointsTotal, pointsLabel);
 
   const starsBox = document.createElement("div");
