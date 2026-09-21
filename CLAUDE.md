@@ -33,6 +33,14 @@ disagreed, the repo won and the difference is called out.
 - `tools/shoot-flow.py` — screenshots every onboarding screen, Home and
   Settings by *clicking through* from a fresh install on seven devices,
   rather than mounting screens. Use it for anything Madison will look at.
+- `tools/check-fixes.py` — the third question, after "is anything
+  broken" (the sweep) and "did it land where I meant it to"
+  (check-positions): **is this specific fix actually in effect here**,
+  on every device, both orientations, installed and in a browser. Written
+  after a batch of device-reported bugs were each verified on one iPad,
+  which is not the bar. Exits non-zero and names the device. Extend it
+  when a fix is worth holding to across the matrix; delete a check when
+  the thing it guards is gone.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 
