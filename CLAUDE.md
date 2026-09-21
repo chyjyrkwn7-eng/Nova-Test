@@ -1,6 +1,10 @@
 # Nova — working notes
 
-Study app for Class 26E, used by ~40 classmates.
+Study app for Class 26E, used by ~40 classmates. **26E is a police academy
+class**, which is worth knowing before writing any copy for it: "While you
+study" was rejected as a Settings header for not reading official enough, and
+became "Studying & tests". The tone the app wants is plain and unfussy, not
+chatty.
 
 Most of this is distilled from a handoff written across the sessions that built
 the app, plus what was learned working directly in the repo. Where the two
@@ -27,7 +31,7 @@ disagreed, the repo won and the difference is called out.
   broken" but "did what I just positioned land where I meant it to", on
   every device. See **Every device, every way in**.
 - `tools/shoot-flow.py` — screenshots every onboarding screen, Home and
-  Settings by *clicking through* from a fresh install on six devices,
+  Settings by *clicking through* from a fresh install on seven devices,
   rather than mounting screens. Use it for anything Madison will look at.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
@@ -345,10 +349,24 @@ scroll to it", which is the only version of this that is actually a defect.
 of the app's 44 and reported `62/62 clean` while a regression had left
 *every onboarding screen* — Welcome, the intro, username entry, character
 select — bunched at the top with dead space below. None of them was in the
-list. It now runs 26: everything that can be mounted cold. A screen needing
-run state (`showBankProblems`, `showAnswerReview`) or rendering nothing on
-its own (`showGeneratingProfile`) is excluded; **anything else new belongs
-in `SCREENS`.** A green sweep is only worth what it looked at.
+list. It now runs 25: everything that can be mounted cold.
+
+**`showX()` names overlays as well as screens, so the count is not the
+gap it looks like.** There are 45 `showX()` functions and 25 of them are
+in `SCREENS`. The other 20 are excluded on purpose and fall into three
+groups, checked rather than assumed: **overlays and banners**, which have
+no screen of their own (`showToast`, `showNoticeBar`, `showUpdateBanner`,
+`showFrameNotice`, `showDailyAlert`, `showTierUpBanner`,
+`showPointsFlyEffect`, `showSafariFallback`, `showContextualInfo`,
+`showDailyQuestionLockedPopup`, `showPracticeTestConfirm`,
+`showCountdown`, `showVroomReadyFlourish`,
+`showVirtualRoomFinaleReveal`); **screens needing run state**
+(`showBankProblems`, `showAnswerReview`, `showTestHistoryDetail`,
+`showVirtualRoomLobby`, `showVirtualRoomResults`); and one that renders
+nothing on its own (`showGeneratingProfile`). **Anything else new belongs
+in `SCREENS`** — a green sweep is only worth what it looked at, and the
+way to check is to diff the app's `^function show` list against `SCREENS`
+rather than to trust this paragraph.
 
 **The sweep is an AUDIT, not a look.** It answers "is anything broken on
 this device" — overflow, collisions, insets, JS errors. It does not answer
@@ -555,7 +573,7 @@ iPad).
 gap, including ones that belong together.** Welcome's two buttons are styled
 11px apart and measured 41px apart on an iPhone because each of the five gaps
 in that column got an equal share. Grouping the pair (and the line explaining
-them) into one flex child is the fix — the free space then lands *between*
+them) into `.cosmic-welcome-actions`, one flex child, is the fix — the free space then lands *between*
 blocks rather than inside one. Welcome is now plain `justify-content:center`
 on a phone as well; space-between made the remaining three gaps ~50px each,
 which read as three holes rather than a filled screen.
@@ -595,12 +613,46 @@ tour dropped there is one that person never sees; it gives up only if the
 screen it was called for has been replaced, or after
 `TOUR_OVERLAY_WAIT_MS`.
 
+**A screen mount blurs a still-focused text field, and that
+`MutationObserver` on `#stage` is load-bearing.** Focusing a field on iOS
+scrolls the page to keep it above the keyboard; replacing that field's
+screen while it still has focus dismisses the keyboard **without ever
+undoing the scroll**, so the page is left pushed up — and because most of
+this app's chrome is `position:fixed`, everything reads as shifted with
+nothing to put it back. That was "the character screen comes up
+off-centre and stays that way". The observer blurs the field and returns
+to the top, and it is **deliberately conditional**: ordinary navigation
+must not have its scroll position reset out from under it, so it only
+fires in the one situation that causes the problem. Chromium has no soft
+keyboard and no visual viewport offset to leave behind, so this cannot be
+reproduced or regression-tested locally — don't "simplify" it because
+nothing appears to depend on it.
+
 **Dead code that appends to `<body>` is worse than dead.** `showTourSendoff()`
 — the old "You're all set" popup — had not been called in a long time (the
 send-off is the last step of `startMainMenuTour()` now), but it attached its
 overlay to `<body>` rather than `#stage`, so nothing cleared it on a screen
 change. Anything that called it, including a harness mounting every screen by
 name, left it stuck over whatever came next. Deleted.
+
+**A fixed element's offset from the bottom must carry the safe-area
+inset if the thing it clears does.** `.homeversion`'s `6.2rem` offset did
+not, while the tab bar's own height does — so the version label sat at
+727..753 against a bar starting at 733, hidden behind it on precisely the
+notched devices where anyone goes looking for a version number. It carries
+the inset now. It also reads `v6.0` on a phone and `Version 6.0` from
+tablet up, as **two spans picked by CSS** rather than a string chosen once
+at render: the right answer changes when a device is rotated, and a
+JS-chosen string does not.
+
+**The sync code field is centred, mono and narrow, and all four parts
+matter.** Reported as the x's not lining up with the box. A code is a
+fixed-length string of characters, not prose, so it is
+`text-align:center` + `var(--mono)` + `letter-spacing:.14em` inside an
+`11rem` wrap — the narrow wrap is what makes centring read as deliberate
+rather than as text stranded in a wide field, and the mono face is what
+stops the characters drifting relative to each other. Widening the field
+undoes the fix even with the centring left in.
 
 **Tap targets: 44px minimum, and check them.** A sweep of every button
 found the Settings controls running at 12.5–13.1px text in 40px boxes while
@@ -826,8 +878,11 @@ re-evaluated on the next check.
   rule as an override — never a rewrite of the base rule.
 - **Settings' behaviour toggles are two sections, not one.** "Motion &
   interaction" (smooth scrolling, reduce motion, swipe to advance) and
-  "While you study" (keep screen awake, auto-advance, mute banners,
-  auto-flag) — seven under one header had visibly piled up. Both headers
+  **"Studying & tests"** (keep screen awake, auto-advance, mute banners,
+  auto-flag) — seven under one header had visibly piled up. The second
+  header was "While you study" first and was reported as not reading
+  official enough for what this app is; the name in the app is the one
+  that counts, and this file said the old one for a while. Both headers
   are `.slab.motion-summary` so they read as a matched pair; the second
   also carries `.section-divider` for the gap above it. A new toggle goes
   into whichever group it belongs to, and into that group's own
@@ -841,7 +896,11 @@ re-evaluated on the next check.
   `is-ready` is a quiet ring that runs whenever the question is unanswered;
   `is-fresh` is a brighter, deliberately finite light-up (five cycles, ~6s)
   plus a toast, shown when the period has rolled over since this device last
-  saw Home; `is-done` greys it out. Both animations are a `::after` ring and
+  saw Home; `is-done` greys it out. The button is `3.4rem` on a phone and
+  `4.6rem` from tablet up — it was 41.6px once, under the 44px minimum,
+  and the tablet size exists because a control sized for a phone reads as
+  an afterthought beside an iPad's tab bar.
+  Both animations are a `::after` ring and
   a `box-shadow` — never the button's own size, because a tap target that
   changes size under a finger is worse than no animation. The global
   `[data-reduce-motion="true"] *{animation:none}` rule switches both off
