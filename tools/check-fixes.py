@@ -154,29 +154,50 @@ def main():
                         if not c["profileTab"]:
                             fails.append(f"{tag}: #bottomtab-profile missing (points fly target)")
 
-                        # --- REPRODUCTION. The grey bar is html's fallback
-                        # showing where body::before does not paint, so the
-                        # test recreates exactly that: hide body::before, hide
-                        # the page's own content (or the sample lands on the
-                        # UI), scroll to the end, and require the bottom row to
-                        # match the background just above the 100lvh boundary.
-                        # A flat var(--paper) strip is what the bug looks like.
-                        band = pg.evaluate("""()=>{
-                          const s=document.createElement('style'); s.id='__probe';
-                          s.textContent='body::before{display:none!important} body>*{visibility:hidden!important}';
+                        # --- The grey bar, measured the only way that means
+                        # anything: what body::before paints at the bottom edge
+                        # against what html falls back to there. body::before is
+                        # FIXED, so its bottom-edge colour is the same at every
+                        # scroll offset, which makes it the correct target
+                        # wherever the page happens to be.
+                        #
+                        # Two earlier versions of this check were worthless and
+                        # both are worth remembering. One asserted
+                        # background-attachment:fixed - a property iOS ignores,
+                        # so it only proved Chromium honoured it. One compared
+                        # the bottom row against "just above the 100lvh
+                        # boundary", computed as SH-overflow-6, which clamps to
+                        # the TOP ROW whenever the overflow exceeds the screen:
+                        # on a 568x260 viewport it compared the bottom of the
+                        # screen to the top and called a gradient a seam. A
+                        # step-detector fails too - on a long page the boundary
+                        # is far above the screen, so the whole visible bottom
+                        # is uniformly wrong with no step to find.
+                        #
+                        # This one is verified against a build that actually has
+                        # the bug: 23 levels there, 4 here.
+                        pg.evaluate("""()=>{const s=document.createElement('style'); s.id='__hc';
+                          s.textContent='body>*{visibility:hidden!important}';
                           document.head.appendChild(s);
-                          window.scrollTo(0, document.documentElement.scrollHeight);
-                          return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>
-                            r({over:document.documentElement.scrollHeight-innerHeight}))));}""")
-                        shot = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-                        SW, SH = shot.size
-                        cx = SW // 2
-                        bottom = shot.getpixel((cx, SH - 1))
-                        above = shot.getpixel((cx, max(0, SH - 1 - band["over"] - 6)))
-                        delta = max(abs(p - q) for p, q in zip(bottom, above))
-                        if delta > 4:
-                            fails.append(f"{tag}: GREY BAR - bottom {bottom} vs {above}, delta {delta}")
-                        pg.evaluate("()=>document.getElementById('__probe')?.remove()")
+                          window.scrollTo(0, document.documentElement.scrollHeight);}""")
+                        pg.wait_for_timeout(260)
+                        withFixed = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+                        pg.evaluate("""()=>{const s=document.createElement('style'); s.id='__hb';
+                          s.textContent='body::before{display:none!important}';
+                          document.head.appendChild(s);}""")
+                        pg.wait_for_timeout(220)
+                        fallback = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+                        SW, SH = withFixed.size
+                        worst, worst_at = 0, None
+                        for col in (SW // 4, SW // 2, (3 * SW) // 4):
+                            for y in range(max(0, SH - 40), SH):
+                                d = max(abs(a - b) for a, b in
+                                        zip(withFixed.getpixel((col, y)), fallback.getpixel((col, y))))
+                                if d > worst: worst, worst_at = d, (col, y)
+                        if worst > 6:
+                            fails.append(f"{tag}: GREY BAR - fallback is {worst} levels off the "
+                                         f"fixed layer at the bottom edge, at {worst_at}")
+                        pg.evaluate("()=>{document.getElementById('__hc')?.remove();document.getElementById('__hb')?.remove();}")
 
                         # 7. back-to-top must never sit under the tab bar
                         bt = pg.evaluate("""()=>{showAppearance();
