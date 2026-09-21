@@ -403,6 +403,18 @@
      sliver of the device's own dark-mode chrome — e.g. on iOS overscroll
      bounce, or in a standalone home-screen app — when our theme is light. */
   html{ background:var(--paper); }
+  /* html's own box can be SHORTER than the viewport when a screen's
+     content is short - measured at 796px against an 800px viewport. That
+     matters because the opaque var(--paper) layer in the rules below is
+     sized to that box (100%), so those last few pixels fell through to
+     the background-colour, which is --edge-bottom. Harmless in normal use
+     (body::before covers the viewport) but it meant the fallback
+     disagreed with the fixed layer by 22-25 levels in the bottom rows -
+     caught on Android, where it showed up first.
+     min-height makes the box at least a viewport tall, so the paper layer
+     always reaches the bottom of the screen and --edge-bottom is left to
+     do only its own job: the overscroll region past the page. */
+  html{ min-height:100vh; min-height:100lvh; }
   /* The root background is what the overscroll bounce reveals, so it is
      the edge colour rather than flat paper - see --edge-bottom. It is
      invisible everywhere else: body::before is opaque and covers the
@@ -28978,7 +28990,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-63";
+const APP_BUILD = "2026-09-21-64";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
