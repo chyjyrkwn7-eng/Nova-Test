@@ -901,10 +901,21 @@ The tiers were named after the flares — Spark, Ember, Comet — so the
 Mastery Ladder and the Home screen's orbit were two names for one thing,
 and climbing gave you nothing to be *given*. The ranks have their own
 names now (`RANK_DISPLAY_NAME`) and the flare is one of the things a rank
-**hands over**. Reaching Ranger lights the Ember flare and unlocks the
+**hands over**. Reaching Bronze lights the Ember flare and unlocks the
 Ember colour; the rank is not called Ember. Keep that distinction in any
-copy you write: `ACCENT_DISPLAY_NAME` is the flare/colour, `RANK_DISPLAY_NAME`
-is the rank.
+copy you write: `ACCENT_DISPLAY_NAME` is the flare/colour,
+`RANK_DISPLAY_NAME` is the rank, and they have separate swatches
+(`ACCENT_SWATCH` vs `RANK_COLOR`) for the same reason — a rank the same
+colour as its own reward has nothing left to be.
+
+**THE RANK NAME IS ITS COLOUR: Iron, Bronze, Silver, Gold, Sapphire,
+Amethyst, Crimson.** That is the thing the reference does that makes it
+read at a glance, and it took two passes to see it. Role names — Rookie,
+Ranger, Veteran, Vanguard, Sentinel, Elite, Titan — carry no colour, so
+seven coloured cards were seven arbitrary colours you had to learn. The
+**keys are still those role words** and must stay: `TIER_UNLOCKS`,
+`ACCENTS`, `ACCENT_SWATCH` and a theme somebody already has selected are
+all keyed by them, so renaming a key is a migration for a cosmetic gain.
 
 - **The thresholds did not move.** `TIER_UNLOCKS` is the same table with
   the same level-and-badges pairs; the keys are the same too, which is
@@ -923,15 +934,33 @@ is the rank.
   capped at Elite however far they have actually got. An older document
   lacking the field reads as 0 and self-heals on that person's next push.
 - **Every rank is the same mark at a different stage of its life, and
-  the mark is a supernova.** The first set was the app's V inside a
-  frame that gained wings and horns as it climbed; it escalated, but it
-  had nothing to do with the app it belongs to. `RANK_STAR` is the whole
-  progression as a table — arms, reach, waist, corona, rays, core,
-  shockwave — and reading down any column it only ever grows. Generated
-  from those numbers rather than drawn seven times, so the escalation is
-  a property of the table and not of how carefully seven paths were
-  hand-tuned to agree. Rookie is a four-point spark; Titan is the burst
-  the app is named after.
+  the mark is a burst of light.** Two sets came before it. The app's V
+  inside a frame that gained wings and horns escalated but had nothing
+  to do with the app it belongs to. The one after that was a star inside
+  a corona ring with rays coming off it, and it **read as a wheel** —
+  which is what a ring plus evenly spaced radial lines always reads as.
+  **Nothing in the current one is a circle or a spoke.** The arms are
+  concave-sided: each side is a quadratic curve whose control point sits
+  on the bisector at `waist`, so the tips are sharp and the sides are
+  drawn in. That is the shape a light source makes and it cannot be
+  mistaken for a rim. The small sparkles sit **in the gaps between the
+  arms**, never on their axes, because a sparkle on an arm's axis is
+  that arm made longer, which is a spoke again.
+  `RANK_STAR` is the whole progression as a table — arms, reach, waist,
+  a half-step-rotated burst behind, a soft oversized corona, glints,
+  core — and reading down any column it only ever grows. Iron is a
+  four-point spark; Crimson is the burst the app is named after.
+- **A locked rank still shows its colour.** The emblem is always drawn in
+  the rank's own colour and the card only turns it down; it used to
+  redraw in grey with the name in `--soft`, so four of the seven cards
+  were the same colourless card and you could not see what you were
+  heading towards. `check-behaviour` asserts all seven `--rank-color`
+  values are distinct and set.
+- **The meter belongs to the rank you are climbing to, and nothing
+  else.** Every unreached rank carried one, which put a half-full bar on
+  Crimson while you were working on Gold — progress towards something
+  you are not working towards. A locked rank says what it costs and
+  stops there.
 - **The emblem is lit or it is not.** It was two stacked copies with the
   lit one clipped from the bottom, so a rank part-way earned was
   part-way lit — asked for, built, and then explicitly asked against
@@ -1008,11 +1037,21 @@ is the rank.
   badge like a stone — a pavilion of shaded faces around a bright table
   — and it read as sixteen jewels. The reference is nothing like that: a
   heavy dark keyline, two or three FLAT colour fields inside it, one
-  small bright mark, a pale rim outside the keyline, and that is the
+  small bright mark, a polished rim outside the keyline, and that is the
   whole drawing. **Flat is the style, not a shortcut**, and a dome
-  highlight is exactly what made the last set read as glass — the gleam
-  is a hard-edged triangle clipped to the token, a light *side* rather
-  than a light *centre*.
+  highlight is exactly what made the last set read as glass — the gloss
+  is hard-edged and clipped to the token, a light *side* rather than a
+  light *centre*.
+- **Flat is not the same as dull, and the shine is three separate
+  things.** The rim is a GRADIENT, not a flat grey: white through
+  shadow to a bright bottom edge, because a flat grey rim is a drawn
+  line and a ramp is a piece of metal catching light. The gloss is a
+  broad wash over the upper-left plus a **narrow bright streak** across
+  it — the streak is what reads as shine; the wash on its own just made
+  the top half paler. And a four-point glint sits proud of the rim at
+  the badge's top-left vertex, drawn **outside** the token group so it
+  can overlap the silhouette: a sparkle that stops at the outline is one
+  painted on the badge rather than one coming off it.
 - **Every badge has a slot, and the slot is drawn whether the badge is
   earned or not.** That is the other half of the reference: each badge
   sits in a recess cut to its own outline, which is why an empty slot

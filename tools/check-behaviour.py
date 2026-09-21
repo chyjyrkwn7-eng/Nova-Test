@@ -362,7 +362,7 @@ def check_ranks(br):
       exact: rankOfStats(20, 4, 0), levelShort: rankOfStats(19, 4, 0),
       badgeShort: rankOfStats(20, 3, 0), nothing: rankOfStats(1, 0, 0),
       titanNoFlares: rankOfStats(70, 14, 0), titan: rankOfStats(70, 14, 3)})""")
-    check("a rank needs BOTH halves, and Titan needs the flares too",
+    check("a rank needs BOTH halves, and Crimson needs the flares too",
           edges["exact"] == "veteran" and edges["levelShort"] == "ranger" and
           edges["badgeShort"] == "ranger" and edges["nothing"] is None and
           edges["titanNoFlares"] == "elite" and edges["titan"] == "titan", edges)
@@ -382,7 +382,7 @@ def check_ranks(br):
       rewards:c.querySelectorAll('.rankcard-rewards li').length}))""")
     check("seven ranks, named as ranks and not as flares",
           [c["name"] for c in cards] ==
-          ["Rookie", "Ranger", "Veteran", "Vanguard", "Sentinel", "Elite", "Titan"],
+          ["Iron", "Bronze", "Silver", "Gold", "Sapphire", "Amethyst", "Crimson"],
           [c["name"] for c in cards])
     # The states are the whole point of the rewrite: "what you are, what
     # you have, and what is to come" has to read without decoding a
@@ -396,11 +396,21 @@ def check_ranks(br):
           [c["state"] for c in cards])
     # A reached rank is not a progress bar. It was, for one build, and
     # that was the thing explicitly asked against.
-    check("only an unreached rank carries a meter",
-          [c["meter"] for c in cards] == [False, False, False, True, True, True, True],
+    # ONLY the next one up. Every unreached rank carried a meter, which
+    # put a half-full bar on Crimson while you were working on Gold -
+    # progress towards something you are not working towards.
+    check("only the rank you are climbing to carries a meter",
+          [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
           [c["meter"] for c in cards])
     check("every rank lists what it hands over",
           all(c["rewards"] == 3 for c in cards), [c["rewards"] for c in cards])
+
+    # A locked rank still shows its colour. Four of the seven used to be
+    # redrawn in grey, so you could not see what you were heading for.
+    hues = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>
+      c.style.getPropertyValue('--rank-color').trim())""")
+    check("every rank carries its own colour, reached or not",
+          len(set(hues)) == 7 and all(h.startswith("#") for h in hues), hues)
 
     # One column on a phone and the card on its side there; upright and
     # four across from 46rem. Two short cards per row was the phone
@@ -436,13 +446,13 @@ def check_ranks(br):
               level:!!a.querySelector('.vroom-level'),
               unranked:!un.querySelector('.lb-rankmark'),
               unrankedExtras:un.childNodes.length};}""")
-    check("a person's row carries their rank", row["rank"] == "Vanguard", row)
+    check("a person's row carries their rank", row["rank"] == "Gold", row)
     # The small blue level number beside the character was asked for,
     # built, and then asked against. Two marks on one 42px character is
     # one too many, and a board that ranks on the number is already
     # printing it.
     check("no level number beside the character", not row["level"], row)
-    check("somebody below Rookie gets nothing at all",
+    check("somebody below the first rank gets nothing at all",
           row["unranked"] and row["unrankedExtras"] == 0, row)
     ctx.close()
 

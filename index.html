@@ -6873,8 +6873,21 @@
     color:var(--rank-color, var(--accent));
     background:color-mix(in srgb, var(--rank-color, var(--accent)) 18%, transparent);
   }
-  .rankcard.is-locked .rankcard-art{ opacity:.7; }
-  .rankcard.is-locked .rankcard-name{ color:var(--soft); }
+  /* A LOCKED RANK STILL SHOWS ITS COLOUR. It used to redraw the emblem
+     in grey and put the name in --soft, so four of the seven cards were
+     the same colourless card and you could not see what you were
+     heading towards. The emblem is always the rank's own colour now;
+     locked only turns it down. */
+  .rankcard.is-locked{
+    border-color:color-mix(in srgb, var(--rank-color, var(--accent)) 22%, transparent);
+    border-left-color:color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
+  }
+  .rankcard.is-locked .rankcard-art{ opacity:.55; }
+  .rankcard.is-locked .rankcard-name{
+    color:color-mix(in srgb, var(--rank-color, var(--accent)) 62%, var(--soft));
+  }
+  .rankcard.is-locked .rankcard-rewardhead{ opacity:.55; }
+  .rankcard.is-next .rankcard-art{ opacity:.85; }
 
   /* Upright from 46rem, which is where four of them fit across without
      a rank name having to wrap. Same markup, turned. */
@@ -6887,6 +6900,7 @@
     .rankcard.is-held{ border-top-color:var(--rank-color, var(--accent)); border-left-color:color-mix(in srgb, var(--rank-color, var(--accent)) 40%, transparent); }
     .rankcard.is-next{ border-left-style:solid; border-top-style:dashed;
       border-top-color:color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent); }
+    .rankcard.is-locked{ border-top-color:color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent); }
     .rankcard-art{ width:100%; height:auto; aspect-ratio:1; }
     .rankcard-body{ width:100%; }
     .rankcard-meter{ max-width:none; margin-left:auto; margin-right:auto; }
@@ -22840,11 +22854,26 @@ function buildUnitBadgeSVG(unitName, earned){
   const token = group({ transform: "translate(50 50) scale(.945) translate(-50 -50)" });
   const tokenClip = clip(uid + "-tok", outline);
 
-  /* A pale rim OUTSIDE the keyline. Drawn first and wider, so about a
-     unit of it shows past the dark edge - it is what lifts a token off
-     a dark case in the reference, and without it these sat in their
-     slots looking like holes with colour in them. */
-  add(outline, { fill: "none", stroke: "rgba(233,238,244,.72)", "stroke-width": "6.4",
+  /* A POLISHED rim OUTSIDE the keyline. Drawn first and wider, so about
+     a unit of it shows past the dark edge - it is what lifts a token
+     off a dark case in the reference, and without it these sat in
+     their slots looking like holes with colour in them.
+     It is a gradient and not a flat grey, because a flat grey rim is
+     a drawn line and a ramp from white through shadow to a bright
+     bottom edge is a piece of metal catching light. That, the gloss
+     below and the glint are the whole of the "shiny". */
+  const rim = document.createElementNS(NS, "linearGradient");
+  rim.setAttribute("id", uid + "-rim");
+  rim.setAttribute("x1", "0"); rim.setAttribute("y1", "0");
+  rim.setAttribute("x2", ".25"); rim.setAttribute("y2", "1");
+  [[0, "#FFFFFF"], [0.3, "#DCE3EC"], [0.62, "#8B97A6"], [0.86, "#C9D3DE"], [1, "#F4F8FC"]]
+    .forEach(([o, c]) => {
+      const st = document.createElementNS(NS, "stop");
+      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
+      rim.appendChild(st);
+    });
+  defs.appendChild(rim);
+  add(outline, { fill: "none", stroke: "url(#" + uid + "-rim)", "stroke-width": "6.4",
                  "stroke-linejoin": "round" }, token);
   add(outline, { fill: geo.theme.p, stroke: BADGE_KEYLINE, "stroke-width": "3.6",
                  "stroke-linejoin": "round" }, token);
@@ -22865,14 +22894,31 @@ function buildUnitBadgeSVG(unitName, earned){
   const ink = geo.bands >= 3 ? BADGE_KEYLINE : geo.theme.a;
   drawBadgeMotif(add, token, geo.motif, 50, 50, R, ink, geo.theme);
 
-  /* The gleam. Flat and hard-edged, clipped to the token - the gym
+  /* The gloss. Flat and hard-edged, clipped to the token - the gym
      badges have a light SIDE, not a dome, and a dome is exactly what
-     made the last set read as glass. */
-  const gleam = group({ "clip-path": tokenClip, opacity: ".13" }, token);
-  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF" }, gleam);
+     made the last set read as glass. Two parts: a broad wash over the
+     upper-left half, and a narrow bright streak across it. The streak
+     is what reads as SHINE rather than as shading; the wash on its own
+     just made the top half paler. */
+  const gleam = group({ "clip-path": tokenClip }, token);
+  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF", opacity: ".14" }, gleam);
+  add("M-12 34L58 -14L74 -14L-12 52Z", { fill: "#FFFFFF", opacity: ".3" }, gleam);
+  add("M-12 62L26 34L36 34L-12 70Z", { fill: "#FFFFFF", opacity: ".16" }, gleam);
   /* And the keyline again on top, so no field's own stroke crosses it. */
   add(outline, { fill: "none", stroke: BADGE_KEYLINE, "stroke-width": "3.6",
                  "stroke-linejoin": "round" }, token);
+  /* The glint, proud of the rim at the top-left where the light is
+     coming from. Drawn OUTSIDE the token group so it can overlap the
+     silhouette's edge - a sparkle that stops at the outline is a
+     sparkle painted on the badge rather than one coming off it. */
+  let gx = 100, gy = 100;
+  geo.pts.forEach(pt => { if(pt[0] + pt[1] < gx + gy){ gx = pt[0]; gy = pt[1]; } });
+  const gs = 7.5;
+  add("M" + gx + " " + (gy - gs) + "Q" + gx + " " + (gy - gs * 0.22) + " " + (gx + gs) + " " + gy +
+      "Q" + gx + " " + (gy + gs * 0.22) + " " + gx + " " + (gy + gs) +
+      "Q" + gx + " " + (gy + gs * 0.22) + " " + (gx - gs) + " " + gy +
+      "Q" + gx + " " + (gy - gs * 0.22) + " " + gx + " " + (gy - gs) + "Z",
+      { fill: "#FFFFFF", opacity: ".92" });
   return svg;
 }
 
@@ -23075,77 +23121,89 @@ function buildTierIconSVG(tierKey){
    thing and left nothing to hand out when you climbed. So the ranks
    take their own names and the flare is one of the REWARDS a rank
    gives you, alongside that flare's colour in Settings. Reaching
-   Ranger unlocks the Ember flare; it is not called Ember.
+   Bronze unlocks the Ember flare; it is not called Ember.
 
-   "Sentinel" is the one display name that does not match its key.
-   `adept` reads as a beginner's word sitting between Vanguard and
-   Elite, and the keys are stored in nothing - the requirement rules
-   are keyed by them, not any saved progress - but renaming a key
-   across TIER_UNLOCKS, ACCENT_SWATCH, ACCENTS and the theme someone
-   already has selected is a migration for a cosmetic gain. */
+   THE NAME IS THE COLOUR. That is the thing the reference does that
+   makes it read at a glance - Bronze is bronze, Gold is gold, and you
+   never have to learn which tier is which. Role names (Rookie, Ranger,
+   Veteran, Vanguard, Sentinel, Elite, Titan) carried no colour at all,
+   so seven coloured cards were seven arbitrary colours. The KEYS are
+   still the old role words, because they are what TIER_UNLOCKS,
+   ACCENTS, ACCENT_SWATCH and a theme somebody already has selected are
+   all keyed by - renaming them would be a migration for a cosmetic
+   gain. */
 const RANK_DISPLAY_NAME = {
-  rookie: "Rookie", ranger: "Ranger", veteran: "Veteran", vanguard: "Vanguard",
-  adept: "Sentinel", elite: "Elite", titan: "Titan"
+  rookie: "Iron", ranger: "Bronze", veteran: "Silver", vanguard: "Gold",
+  adept: "Sapphire", elite: "Amethyst", titan: "Crimson"
+};
+/* A rank's own colour, and deliberately NOT ACCENT_SWATCH. Those are
+   the flare colours - the thing a rank hands over - and a rank that is
+   the same colour as its own reward has nothing left to be. Keeping
+   them apart is also what lets the rank colours run a straight metal
+   ramp while the flares stay on the app's own palette. */
+const RANK_COLOR = {
+  rookie: "#8B939E", ranger: "#C07A3E", veteran: "#CAD3DC", vanguard: "#E5B63F",
+  adept: "#3D74E8", elite: "#A855F7", titan: "#E23B3B"
 };
 /* Every rank is the SAME MARK at a different stage of its life, and
-   the mark is a supernova. The first set was the app's V inside a
-   frame that gained wings and horns as it climbed, which escalated
-   but had nothing to do with the app it belongs to; this one starts
-   as a spark and ends as the burst the app is named after.
+   the mark is a burst of light.
+
+   NOTHING IN IT IS A CIRCLE OR A SPOKE. The version before this had a
+   corona ring with rays coming off it and it read as a wheel, which is
+   what a ring plus evenly spaced radial lines always reads as. The arms
+   are concave-sided instead - each side is a quadratic curve pulled in
+   towards the centre - which is the shape a light source makes and
+   cannot be mistaken for a rim.
 
    Generated from this table rather than drawn seven times, so the
-   escalation is a property of the numbers and not of how carefully
-   seven paths were hand-tuned to agree with each other. Read down any
-   column and it only ever grows.
+   escalation is a property of the numbers. Read down any column and it
+   only ever grows.
 
-     points  arms on the star
-     r       how far those arms reach
-     inner   waist of the star, as a fraction of r
-     ring    a corona circle, 0 for none
-     rays    spokes outside the ring, 0 for none
-     core    the bright centre, 0 for none
-     shock   an outer shockwave ring, Titan only
-     arcs    broken arcs riding the corona */
+     pts     arms on the burst
+     r       how far they reach
+     waist   how pinched the sides are, as a fraction of r
+     second  a half-step-rotated burst behind, as a fraction of r
+     corona  a soft oversized burst behind that, as a multiple of r
+     glints  small sparkles set in the gaps between the arms
+     core    the bright centre */
 const RANK_STAR = {
-  rookie:   { points: 4, r: 23, inner: 0.30, ring: 0,  rays: 0,  core: 0,  shock: 0,  arcs: 0 },
-  ranger:   { points: 4, r: 28, inner: 0.32, ring: 32, rays: 0,  core: 0,  shock: 0,  arcs: 0 },
-  veteran:  { points: 6, r: 31, inner: 0.36, ring: 36, rays: 6,  core: 0,  shock: 0,  arcs: 0 },
-  vanguard: { points: 8, r: 34, inner: 0.38, ring: 40, rays: 8,  core: 7,  shock: 0,  arcs: 0 },
-  adept:    { points: 8, r: 37, inner: 0.40, ring: 43, rays: 8,  core: 9,  shock: 0,  arcs: 1 },
-  elite:    { points: 8, r: 40, inner: 0.42, ring: 46, rays: 16, core: 11, shock: 0,  arcs: 1 },
-  titan:    { points: 8, r: 43, inner: 0.44, ring: 49, rays: 16, core: 13, shock: 57, arcs: 2 }
+  rookie:   { pts: 4, r: 24, waist: 0.13, second: 0,    corona: 0,    glints: 0, core: 0 },
+  ranger:   { pts: 4, r: 29, waist: 0.14, second: 0.40, corona: 0,    glints: 0, core: 0 },
+  veteran:  { pts: 4, r: 33, waist: 0.15, second: 0.46, corona: 0,    glints: 2, core: 4 },
+  vanguard: { pts: 6, r: 36, waist: 0.17, second: 0.50, corona: 0,    glints: 2, core: 5 },
+  adept:    { pts: 6, r: 39, waist: 0.17, second: 0.52, corona: 1.25, glints: 4, core: 6 },
+  elite:    { pts: 8, r: 42, waist: 0.19, second: 0.55, corona: 1.30, glints: 4, core: 7 },
+  titan:    { pts: 8, r: 46, waist: 0.20, second: 0.58, corona: 1.40, glints: 6, core: 9 }
 };
 let rankEmblemSeq = 0;
-/* One rank's emblem, as a real SVG element. `lit` false draws the same
-   geometry in flat metal, which is what a rank you have not reached
-   looks like - the same "read the shape and nothing else" the locked
-   badges use, rather than a different, emptier drawing. */
-function buildRankEmblemSVG(rankKey, lit){
+/* One rank's emblem, as a real SVG element. Always drawn in the rank's
+   OWN colour - a locked rank is dimmed by the card around it, not
+   redrawn in grey. Seven grey emblems tell you nothing about where you
+   are heading, and the reference keeps every tier's colour visible
+   whether you have reached it or not. */
+function buildRankEmblemSVG(rankKey){
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 128 128");
-  svg.setAttribute("class", "rank-emblem-svg" + (lit ? " is-lit" : " is-dim"));
+  svg.setAttribute("class", "rank-emblem-svg");
   svg.setAttribute("aria-hidden", "true");
   const spec = RANK_STAR[rankKey] || RANK_STAR.rookie;
-  const base = ACCENT_SWATCH[rankKey] || "#6B7280";
+  const base = RANK_COLOR[rankKey] || "#8B939E";
   const uid = "rk" + (++rankEmblemSeq);
   const C = 64;
 
   const defs = document.createElementNS(NS, "defs");
   const grad = document.createElementNS(NS, "radialGradient");
   grad.setAttribute("id", uid);
-  grad.setAttribute("cx", "50%"); grad.setAttribute("cy", "42%"); grad.setAttribute("r", "62%");
-  const stops = lit
-    ? [[0, "#FFFFFF"], [0.28, badgeShade(base, 0.55)], [0.68, base], [1, badgeShade(base, -0.4)]]
-    : [[0, "#79828D"], [0.35, "#5A626C"], [1, "#333942"]];
-  stops.forEach(([o, c]) => {
-    const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-    grad.appendChild(st);
-  });
+  grad.setAttribute("cx", "50%"); grad.setAttribute("cy", "44%"); grad.setAttribute("r", "58%");
+  [[0, "#FFFFFF"], [0.2, badgeShade(base, 0.6)], [0.62, base], [1, badgeShade(base, -0.38)]]
+    .forEach(([o, c]) => {
+      const st = document.createElementNS(NS, "stop");
+      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
+      grad.appendChild(st);
+    });
   defs.appendChild(grad); svg.appendChild(defs);
   const paint = "url(#" + uid + ")";
-  const halo = lit ? badgeShade(base, 0.25) : "#69717B";
 
   function add(d, attrs){
     const el = document.createElementNS(NS, "path");
@@ -23154,45 +23212,48 @@ function buildRankEmblemSVG(rankKey, lit){
     svg.appendChild(el);
     return el;
   }
-  const P = (a, r) => (C + Math.cos(a) * r).toFixed(2) + " " + (C + Math.sin(a) * r).toFixed(2);
-  const circle = (r) => "M" + (C - r) + " " + C + "a" + r + " " + r + " 0 1 0 " + (r * 2) + " 0" +
-                        "a" + r + " " + r + " 0 1 0 " + (-r * 2) + " 0Z";
+  /* The burst. Each arm's two sides are one quadratic curve whose
+     control point sits on the bisector at `waist`, so the tips are
+     sharp and the sides are drawn in - a sparkle, not a cog. */
+  function burst(cx, cy, pts, r, waist, rot){
+    const P = (a, rr) => (cx + Math.cos(a) * rr).toFixed(2) + " " + (cy + Math.sin(a) * rr).toFixed(2);
+    let d = "";
+    for(let i = 0; i < pts; i++){
+      const a0 = rot + i * 2 * Math.PI / pts;
+      const a1 = rot + (i + 1) * 2 * Math.PI / pts;
+      const am = (a0 + a1) / 2;
+      if(i === 0) d += "M" + P(a0, r);
+      d += "Q" + P(am, r * waist) + " " + P(a1, r);
+    }
+    return d + "Z";
+  }
   const UP = -Math.PI / 2;
+  const half = Math.PI / spec.pts;
 
-  /* Outermost first, so the star always sits in front of its own
-     corona rather than being lost inside it. */
-  if(spec.shock) add(circle(spec.shock), { fill: "none", stroke: halo,
-    "stroke-width": "2", opacity: ".5" });
-  for(let i = 0; i < spec.rays; i++){
-    const a = UP + i * 2 * Math.PI / spec.rays;
-    const long = (i % 2 === 0) || spec.rays <= 8;
-    const from = spec.ring + 2, to = spec.ring + (long ? 12 : 6);
-    add("M" + P(a, from) + "L" + P(a, to), { fill: "none", stroke: halo,
-      "stroke-width": long ? "3.4" : "2.2", "stroke-linecap": "round", opacity: ".85" });
+  if(spec.corona){
+    add(burst(C, C, spec.pts, spec.r * spec.corona, spec.waist * 1.5, UP),
+        { fill: badgeShade(base, 0.35), opacity: ".2" });
   }
-  for(let i = 0; i < spec.arcs * 2; i++){
-    /* Broken arcs on the corona, on opposite sides so the mirror holds.
-       Drawn as two symmetric pairs rather than four independent ones. */
-    const a0 = UP + (i % 2 ? Math.PI : 0) + (i < 2 ? 0.55 : -0.55) * (i % 2 ? -1 : 1);
-    const r = spec.ring + 6;
-    add("M" + P(a0 - 0.38, r) + "A" + r + " " + r + " 0 0 1 " + P(a0 + 0.38, r),
-      { fill: "none", stroke: halo, "stroke-width": "2.6", "stroke-linecap": "round", opacity: ".7" });
+  for(let i = 0; i < spec.glints; i++){
+    /* Small sparkles set in the GAPS between the arms, not on their
+       axes: a sparkle on an arm's axis is that arm made longer, which
+       is a spoke, which is the one thing this drawing is avoiding. */
+    const a = UP + half + i * 2 * Math.PI / spec.glints;
+    const gr = spec.r * 0.8;
+    add(burst(C + Math.cos(a) * gr, C + Math.sin(a) * gr, 4, spec.r * 0.18, 0.12, UP),
+        { fill: badgeShade(base, 0.55), opacity: ".9" });
   }
-  if(spec.ring) add(circle(spec.ring), { fill: "none", stroke: paint, "stroke-width": "3.2" });
-
-  /* The star itself: `points` arms, waisted at `inner`, every vertex
-     placed by angle so it is symmetric by construction. */
-  const d = [];
-  for(let i = 0; i < spec.points * 2; i++){
-    const a = UP + i * Math.PI / spec.points;
-    d.push(P(a, i % 2 === 0 ? spec.r : spec.r * spec.inner));
+  if(spec.second){
+    add(burst(C, C, spec.pts, spec.r * spec.second, spec.waist * 1.8, UP + half),
+        { fill: badgeShade(base, -0.12), opacity: ".95" });
   }
-  add("M" + d.join("L") + "Z", { fill: paint, stroke: "rgba(0,0,0,.35)", "stroke-width": "1",
-    "stroke-linejoin": "round" });
+  add(burst(C, C, spec.pts, spec.r, spec.waist, UP),
+      { fill: paint, stroke: "rgba(0,0,0,.28)", "stroke-width": ".8", "stroke-linejoin": "round" });
   if(spec.core){
-    add(circle(spec.core), { fill: lit ? "#FFFFFF" : "#98A1AB", opacity: lit ? ".95" : ".8" });
-    add(circle(spec.core + 3), { fill: "none", stroke: lit ? "#FFFFFF" : "#98A1AB",
-      "stroke-width": "1.2", opacity: ".45" });
+    const r = spec.core;
+    add("M" + (C - r) + " " + C + "a" + r + " " + r + " 0 1 0 " + (r * 2) + " 0" +
+        "a" + r + " " + r + " 0 1 0 " + (-r * 2) + " 0Z",
+        { fill: "#FFFFFF", opacity: ".92" });
   }
   return svg;
 }
@@ -23218,8 +23279,8 @@ function decorateAvatar(avatarSpan, level, badges, mystery){
   const mark = document.createElement("span");
   mark.className = "lb-rankmark";
   mark.title = RANK_DISPLAY_NAME[key];
-  mark.style.setProperty("--rank-color", ACCENT_SWATCH[key]);
-  mark.appendChild(buildRankEmblemSVG(key, true));
+  mark.style.setProperty("--rank-color", RANK_COLOR[key]);
+  mark.appendChild(buildRankEmblemSVG(key));
   avatarSpan.appendChild(mark);
   return avatarSpan;
 }
@@ -30766,7 +30827,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-73";
+const APP_BUILD = "2026-09-21-74";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35764,11 +35825,11 @@ function buildRanksTab(){
   /* ---- the hero: the rank you hold, and what is left of the next ---- */
   const hero = document.createElement("div");
   hero.className = "rankhero" + (held ? "" : " is-unranked");
-  hero.style.setProperty("--rank-color", ACCENT_SWATCH[held || nextKey || "rookie"]);
+  hero.style.setProperty("--rank-color", RANK_COLOR[held || nextKey || "rookie"]);
 
   const heroArt = document.createElement("div");
   heroArt.className = "rankhero-art";
-  heroArt.appendChild(buildRankEmblemSVG(held || TIER_ORDER_FULL[0], !!held));
+  heroArt.appendChild(buildRankEmblemSVG(held || TIER_ORDER_FULL[0]));
   hero.appendChild(heroArt);
 
   const heroInfo = document.createElement("div");
@@ -35888,7 +35949,7 @@ function buildRanksTab(){
     const card = document.createElement("article");
     card.className = "rankcard" + (reached ? " is-held" : isNext ? " is-next" : " is-locked") +
       (isHere ? " is-here" : "");
-    card.style.setProperty("--rank-color", ACCENT_SWATCH[key]);
+    card.style.setProperty("--rank-color", RANK_COLOR[key]);
 
     /* One emblem, lit or not. It used to be two stacked copies with the
        lit one clipped from the bottom so a rank part-way earned was
@@ -35897,7 +35958,7 @@ function buildRanksTab(){
        across it says neither. */
     const art = document.createElement("div");
     art.className = "rankcard-art";
-    art.appendChild(buildRankEmblemSVG(key, reached));
+    art.appendChild(buildRankEmblemSVG(key));
     card.appendChild(art);
 
     const body = document.createElement("div");
@@ -35923,7 +35984,13 @@ function buildRanksTab(){
       (typeof rule.mysteryStars === "number" ? " · " + rule.mysteryStars + " Secret Flares" : "");
     body.appendChild(req);
 
-    if(!reached){
+    /* The meter belongs to the rank you are CLIMBING TO and nothing
+       else. Every unreached rank carried one, which put a half-full bar
+       on Crimson while you were working on Bronze - progress towards
+       something you are not working towards, which is the thing that
+       was asked against. A locked rank says what it costs and stops
+       there. */
+    if(isNext){
       const meter = document.createElement("div");
       meter.className = "rankcard-meter";
       const meterFill = document.createElement("span");

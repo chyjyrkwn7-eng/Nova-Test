@@ -201,8 +201,8 @@ def main():
                    "badges": badges})
             return pg
 
-        # Different ranks on purpose: Madison clears Veteran (level 20,
-        # 4 badges) and Devonte only Rookie (level 5, 1 badge), so a row
+        # Different ranks on purpose: Madison clears Silver (level 20,
+        # 4 badges) and Devonte only Iron (level 5, 1 badge), so a row
         # showing the wrong emblem cannot pass by showing the same one
         # twice.
         host = open_tab("Madison", "ninja", 14820, "HOST-0001", 4)
@@ -256,7 +256,7 @@ def main():
         ranks = host.evaluate("""()=>[...document.querySelectorAll('.vroom-row')]
           .map(r=>{const m=r.querySelector('.lb-rankmark'); return m ? m.title : null;})""")
         check("every row carries its person's rank",
-              sorted(r for r in ranks if r) == ["Rookie", "Veteran"], ranks)
+              sorted(r for r in ranks if r) == ["Iron", "Silver"], ranks)
         check("no level number beside the character",
               host.evaluate("()=>!document.querySelector('.vroom-level')"), "none")
 
