@@ -21517,7 +21517,7 @@ const RANKING_BOARDS = [
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 tests finished at 100%. The whole test has to be clean, so a run covering several units counts once and every question in it has to be right. The daily question does not count." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos, two perfect bonuses, and mastery progress on both. The daily question does not count." }
 ];
 
 
@@ -28901,7 +28901,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-59";
+const APP_BUILD = "2026-09-21-60";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -29437,6 +29437,7 @@ function summarize(){
   let newFarthest = false;
   let pointsEarned = 0;
   let perfectBonusEarned = 0;
+  let hundosEarned = 0;
   let newlyUnlockedColors = [];
   if(runTrackable && !timedOut && total > 0){
     /* This "before" snapshot is the actual fix for a real, confirmed
@@ -29452,6 +29453,24 @@ function summarize(){
     const TIER_ORDER = TIER_ORDER_FULL;
     const beforeTiers = {};
     TIER_ORDER.forEach(c => { beforeTiers[c] = tierColorUnlocked(c); });
+    /* Per-unit perfects are resolved HERE, before points, because a hundo
+       and a perfect bonus are both per unit now. Take three units, get
+       100% on two of them, and that is two hundos and two bonuses - the
+       run as a whole is not 100%, so the old whole-run test scored it as
+       zero of each while the mastery side was already crediting both
+       units. This call only moved; it was the same call, further down,
+       and it has to run after the beforeTiers snapshot because it awards
+       stars and stars move tiers. */
+    if(cfg.source === "all"){
+      multiUnitStarsEarned = recordMultiUnitPerfectsIfEligible(order, missed);
+    }
+    /* Falls back to the whole run when there are no per-unit perfects to
+       count: a single-unit run, or a multi-unit one that is not eligible
+       for per-unit scoring (a partial slice of a unit is not a unit).
+       A run that was 100% overall is still one hundo in that case. */
+    hundosEarned = multiUnitStarsEarned.perfected.length > 0
+      ? multiUnitStarsEarned.perfected.length
+      : ((pct === 100 && runLabel !== "Daily question") ? 1 : 0);
     /* A flat 100 points for a correct daily question, per explicit
        request \u2014 not the normal good*POINTS_PER_QUESTION formula (which
        would only give 10 for a single question), a deliberately
@@ -29459,19 +29478,18 @@ function summarize(){
     pointsEarned = (runLabel === "Daily question")
       ? (isPerfect ? 100 : 0)
       : good * POINTS_PER_QUESTION;
-    if(pct === 100 && runLabel !== "Daily question") perfectBonusEarned = PERFECT_BONUS;
+    perfectBonusEarned = PERFECT_BONUS * hundosEarned;
     store.lifetime.points += pointsEarned + perfectBonusEarned;
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
     else if(runMode === "game") store.lifetime.gamePlays += 1;
-    /* The daily question is excluded, and it has to be. It is a single
-       question, so answering it correctly is a 100% run and was counting
-       as a perfect test - which on a board that ranks hundos would have
-       made the ranking mostly "how many days did you tap the ? button",
-       one per person per day, swamping real tests entirely. The perfect
-       BONUS above already excludes it on the same reasoning; this line
-       simply never got the same treatment. */
-    if(pct === 100 && runLabel !== "Daily question") store.lifetime.perfectTests += 1;
+    /* One per PERFECTED UNIT, not one per perfect run - see hundosEarned
+       above. The daily question is excluded there, and it has to be: it
+       is a single question, so answering it correctly is a 100% run and
+       was counting as a perfect test, which on a board that ranks hundos
+       would have made the ranking mostly "how many days did you tap the
+       ? button". */
+    store.lifetime.perfectTests += hundosEarned;
     saveStore();
     newBest = recordTestPlay(elapsedMs, pct);
     /* Every points-earning run can newly cross a Mastery Ladder tier
@@ -29483,7 +29501,6 @@ function summarize(){
        than only inside the star-tracking branch below. */
     if(cfg.source === "all"){
       leveledUpTo = recordUnitPerfectIfEligible(pct);
-      multiUnitStarsEarned = recordMultiUnitPerfectsIfEligible(order, missed);
       if(runMode === "game" && isFullUnitRun()){
         justBeatSpeed = recordGameBeatIfEligible();
         newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, total);
@@ -29655,7 +29672,8 @@ function summarize(){
       const ptsRow2 = document.createElement("p");
       ptsRow2.className = "points-line";
       ptsRow2.append(
-        Object.assign(document.createElement("span"), { className: "points-label", textContent: "Perfect bonus" }),
+        Object.assign(document.createElement("span"), { className: "points-label",
+          textContent: hundosEarned > 1 ? hundosEarned + " perfect bonuses" : "Perfect bonus" }),
         Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + perfectBonusEarned })
       );
       ptsWrap.appendChild(ptsRow2);
