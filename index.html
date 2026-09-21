@@ -2523,6 +2523,27 @@
   @media (max-width:32rem) and (max-height:52rem) and (min-height:40rem){
     .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.8rem; }
   }
+  /* The two shortest laptop windows were the last ones riding high - a
+     1366x768 Dell leaves 638px in Chrome and measured 49px above the
+     button against 88 below, and a 1280x800 measured 81/88. Wide, so the
+     narrow tier above cannot reach them, and short enough that the cards
+     are still the binding constraint. Same self-cancelling last-card
+     margin, and the same idea in the padding: these are pure spacing
+     reductions, the type is untouched. 44rem is 704px - over both, under
+     a MacBook Air's 770px window, which already sits at 181/88. */
+  @media (min-width:40rem) and (max-height:44rem){
+    /* These have to be SMALLER than the tier above, not smaller than the
+       tablet block - the first attempt set .75rem/1.2rem padding against
+       that tier's .5rem/.9rem and, being later in source, made the two
+       shortest laptops bigger instead of tighter. A Dell Latitude went
+       from 49px above the button to 35 and picked up 23px of overflow
+       doing it. Always diff a new tier against the one that is actually
+       winning, not against the base. */
+    .welcomeintro-row{ margin-bottom:.25rem; padding:.35rem .9rem; }
+    .welcomeintro-head{ margin-bottom:0; }
+    .welcomeintro-title{ margin-bottom:.4rem; }
+    .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.2rem; }
+  }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
@@ -5563,6 +5584,23 @@
        comes off the pool the two autos divide, so the title lands ~19px
        lower than it did and the hero barely moves. */
     .cosmic-welcome-title{ margin-top:1.6rem; }
+  }
+  /* The non-Max phones only. A Pro Max leaves 84px between the sub and
+     the buttons; a 14/15/16 leaves 48 and a 13 mini 42, because there is
+     simply less height to divide - so the text block reads as sitting
+     higher under the sphere than it does on the phone this was tuned on.
+     The gap under the sphere is the one lever that moves it down without
+     moving the buttons, which are already pinned near the bottom edge
+     (the hint clears it by the same 82px on all three). Bounded top and
+     bottom: over 46rem so an SE, where this screen is already full, is
+     left alone, and under 56rem so the Pro Max at 59.75rem keeps exactly
+     the spacing that was signed off. */
+  @media (max-width:32rem) and (min-height:46rem) and (max-height:56rem){
+    /* 2.6rem, not 3: at 3rem a 13 mini picked up 5px of overflow and its
+       hint closed to 56px off the bottom edge. This keeps the gap under
+       the sphere at 68px against a Pro Max's 51 - the block does sit
+       lower - without either. */
+    .cosmic-welcome-title{ margin-top:2.6rem; }
   }
   /* The complement of the (min-height:46rem) block above, and the reason
      that floor exists: everything in it is affordable on a phone with
@@ -24547,12 +24585,12 @@ function showClassSelection(){
      "No other classes available yet." right next to it, per explicit
      request for something a bit more than a bare two-word fragment. */
   const classDesc = document.createElement("span");
-  /* Names what it is without repeating what the title already says.
-     "The Class 26E police academy class" used the word twice in six
-     words, right under a title that is itself "Class 26E", and was
-     reported as redundant. The card title identifies it; this line only
-     has to say what kind of thing it is. */
-  classDesc.className = "modecarddesc"; classDesc.textContent = "The police academy class this app was built for.";
+  /* Third wording, and the shortest. "For police academy cadets" never
+     said which class; "The Class 26E police academy class" said class
+     twice; "The police academy class this app was built for" was flagged
+     for talking about the app instead of the class. What is left is the
+     thing itself. */
+  classDesc.className = "modecarddesc"; classDesc.textContent = "Class 26E police academy.";
   classCard.append(classTitle, classDesc);
   cards.appendChild(classCard);
 
@@ -25049,6 +25087,14 @@ function showWelcomeCodeEntry(){
           "> finalizing sync..."
         ], 3200, () => {
           showHome();
+          /* The same pause the create-account path gets, and for the same
+             reason. That one is covered by holdNoticesAfterTour() firing
+             at the end of the main-menu tour - but signing in with a code
+             deliberately skips that tour (the person already knows the
+             app from their other device), so without this an update or
+             re-add banner could land on the very first frame of Home, on
+             top of the "welcome back" toast. */
+          holdNoticesAfterTour();
           showToast("Welcome back \u2014 your progress is here.");
         });
       } else {
@@ -28209,7 +28255,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-47";
+const APP_BUILD = "2026-09-21-48";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33287,7 +33333,19 @@ function applyGlassRefraction(el, mapImgId){
        including the one summarize() itself triggers by replacing the
        stage's content. Checking a flag here, in the one place that
        actually decides the value, is what makes it stick. */
-    const show = isModern && oldNavVisible && !window.forceHideBottomTabs;
+    /* store.onboardingComplete is a hard floor under the other two
+       conditions, not a refinement of them. The bar has never actually
+       appeared during onboarding - walked from a fresh install, both the
+       create-account and the sign-in-with-a-code paths report it hidden
+       with zero height on every screen - but it was reported as doing so
+       from a screenshot, because a harness that MOUNTS an onboarding
+       screen against a finished account leaves the legacy nav visible and
+       the bar follows it. This makes it impossible rather than merely
+       untrue: the same flag decides, at boot, whether the app shows
+       onboarding at all (see the !store.onboardingComplete branch at the
+       bottom of this file), so the two can never disagree. */
+    const show = isModern && oldNavVisible && !window.forceHideBottomTabs
+                 && !!(typeof store !== "undefined" && store && store.onboardingComplete);
     bar.hidden = !show;
     document.body.classList.toggle("has-bottomtabs", show);
     /* On screens with their own floating action button (Setup's Start,

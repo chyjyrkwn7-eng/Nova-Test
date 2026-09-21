@@ -26,6 +26,9 @@ disagreed, the repo won and the difference is called out.
 - `tools/check-positions.py` — the companion to it: not "is anything
   broken" but "did what I just positioned land where I meant it to", on
   every device. See **Every device, every way in**.
+- `tools/shoot-flow.py` — screenshots every onboarding screen, Home and
+  Settings by *clicking through* from a fresh install on six devices,
+  rather than mounting screens. Use it for anything Madison will look at.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 
@@ -534,16 +537,35 @@ the Rewards switcher let the flex items shrink below their own `nowrap` text:
 the page stopped scrolling sideways and the three labels overlapped instead.
 **Look at a screenshot, not just the numbers.**
 
-**The harness shows the bottom tab bar on onboarding screens. The app does
-not.** Both `sweep-layout.py` and any screenshot script seed a finished
-account and then call `showWelcomeIntro()` (or similar) directly, and the
-tab bar's visibility is derived from the legacy `.navsegment`, which that
-state leaves visible. Walked for real — fresh `localStorage`, clicking
-from Welcome through What's New into the intro — the bar reports
-`hidden:true` and a height of 0 on every onboarding screen, on every size.
-Reported once as "a massive bug" from a screenshot, and it is worth
-knowing before someone fixes a bug that is not there. If you need to check
-it, walk the flow; do not mount the screen.
+**Mounting an onboarding screen is not the same as reaching one, and the
+difference moves the layout.** `showWelcome()` hides the nav buttons the
+bottom tab bar derives its visibility from; every onboarding screen is
+reached through it. Calling `showWelcomeIntro()` cold against a seeded
+(finished) account skips that, so the bar stays up — which puts a tab bar
+into screenshots of screens that never have one (reported twice as "a
+massive bug", and it is not one: walked for real, both the create-account
+and the sign-in-with-a-code paths report the bar `hidden` with height 0 on
+every screen) **and** swaps `--panel-reserve` from 5.5rem to 9rem, which
+moves every button on the screen by 3.5rem. Both `sweep-layout.py` and
+`check-positions.py` now call `showWelcome()` first for anything in their
+`ONBOARDING_SCREENS` set, and `tools/shoot-flow.py` is the
+pattern for screenshots: click through from a fresh `localStorage` rather
+than mounting anything.
+
+**The bar is also now structurally impossible during onboarding**, not
+merely absent: `syncVisibility()` requires `store.onboardingComplete`, the
+same flag that decides at boot whether the app shows onboarding at all, so
+the two cannot disagree. A harness that seeds a finished account has to
+seed that flag too, or the bar will never appear anywhere.
+
+**Diff a new tier against the one that is actually winning, not against
+the base.** A laptop tier added at `(min-width:40rem) and
+(max-height:44rem)` used values chosen as reductions from the *tablet*
+block — but a short-viewport tier was already overriding that block, and
+the new values were larger than its. Being later in source they won, and
+the two shortest laptops came out bigger instead of tighter: a Dell
+Latitude went from 49px above its button to 35 and picked up 23px of
+overflow. The computed value is the only thing worth comparing against.
 
 **Chromium cannot see any of this by itself.** It reports every
 `env(safe-area-inset-*)` as `0` and has no display-mode emulation, so the

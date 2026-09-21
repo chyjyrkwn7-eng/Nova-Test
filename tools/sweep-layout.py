@@ -111,10 +111,17 @@ SCREENS = [
     "showVirtualRoomChoice", "showVirtualRoomSetup", "showVirtualRoomJoinEntry",
 ]
 
+# Reached only from Welcome, and only before the account exists.
+ONBOARDING_SCREENS = {
+    "showWelcome", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
+    "showWelcomeCodeEntry", "showWelcomeCodeReveal",
+}
+
 SEED = """try{
  localStorage.setItem('class26e.synccode','ABCD-2345');
  localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',avatarChar:'a',
-   stats:{},testStats:{},studyLog:{},seenProfileTour:true,seenSettingsTour:true,
+   stats:{},testStats:{},studyLog:{},onboardingComplete:true,seenProfileTour:true,seenSettingsTour:true,
    seenRewardsTour:true,seenHomeTour:true,seenLadderTour:true,
    theme:{mode:'dark',accent:'ink',layout:'modern'}}));}catch(e){}"""
 
@@ -308,6 +315,18 @@ def main():
                         if not page.evaluate(f"typeof {fn}==='function'"):
                             found[fn] = [f"{fn} is not defined"]
                             continue
+                        # An onboarding screen is only ever reached with the
+                        # tab bar already hidden - showWelcome() is what hides
+                        # it, by hiding the nav buttons the bar derives its
+                        # visibility from. Mounting one cold against the seeded
+                        # (finished) account left the bar up, which both put a
+                        # bar on screens that never have one and swapped
+                        # --panel-reserve from 5.5rem to 9rem, shortening every
+                        # onboarding panel. Walking in through Welcome first is
+                        # what the app itself does.
+                        if fn in ONBOARDING_SCREENS:
+                            page.evaluate("showWelcome();")
+                            page.wait_for_timeout(120)
                         page.evaluate(f"{fn}(); scrollTo(0,0);")
                         page.wait_for_timeout(300)
                         hits = page.evaluate(AUDIT, ins)

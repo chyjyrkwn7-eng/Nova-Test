@@ -50,7 +50,7 @@ DEVICES = [
 SEED = """try{
  localStorage.setItem('class26e.synccode','ABCD-2345');
  localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',firstName:'Madison',avatarChar:'a',
-   stats:{},testStats:{},studyLog:{},seenProfileTour:true,seenSettingsTour:true,
+   stats:{},testStats:{},studyLog:{},onboardingComplete:true,seenProfileTour:true,seenSettingsTour:true,
    seenRewardsTour:true,seenHomeTour:true,seenLadderTour:true,
    theme:{mode:'dark',accent:'ink',layout:'modern'}}));}catch(e){}"""
 STANDALONE = """
@@ -78,7 +78,20 @@ def serve():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f"http://127.0.0.1:{port}/index.html"
 
+ONBOARDING_SCREENS = {
+    "showWelcome", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
+    "showWelcomeCodeEntry", "showWelcomeCodeReveal",
+}
+
 def run(page, fn):
+    # See the note in sweep-layout.py: an onboarding screen is only ever
+    # reached with the tab bar already hidden, and showWelcome() is what
+    # hides it. Mounting one cold leaves the bar up and swaps
+    # --panel-reserve, moving every button on the screen by 3.5rem.
+    if fn in ONBOARDING_SCREENS:
+        page.evaluate("showWelcome();")
+        page.wait_for_timeout(110)
     page.evaluate(f"{fn}(); scrollTo(0,0);")
     page.wait_for_timeout(230)
     page.evaluate("document.querySelectorAll('.next.playbtn[hidden]').forEach(b=>b.hidden=false)")
