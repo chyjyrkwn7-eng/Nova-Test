@@ -21823,36 +21823,280 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    already incremented wherever a test finishes at 100%, so that board
    is ranking the real thing from the start. */
 
-/* Provisional. A points curve, not a formula anyone agreed to: each
-   level costs 15% more than the last, starting at 500, so the early
-   ones come quickly and the later ones do not. Level 1 is the floor -
-   nobody is level 0 - and it is capped so a single outlier cannot own
-   the top of the board forever. */
-const LEVEL_BASE_POINTS = 500;
-const LEVEL_GROWTH = 1.15;
-const LEVEL_CAP = 99;
-function levelFromPoints(points){
-  let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
+/* Each level costs 5% more XP than the last, starting at 300. Level 1
+   is the floor - nobody is level 0 - and 80 is the ceiling, per
+   explicit request.
+
+   The curve is chosen so the ceiling is reachable. It was 500 XP at
+   +15% a level with a cap of 99, which is a fine shape and a
+   completely unreachable one: compounded 80 times that asks for about
+   200 million XP, when an aced three-unit test pays under a thousand.
+   +5% from 300 puts level 10 at ~3,300 XP, level 40 at ~34,000 and
+   level 80 at ~292,000 - early levels inside a session, the last of
+   them a genuine course-long climb. Nobody's level goes DOWN in the
+   change, which is the property that made it safe to make. */
+const LEVEL_BASE_POINTS = 300;
+const LEVEL_GROWTH = 1.05;
+const LEVEL_CAP = 80;
+
+/* Where a given XP total sits: the level, how far into it, and how far
+   across. One function so the bar, the number under it and the board
+   can never disagree about the same total - they each used to do their
+   own arithmetic. `span` is 0 at the cap, and callers must treat that
+   as "full", not divide by it. */
+function levelProgress(points){
   const p = Math.max(0, Number(points) || 0);
+  let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
   while(lvl < LEVEL_CAP && p >= spent + need){
     spent += need; need = Math.round(need * LEVEL_GROWTH); lvl += 1;
   }
-  return lvl;
+  const atCap = lvl >= LEVEL_CAP;
+  return {
+    level: lvl,
+    total: p,
+    into: atCap ? 0 : p - spent,
+    span: atCap ? 0 : need,
+    toNext: atCap ? 0 : (spent + need - p),
+    fraction: atCap ? 1 : Math.min(1, Math.max(0, (p - spent) / need)),
+    atCap: atCap
+  };
 }
+function levelFromPoints(points){ return levelProgress(points).level; }
 function levelOf(st){
   return levelFromPoints(st && st.lifetime ? st.lifetime.points : 0);
 }
 
-/* Provisional. Until badges exist as their own thing, this counts the
-   Mastery Ladder tiers actually unlocked - the closest thing the app
-   already has to "an award you either have or you do not". It reads
-   as a real number on the board today and becomes a one-line change
-   when real badges arrive. */
+/* One badge per unit, earned by mastering that unit. No longer
+   provisional: this used to count Mastery Ladder tiers, as the nearest
+   thing the app had to an award you either hold or do not.
+
+   BADGE_THRESHOLD is 35, per explicit request, and 35 was already
+   MASTERY_THRESHOLDS.mastery - the number the unit cards have been
+   calling "Advanced" all along. DRILL_STAR_THRESHOLD was a separate
+   40 for the same idea, so the app held two different answers to
+   "have I mastered this unit". They are one number now. */
+const BADGE_THRESHOLD = 35;
+function unitBadgeEarned(name){
+  return (store.unitPerfects[name] || 0) >= BADGE_THRESHOLD;
+}
+function badgesEarnedList(){
+  return topicsIn(QUESTIONS).filter(unitBadgeEarned);
+}
 function badgeCountOf(st){
-  if(!st) return 0;
+  const perf = (st && st.unitPerfects) || {};
   try {
-    return TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
+    return topicsIn(QUESTIONS).filter(u => (perf[u] || 0) >= BADGE_THRESHOLD).length;
   } catch(e){ return 0; }
+}
+
+/* ---------- the badges themselves --------------------------------------
+   Sixteen units, sixteen badges, and they are meant to read like gym
+   badges: one bold silhouette each, a two-stop metal gradient, a dark
+   rim and a bright dome highlight, with a small emblem inside.
+
+   Assigned per unit by name rather than hashed. A hash gives sixteen
+   DIFFERENT badges but not sixteen DESIGNED ones - the shape that
+   lands on "Victims of Crime" would be whatever the hash said, and the
+   colours next to each other would fight. These are chosen: a shield
+   for ethics, a flame for fitness, a lone star for the constitutions,
+   a speech bubble for verbal communication.
+
+   Unknown unit names still get a badge (see the fallback below), and
+   that is not defensive padding: the leaderboard learned this the hard
+   way when buildAvatarCharSVG returned null for an id it did not know
+   and three classmates silently vanished from the board. A badge that
+   cannot be drawn has to still be a badge. */
+const BADGE_SHAPES = {
+  shield:  "M50 5 L89 19 V49 C89 73 71 89 50 96 C29 89 11 73 11 49 V19 Z",
+  star5:   "M50 3 L62 36 H96 L68 57 L79 92 L50 71 L21 92 L32 57 L4 36 H38 Z",
+  flame:   "M50 3 C63 26 86 35 86 59 A36 36 0 0 1 14 59 C14 44 25 37 31 28 C33 43 41 45 43 39 C45 30 43 19 50 3 Z",
+  hexagon: "M50 4 L89 27 V73 L50 96 L11 73 V27 Z",
+  quatrefoil: "M50 6 A22 22 0 0 1 72 28 A22 22 0 0 1 94 50 A22 22 0 0 1 72 72 A22 22 0 0 1 50 94 A22 22 0 0 1 28 72 A22 22 0 0 1 6 50 A22 22 0 0 1 28 28 A22 22 0 0 1 50 6 Z",
+  triangle:"M50 6 L94 88 H6 Z",
+  star6:   "M50 3 L63 28 H90 L76 50 L90 72 H63 L50 97 L37 72 H10 L24 50 L10 28 H37 Z",
+  octagon: "M33 6 H67 L94 33 V67 L67 94 H33 L6 67 V33 Z",
+  banner:  "M12 10 H88 V80 L69 69 L50 88 L31 69 L12 80 Z",
+  cuff:    "M50 4 A46 46 0 1 1 49.99 4 Z M50 27 A23 23 0 1 0 50.01 27 Z",
+  heart:   "M50 95 C16 69 6 50 6 35 A23 23 0 0 1 50 25 A23 23 0 0 1 94 35 C94 50 84 69 50 95 Z",
+  drop:    "M50 3 C74 30 91 49 91 64 A41 41 0 0 1 9 64 C9 49 26 30 50 3 Z",
+  cog:     "M50 4 L58 12 L69 8 L73 19 L85 20 L84 32 L94 38 L88 48 L94 58 L84 64 L85 76 L73 77 L69 88 L58 84 L50 92 L42 84 L31 88 L27 77 L15 76 L16 64 L6 58 L12 48 L6 38 L16 32 L15 20 L27 19 L31 8 L42 12 Z",
+  pentagon:"M50 4 L94 36 L77 92 H23 L6 36 Z",
+  bubble:  "M16 10 H84 A12 12 0 0 1 96 22 V58 A12 12 0 0 1 84 70 H46 L26 92 V70 H16 A12 12 0 0 1 4 58 V22 A12 12 0 0 1 16 10 Z",
+  diamond: "M50 3 L93 50 L50 97 L7 50 Z"
+};
+
+/* Drawn on top of the silhouette, small and simple. Anything with more
+   detail than this disappears at the size a grid of sixteen actually
+   gets on a phone. */
+const BADGE_EMBLEMS = {
+  star:    { d: "M50 32 L55 45 H69 L58 53 L62 67 L50 59 L38 67 L42 53 L31 45 H45 Z", fill: true },
+  bolt:    { d: "M56 28 L38 56 H49 L44 72 L63 44 H51 Z", fill: true },
+  ring:    { d: "M50 34 A16 16 0 1 1 49.9 34 Z", fill: false, w: 6 },
+  bars:    { d: "M36 40 H64 M36 50 H64 M36 60 H54", fill: false, w: 6 },
+  chevron: { d: "M36 44 L50 58 L64 44 M36 58 L50 72 L64 58", fill: false, w: 6 },
+  dot3:    { d: "M39 50 A5 5 0 1 1 38.9 50 Z M50 50 A5 5 0 1 1 49.9 50 Z M61 50 A5 5 0 1 1 60.9 50 Z", fill: true },
+  cross:   { d: "M45 32 H55 V45 H68 V55 H55 V68 H45 V55 H32 V45 H45 Z", fill: true },
+  wave:    { d: "M32 54 C38 42 44 66 50 54 C56 42 62 66 68 54", fill: false, w: 6 },
+  scales:  { d: "M50 32 V66 M34 44 H66 M34 44 L28 58 H40 Z M66 44 L60 58 H72 Z", fill: false, w: 5 },
+  teardrop:{ d: "M50 30 C60 44 66 51 66 57 A16 16 0 0 1 34 57 C34 51 40 44 50 30 Z", fill: true },
+  book:    { d: "M30 36 H47 V68 H30 Z M53 36 H70 V68 H53 Z M48 34 H52 V70 H48 Z", fill: true },
+  shieldlet:{ d: "M50 30 L68 37 V53 C68 63 60 70 50 74 C40 70 32 63 32 53 V37 Z", fill: true }
+};
+
+const UNIT_BADGE_SPECS = {
+  "Professionalism and Ethics":                   { shape: "shield",   c1: "#9CC8F2", c2: "#1E4C88", emblem: "star" },
+  "Professional Policing":                        { shape: "star5",    c1: "#FFDC86", c2: "#A97410", emblem: "ring" },
+  "Fitness, Wellness, and Stress Management":     { shape: "flame",    c1: "#FFB271", c2: "#B4301B", emblem: "bolt" },
+  "TCOLE Rules":                                  { shape: "hexagon",  c1: "#9BEBE0", c2: "#136B61", emblem: "bars" },
+  "Multiculturalism and Human Relations":         { shape: "quatrefoil", c1: "#EEA9FB", c2: "#6A2A9C", emblem: "dot3" },
+  "Racial Profiling":                             { shape: "triangle", c1: "#AEB6FF", c2: "#2B2D8E", emblem: "scales" },
+  "US and Texas Constitution and Rights":         { shape: "star6",    c1: "#FF9E9E", c2: "#9E1B2B", emblem: "star" },
+  "Penal Code":                                   { shape: "octagon",  c1: "#FFD49B", c2: "#94400F", emblem: "book" },
+  "Code of Criminal Procedure and Bill of Rights":{ shape: "banner",   c1: "#F5E3B4", c2: "#856526", emblem: "bars" },
+  "Arrest, Search, and Seizure":                  { shape: "cuff",     c1: "#D6DEE6", c2: "#434F5B", emblem: "ring" },
+  "Victims of Crime":                             { shape: "heart",    c1: "#FFB6CC", c2: "#A11D52", emblem: "teardrop" },
+  "Missing and Exploited Children":               { shape: "drop",     c1: "#9ED8FF", c2: "#175C9B", emblem: "dot3" },
+  "Identity Crimes":                              { shape: "cog",      c1: "#9CF0B4", c2: "#19763B", emblem: "ring" },
+  "Sexual Assault and Family Violence":           { shape: "pentagon", c1: "#D3B6FF", c2: "#56279A", emblem: "shieldlet" },
+  "Verbal Communication":                         { shape: "bubble",   c1: "#8FEEF8", c2: "#0E6C86", emblem: "wave" },
+  "Civil Process and Liability":                  { shape: "diamond",  c1: "#FFE39B", c2: "#9E6F0C", emblem: "chevron" }
+};
+
+const BADGE_SHAPE_ORDER = Object.keys(BADGE_SHAPES);
+const BADGE_EMBLEM_ORDER = Object.keys(BADGE_EMBLEMS);
+const BADGE_FALLBACK_COLORS = [
+  ["#9CC8F2", "#1E4C88"], ["#FFDC86", "#A97410"], ["#9BEBE0", "#136B61"],
+  ["#FFB6CC", "#A11D52"], ["#D3B6FF", "#56279A"], ["#9CF0B4", "#19763B"]
+];
+function badgeSpecFor(unitName){
+  const known = UNIT_BADGE_SPECS[unitName];
+  if(known) return known;
+  /* A unit nobody designed a badge for still gets one, deterministically
+     - the same unit always draws the same badge. */
+  const h = parseInt(hashOf(String(unitName || "")), 36) || 0;
+  const col = BADGE_FALLBACK_COLORS[h % BADGE_FALLBACK_COLORS.length];
+  return {
+    shape: BADGE_SHAPE_ORDER[h % BADGE_SHAPE_ORDER.length],
+    emblem: BADGE_EMBLEM_ORDER[(h >> 3) % BADGE_EMBLEM_ORDER.length],
+    c1: col[0], c2: col[1]
+  };
+}
+
+/* Gradient ids have to be unique per instance. Sixteen badges on one
+   screen all referencing url(#badge-grad) is one shared definition and
+   fifteen wrong fills. */
+let badgeSvgSeq = 0;
+
+function buildUnitBadgeSVG(unitName, earned){
+  const NS = "http://www.w3.org/2000/svg";
+  const spec = badgeSpecFor(unitName);
+  const d = BADGE_SHAPES[spec.shape] || BADGE_SHAPES.hexagon;
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("class", "badge-art" + (earned ? " is-earned" : " is-locked"));
+  svg.setAttribute("aria-hidden", "true");
+
+  if(!earned){
+    /* Outline only, per explicit request: you can see the SHAPE of what
+       is missing, which is the whole appeal of a badge case, but not
+       the badge. */
+    const ghost = document.createElementNS(NS, "path");
+    ghost.setAttribute("d", d);
+  ghost.setAttribute("fill-rule", "evenodd");
+    ghost.setAttribute("fill", "rgba(255,255,255,.035)");
+    ghost.setAttribute("stroke", "rgba(255,255,255,.3)");
+    ghost.setAttribute("stroke-width", "3");
+    ghost.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(ghost);
+    return svg;
+  }
+
+  const uid = "bdg" + (++badgeSvgSeq);
+  const defs = document.createElementNS(NS, "defs");
+
+  const grad = document.createElementNS(NS, "linearGradient");
+  grad.setAttribute("id", uid + "-f");
+  grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0");
+  grad.setAttribute("x2", "0"); grad.setAttribute("y2", "1");
+  [[0, spec.c1], [0.52, spec.c2], [1, spec.c2]].forEach(([off, col]) => {
+    const st = document.createElementNS(NS, "stop");
+    st.setAttribute("offset", String(off));
+    st.setAttribute("stop-color", col);
+    grad.appendChild(st);
+  });
+  defs.appendChild(grad);
+
+  /* The dome. A single white-to-nothing gradient over the top half is
+     what turns a flat silhouette into something with a surface - the
+     same trick the app icon uses, and the reason it does not need a
+     drop shadow to read as an object. */
+  const gloss = document.createElementNS(NS, "linearGradient");
+  gloss.setAttribute("id", uid + "-g");
+  gloss.setAttribute("x1", "0"); gloss.setAttribute("y1", "0");
+  gloss.setAttribute("x2", "0"); gloss.setAttribute("y2", "1");
+  [[0, "rgba(255,255,255,.75)"], [0.35, "rgba(255,255,255,.18)"],
+   [0.55, "rgba(255,255,255,0)"], [1, "rgba(0,0,0,.22)"]].forEach(([off, col]) => {
+    const st = document.createElementNS(NS, "stop");
+    st.setAttribute("offset", String(off));
+    st.setAttribute("stop-color", col);
+    gloss.appendChild(st);
+  });
+  defs.appendChild(gloss);
+  svg.appendChild(defs);
+
+  const body = document.createElementNS(NS, "path");
+  body.setAttribute("d", d);
+  body.setAttribute("fill-rule", "evenodd");
+  body.setAttribute("fill", "url(#" + uid + "-f)");
+  body.setAttribute("stroke", "rgba(0,0,0,.45)");
+  body.setAttribute("stroke-width", "3.5");
+  body.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(body);
+
+  const dome = document.createElementNS(NS, "path");
+  dome.setAttribute("d", d);
+  dome.setAttribute("fill-rule", "evenodd");
+  dome.setAttribute("fill", "url(#" + uid + "-g)");
+  svg.appendChild(dome);
+
+  /* An inner rim, set in from the edge, is the detail that reads as
+     enamel-on-metal rather than a coloured sticker. */
+  const rim = document.createElementNS(NS, "path");
+  rim.setAttribute("d", d);
+  rim.setAttribute("fill-rule", "evenodd");
+  rim.setAttribute("fill", "none");
+  rim.setAttribute("stroke", "rgba(255,255,255,.4)");
+  rim.setAttribute("stroke-width", "2.5");
+  rim.setAttribute("stroke-linejoin", "round");
+  rim.setAttribute("transform", "translate(50 50) scale(.82) translate(-50 -50)");
+  svg.appendChild(rim);
+
+  const em = BADGE_EMBLEMS[spec.emblem];
+  if(em){
+    const shadow = document.createElementNS(NS, "path");
+    shadow.setAttribute("d", em.d);
+    shadow.setAttribute("transform", "translate(0 1.5)");
+    shadow.setAttribute("fill", em.fill ? "rgba(0,0,0,.35)" : "none");
+    shadow.setAttribute("stroke", em.fill ? "none" : "rgba(0,0,0,.35)");
+    if(!em.fill){
+      shadow.setAttribute("stroke-width", String(em.w || 5));
+      shadow.setAttribute("stroke-linecap", "round");
+      shadow.setAttribute("stroke-linejoin", "round");
+    }
+    svg.appendChild(shadow);
+
+    const mark = document.createElementNS(NS, "path");
+    mark.setAttribute("d", em.d);
+    mark.setAttribute("fill", em.fill ? "rgba(255,255,255,.92)" : "none");
+    mark.setAttribute("stroke", em.fill ? "none" : "rgba(255,255,255,.92)");
+    if(!em.fill){
+      mark.setAttribute("stroke-width", String(em.w || 5));
+      mark.setAttribute("stroke-linecap", "round");
+      mark.setAttribute("stroke-linejoin", "round");
+    }
+    svg.appendChild(mark);
+  }
+  return svg;
 }
 
 function hundosOf(st){
@@ -21867,14 +22111,14 @@ const RANKING_BOARDS = [
     blurb: "Ranked by level. Level comes from total XP, so it climbs with everything you do \u2014 every question answered, every test finished." },
   { key: "badges", tab: "Badges", field: "badges",
     unit: (n) => n + (n === 1 ? " badge" : " badges"),
-    blurb: "Ranked by how many badges you have earned. A badge is what you get for mastering a unit, so this board is about how much of the material you have taken all the way rather than how much time you have put in." },
+    blurb: "Ranked by badges. Every unit has one, and you earn it by mastering that unit \u2014 35 hundos in it. Badges replace stars, so this board is how much of the material you have taken all the way." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam or Game alike. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos." }
 ];
 
 
@@ -23540,7 +23784,12 @@ const MASTERY_THRESHOLDS = { mastery: 35, intermediate: 20, beginner: 10 };
    Hardcore, already the game's own top difficulty). Collecting stars
    across all units is what now drives the Mastery Ladder, instead of
    tracking Drill and Game as two disconnected progressions. */
-const DRILL_STAR_THRESHOLD = 40;
+/* The same number as BADGE_THRESHOLD, deliberately: a unit's Drill
+   star and its badge are the same achievement told twice, and they
+   were 40 and 35, so a unit could be "Advanced" on its own card and
+   still not starred. Written as the constant rather than as another
+   literal so they cannot drift apart again. */
+const DRILL_STAR_THRESHOLD = BADGE_THRESHOLD;
 function unitDrillStarEarned(name){
   return unitPerfectCount(name) >= DRILL_STAR_THRESHOLD;
 }
@@ -26360,7 +26609,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, no matter where you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "Rankings is the class leaderboards \u2014 level, badges and perfect tests, updating live. Search for anyone, or tap Find me." },
+      text: "Rankings is the class leaderboards \u2014 level, badges and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: "Profile has your name, avatar and colours, your stats, and now your achievements and unlocks too." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
@@ -30547,7 +30796,8 @@ function showAppearance(){
   const motionDetails = document.createElement("div");
   motionDetails.className = "motion-details";
   const extraLab = document.createElement("p");
-  extraLab.className = "slab motion-summary"; extraLab.textContent = "Motion & interaction";
+  extraLab.className = "slab motion-summary"; extraLab.id = "settings-motion";
+  extraLab.textContent = "Motion & interaction";
   motionDetails.appendChild(extraLab);
 
   /* Seven toggles under one header had visibly piled up - reported as
@@ -30563,7 +30813,7 @@ function showAppearance(){
   const studyDetails = document.createElement("div");
   studyDetails.className = "motion-details";
   const studyLab = document.createElement("p");
-  studyLab.className = "slab motion-summary section-divider";
+  studyLab.className = "slab motion-summary section-divider"; studyLab.id = "settings-study";
   /* "While you study" was reported as not reading official enough.
      "Studying & tests" is built the same way as "Motion & interaction"
      above it - two nouns, an ampersand, no second person - so the two
@@ -30764,7 +31014,8 @@ function showAppearance(){
      card treatment (background, padding, rounded corners, subtle
      shadow) Motion & interaction's own header already has above it,
      instead of the plain uppercase label every other section uses. */
-  lbLab.className = "slab section-divider motion-summary"; lbLab.textContent = "Rankings";
+  lbLab.className = "slab section-divider motion-summary"; lbLab.id = "settings-rankings";
+  lbLab.textContent = "Rankings";
   lbSect.appendChild(lbLab);
   const lbRow = document.createElement("label");
   lbRow.className = "opt";
@@ -30807,7 +31058,8 @@ function showAppearance(){
   const syncSect = document.createElement("div");
   syncSect.className = "sect";
   const syncLab = document.createElement("p");
-  syncLab.className = "slab section-divider motion-summary"; syncLab.textContent = "Sync";
+  syncLab.className = "slab section-divider motion-summary"; syncLab.id = "settings-sync";
+  syncLab.textContent = "Sync";
   syncLab.appendChild(buildInfoIcon("Turns on automatically so your progress saves to the cloud as you go. To add a second device, enter this device's code there once \u2014 from then on both devices share the same progress automatically, updating live, no need to enter it again."));
   syncSect.appendChild(syncLab);
 
@@ -31216,9 +31468,21 @@ function showAppearance(){
   if(!store.seenSettingsTour){
     store.seenSettingsTour = true;
     saveStore();
+    /* One step per section, pointed at that section by id. All five
+       headers carry .motion-summary, so the single step this replaces
+       resolved to whichever came first and then described the screen
+       in general terms - including "sharing and install options",
+       which moved under Miscellaneous, and saying nothing at all about
+       Rankings or about what the sync code actually is. */
     startSimpleTour([
-      { target: ".motion-summary", align: "left", vplacement: "below",
-        text: "Fine-tune how the app moves and feels here, plus sync, sharing, and install options further down." }
+      { target: "#settings-motion", align: "left", vplacement: "below",
+        text: "How the app moves: smooth scrolling, reduced motion, and swiping to the next question." },
+      { target: "#settings-study", align: "left", vplacement: "below",
+        text: "How tests behave: keep the screen awake, advance on its own, mute banners, and flag a question you keep missing." },
+      { target: "#settings-rankings", align: "left", vplacement: "below",
+        text: "Turn this off to come off the class leaderboards. Your XP, badges and hundos all still count \u2014 nobody else sees them." },
+      { target: "#settings-sync", align: "left", vplacement: "below",
+        text: "Your sync code is your account. Use it to add a second device, and keep it somewhere safe \u2014 it is the only way back in." }
     ]);
   }
 }
@@ -33607,9 +33871,13 @@ function showProfile(defaultTab){
      completed test sessions, not a new calculation. Handled as its
      own case (plain number, not formatDuration) since the other three
      cards in this same row are all durations and this one isn't. */
+  /* Titles that say what they measure. "Total" beside two other
+     durations does not say total WHAT, and "Sessions" beside them
+     reads as study sessions when the number is completed tests. Both
+     reported as vague, and both were. */
   [["This week", totals.weekMs, "duration"],
-   ["This month", totals.monthMs, "duration"], ["Total", totals.totalMs, "duration"],
-   ["Sessions", sumTestPlays, "count"]].forEach(([label, value, kind]) => {
+   ["This month", totals.monthMs, "duration"], ["All time", totals.totalMs, "duration"],
+   ["Study sessions", sumTestPlays, "count"]].forEach(([label, value, kind]) => {
     const card = document.createElement("div");
     card.className = "stat-card";
     const num = document.createElement("span");
@@ -33625,7 +33893,7 @@ function showProfile(defaultTab){
   const testingStatsSect = document.createElement("div");
   testingStatsSect.className = "points-progress-sect"; testingStatsSect.style.marginTop = "1rem";
   const head1b = document.createElement("p");
-  head1b.className = "slab"; head1b.textContent = "Testing Stats";
+  head1b.className = "slab"; head1b.textContent = "Testing stats";
   testingStatsSect.appendChild(head1b);
 
   const lifeGrid = document.createElement("div");
@@ -33633,12 +33901,16 @@ function showProfile(defaultTab){
   const answered = store.lifetime.answered;
   const correct = store.lifetime.correct;
   const testsCompleted = store.lifetime.drillPlays + store.lifetime.examPlays + store.lifetime.gamePlays;
+  /* "Tests at 100%" is the number this app calls HUNDOS everywhere
+     else, and it has not meant "tests" since scoring went per unit - a
+     run covering three units can add three. Two streaks sat side by
+     side with only one of them saying what it counted. */
   [["Questions answered", String(answered), null],
-   ["Answered correctly", String(correct), null],
-   ["Tests completed", String(testsCompleted), null],
-   ["Tests at 100%", String(store.lifetime.perfectTests), null],
-   ["Correct answer streak", String(store.lifetime.longestStreak), null],
-   ["Current streak", String(store.lifetime.currentStreak || 0), null]].forEach(([label, val, info]) => {
+   ["Correct answers", String(correct), null],
+   ["Tests finished", String(testsCompleted), null],
+   ["Hundos", String(store.lifetime.perfectTests), null],
+   ["Best answer streak", String(store.lifetime.longestStreak), null],
+   ["Current answer streak", String(store.lifetime.currentStreak || 0), null]].forEach(([label, val, info]) => {
     const card = document.createElement("div");
     card.className = "stat-card";
     const num = document.createElement("span");
@@ -33989,6 +34261,23 @@ function showRankings(defaultBoard){
 
   stage.replaceChildren(panel);
   toTop();
+
+  /* The Rewards tour's flag, on the screen that replaced Rewards. It
+     was left set but never read once Rewards became Rankings, so the
+     one screen in the app whose whole job is comparison shipped with
+     no explanation of what the three boards actually rank. */
+  if(!store.seenRewardsTour){
+    store.seenRewardsTour = true;
+    saveStore();
+    startSimpleTour([
+      { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
+        text: "Three boards, three different things. Level is everything you have done; Badges is units you have mastered; Hundos is units you have finished at 100%." },
+      { target: ".rank-search", align: "left", vplacement: "below",
+        text: "Search for anyone in 26E by username." },
+      { target: ".rank-me-btn", align: "right", vplacement: "below",
+        text: "Find me jumps to your own row and flashes it. Everybody's numbers here update live \u2014 there is nothing to refresh." }
+    ]);
+  }
 }
 
 /* Achievements and Unlocks, built as two detached nodes for whoever
