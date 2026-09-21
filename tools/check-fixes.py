@@ -7,6 +7,7 @@ here", which is the question after a batch of device-reported bugs. Every
 check below is a measurement, not a code read.
 """
 import functools, http.server, io, os, re, socket, sys, threading
+from PIL import Image
 from playwright.sync_api import sync_playwright
 
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
@@ -97,6 +98,28 @@ def main():
                         pg.on("pageerror", lambda e: errs.append(str(e)[:120]))
                         pg.goto(url); pg.wait_for_timeout(1400)
 
+                        # --- REPRODUCTION, not a happy path. The splash bug is
+                        # an oversized fixed box during an iOS launch, which
+                        # Chromium never produces on its own: measured here the
+                        # overlay matches the viewport on frame one, which is
+                        # exactly why two earlier "fixes" passed locally and
+                        # shipped broken. Force the box oversized and require
+                        # the group to stay centred on the VIEWPORT.
+                        sp = pg.evaluate("""()=>{
+                          const o=document.getElementById('splashscreen'); if(!o) return null;
+                          o.style.width=(innerWidth+260)+'px'; o.style.height=(innerHeight+260)+'px';
+                          return new Promise(res=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                            const g=document.getElementById('splash-group');
+                            const r=g.getBoundingClientRect();
+                            res({dx:Math.round((r.left+r.right)/2-innerWidth/2),
+                                 dy:Math.round((r.top+r.bottom)/2-innerHeight/2),
+                                 vis:+getComputedStyle(g).opacity>0});})));}""")
+                        if sp is not None:
+                            if abs(sp["dx"])>2 or abs(sp["dy"])>2:
+                                fails.append(f"{tag}: splash off-centre by {sp['dx']},{sp['dy']} in an oversized box")
+                            if not sp["vis"]:
+                                fails.append(f"{tag}: splash group never became visible")
+
                         # 2. splash: revealed and centred, before it is torn down
                         sp = pg.evaluate("""()=>{const g=document.getElementById('splash-group');
                           if(!g) return null; const r=g.getBoundingClientRect();
@@ -128,17 +151,28 @@ def main():
                         if not c["profileTab"]:
                             fails.append(f"{tag}: #bottomtab-profile missing (points fly target)")
 
-                        # 1. grey bar, measured: nothing flat below the glow
+                        # --- REPRODUCTION. The grey bar is html's fallback
+                        # showing where body::before does not paint, so the
+                        # test recreates exactly that: hide body::before, hide
+                        # the page's own content (or the sample lands on the
+                        # UI), scroll to the end, and require the bottom row to
+                        # match the background just above the 100lvh boundary.
+                        # A flat var(--paper) strip is what the bug looks like.
                         band = pg.evaluate("""()=>{
-                          const s=document.createElement('style');
-                          s.id='__probe'; s.textContent='body::before{display:none !important}';
+                          const s=document.createElement('style'); s.id='__probe';
+                          s.textContent='body::before{display:none!important} body>*{visibility:hidden!important}';
                           document.head.appendChild(s);
                           window.scrollTo(0, document.documentElement.scrollHeight);
-                          return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
-                            const cs=getComputedStyle(document.documentElement);
-                            r({attach:cs.backgroundAttachment.split(',')[0].trim(),
-                               over:document.documentElement.scrollHeight-innerHeight});
-                          })));}""")
+                          return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>
+                            r({over:document.documentElement.scrollHeight-innerHeight}))));}""")
+                        shot = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+                        SW, SH = shot.size
+                        cx = SW // 2
+                        bottom = shot.getpixel((cx, SH - 1))
+                        above = shot.getpixel((cx, max(0, SH - 1 - band["over"] - 6)))
+                        delta = max(abs(p - q) for p, q in zip(bottom, above))
+                        if delta > 4:
+                            fails.append(f"{tag}: GREY BAR - bottom {bottom} vs {above}, delta {delta}")
                         pg.evaluate("()=>document.getElementById('__probe')?.remove()")
 
                         # 7. back-to-top must never sit under the tab bar

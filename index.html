@@ -569,7 +569,15 @@
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
-      radial-gradient(ellipse 120% 55% at 50% 104%, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
+      /* Viewport units, not percentages, and this is not a style choice:
+         the html fallback has to state this same ellipse over a
+         DOCUMENT-sized box so it continues below the first viewport
+         (see that rule's note), and percentages there would stretch it.
+         Inside this box - fixed, inset:0, one viewport - 120vw/55lvh/
+         50vw/104lvh computes to exactly what 120%/55%/50%/104% did, so
+         nothing here moves; it just makes the two declarations the same
+         text, which is the only way they stay the same pixels. */
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
       var(--paper);
   }
   /* A hard, flat-colored bar running the full width of the very top of
@@ -630,23 +638,8 @@
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 6%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 6%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
-    /* background-attachment:fixed, and it is the whole fix for the grey
-       bar along the bottom edge. background-size pins the gradient to one
-       viewport, but with the default `scroll` attachment that box is
-       anchored to the top of the DOCUMENT, not the viewport - so on any
-       screen taller than the viewport, everything past the first 100lvh
-       is bare var(--paper). Measured at 1210x834 (an iPad Pro 11" on its
-       side): the document is 842px, and the last 8px scrolled to a flat
-       #12161B with no glow in it at all. On a real device it was 29px,
-       reported as a grey bar that disappears while scrolling and creeps
-       back - body::before is fixed and normally covers it, which is why
-       it is a strip at the safe-area edge rather than a solid block.
-       `fixed` makes the positioning area the viewport, so this layer is
-       identical to body::before at every scroll offset and there is no
-       "below the gradient" region left to be flat. */
     background-size:100vw 100lvh;
     background-repeat:no-repeat;
-    background-attachment:fixed;
   }
   /* Kept pixel-identical to the body::before stack above - that is the
      whole point of this rule (see its note), so every layer, every
@@ -654,13 +647,84 @@
      background-attachment included: see the note on the rule above. */
   html[data-theme="dark"][data-layout="modern"]{
     background:
+      /* Identical to body::before's, circles and all. An ellipse in
+         viewport units was tried here so these two could also run the
+         full document height: it killed the boundary step, and it broke
+         the one invariant this rule exists for. Measured against
+         body::before it was up to 22 levels out - so wherever that fixed
+         layer failed at the TOP (the status-bar strip this fallback was
+         written for in the first place) it would have painted a brand
+         new seam there. A farthest-corner circle is measured from the
+         LAYER'S box, so it cannot be given a document-sized box without
+         changing shape, and matching it on body::before would change the
+         app's actual background. Left alone. */
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
-      radial-gradient(ellipse 120% 55% at 50% 104%, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
+      /* THE GREY BAR FIX. Same ellipse as body::before's, but written in
+         VIEWPORT UNITS instead of percentages, which lets this one layer
+         be sized to the whole document (100vw 100%) instead of to one
+         viewport - so it simply never ends, and there is no boundary for
+         a seam to appear at.
+
+         Why a boundary existed: html's box is the whole DOCUMENT, the
+         glows were sized to 100lvh and no-repeat, so anything past the
+         first viewport fell through to flat var(--paper). Measured as a
+         flat #12161B strip - exactly the colour sampled out of the
+         reported screenshot.
+
+         Two earlier attempts failed and are worth not repeating.
+         background-attachment:fixed: Chromium reports it honoured,
+         which is why it looked fixed from here, but **iOS Safari has
+         never supported it** - WebKit silently treats it as `scroll` -
+         so it did nothing on the one platform it was for. Then a flat
+         fill below the boundary in the edge colour: measured, that edge
+         is not one colour. It varies ~10 levels across the width
+         because this ellipse is centred at 50%, and changes again at
+         the tablet breakpoint where the glow radii double. No constant
+         can match it.
+
+         Percentages inside a radial-gradient resolve against the
+         layer's own box, so a full-document box would have stretched
+         this ellipse - the documented seam this file already warns
+         about. Viewport units do not: 120vw/55lvh/50vw/104lvh compute
+         to the same pixels the 120%/55%/50%/104% version does inside a
+         100vw x 100lvh box, which is exactly body::before's box. The
+         two layers stay pixel-identical, which is the whole point of
+         this rule, and the continuation below the fold is the same
+         gradient rather than an approximation of it.
+
+         The two corner glows above keep their 100lvh box: they sit at
+         8% and 25% from the top and have faded out long before the
+         first viewport ends, so they have nothing to continue. */
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
+      /* The corner glows, continued past the first viewport, and the
+         trick is that these are MIRRORED copies sitting at 0 100lvh.
+
+         The two above cannot be given a document-sized box: they are
+         farthest-corner circles, so the box is what defines their
+         radius, and changing it changes their shape - measured at up to
+         22 levels away from body::before, which would have put a fresh
+         seam at the top of the screen. So they stay exactly as they
+         are, and they stop dead at 100lvh. On a phone that is invisible
+         (radii are 40%/45%, long faded). On a TABLET the radii double
+         to 100%/100%, so both are still strong at the cut: a 17-level
+         step at the boundary on an iPad in landscape, which is the
+         device and orientation this was reported from.
+
+         A layer positioned at 0 100lvh paints NOTHING above that line,
+         so anything here is free - it cannot alter the page or the
+         identity with body::before, and the checks confirm both stay at
+         0. Mirroring each centre vertically (8% -> 92%, 25% -> 75%) is
+         what makes it continuous rather than merely close: a mirrored
+         copy evaluated at its own y=0 is the original evaluated at its
+         y=100%, so the two meet at exactly the same value and carry on
+         from there. */
+      radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
-    background-size:100vw 100lvh;
+    background-size:100vw 100lvh, 100vw 100lvh, 100vw 100%, 100vw 100lvh, 100vw 100lvh, auto;
+    background-position:0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0;
     background-repeat:no-repeat;
-    background-attachment:fixed;
   }
   /* Toned down specifically while a question is actively on screen \u2014
      per explicit feedback that the full ambient glow read as a bit
@@ -761,17 +825,30 @@
     transition:opacity .5s ease;
   }
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
-  /* Held at opacity:0 until the viewport stops changing - see the
-     script under the markup. The sizing above (100vw/100lvh rather than
-     inset:0 alone) was the previous attempt at the bottom-right launch
-     and it was not enough: those units resolve against the same viewport
-     iOS is still settling, so for the first frames the box is bigger than
-     the screen and a centred group sits low and right of the real centre.
-     Rather than keep guessing at a unit that measures correctly during a
-     launch, this simply does not paint the group until two measurements
-     agree. Nothing mis-positioned is ever on screen to move. */
+  /* Positioned in PIXELS from the top-left, not centred inside its
+     parent, and that distinction is the whole fix for the bottom-right
+     launch.
+
+     Two attempts failed before this. First the overlay's sizing units
+     were changed (100vw/100lvh instead of inset:0 alone) - those resolve
+     against the very viewport iOS is still settling. Then the group was
+     held hidden until innerHeight stopped changing - but innerHeight
+     reports its final value immediately while the fixed BOX is still
+     oversized, so the gate passed and the group appeared in the corner
+     anyway. Chromium cannot reproduce any of it: measured here, the
+     overlay's rect matches the viewport on the very first frame, so both
+     attempts "passed" locally without ever being exercised.
+
+     What is actually wrong during a launch is the fixed box's SIZE, not
+     its origin - it starts at 0,0 and is too big. Centring inside it
+     (align-items/justify-content) therefore lands low and right by half
+     the error. Explicit left/top in pixels, measured from visualViewport,
+     is immune to that: the origin is right, so pixel offsets are right,
+     however wrong the box is. JS sets them; see the script under the
+     markup. */
   #splash-group{
     display:flex; flex-direction:column; align-items:center; gap:.7rem;
+    position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
     opacity:0;
   }
   #splash-group.splash-ready{ animation:splash-in .4s ease forwards; }
@@ -7275,24 +7352,44 @@
   </div>
 </div>
 <script>
-  /* Reveal the splash group only once the viewport has settled, so the
-     bottom-right-then-jump-to-centre launch cannot be seen. Three
-     consecutive frames reporting the same innerHeight is the signal;
-     the counter is a hard ceiling so a viewport that never stops
-     reporting new numbers still shows the splash rather than a blank
-     screen. ~40 frames is about two thirds of a second against a splash
-     that runs 8 seconds on a first run. Runs from <head>-adjacent markup
-     with no dependencies, deliberately: anything deferred loses the race
-     with the frames it is trying to hide. */
+  /* Centres the splash group on the VISIBLE viewport in pixels, and
+     keeps doing it while the viewport settles. See #splash-group's own
+     note for why pixels rather than percentages: during an iOS launch
+     the fixed box is oversized but still starts at 0,0, so a percentage
+     centre lands low and right while a pixel centre does not.
+
+     visualViewport is the visible region and is what moves during a
+     launch; innerWidth/innerHeight are the fallback for anything that
+     lacks it. Re-run on every visualViewport change AND on a short rAF
+     loop, because the first frames of a standalone launch can resize
+     without firing an event.
+
+     The group stays at opacity:0 until the first placement has actually
+     been applied, so nothing is ever painted at a position that is
+     about to change. The frame ceiling means a viewport that never
+     settles still shows a splash rather than a blank screen. */
   (function(){
     var g = document.getElementById("splash-group");
     if(!g) return;
-    var last = -1, stable = 0, frames = 0;
+    var vv = window.visualViewport || null;
+    function place(){
+      var w = vv ? vv.width  : window.innerWidth;
+      var h = vv ? vv.height : window.innerHeight;
+      g.style.left = Math.round(w / 2) + "px";
+      g.style.top  = Math.round(h / 2) + "px";
+    }
+    place();
+    g.classList.add("splash-ready");
+    if(vv){
+      vv.addEventListener("resize", place);
+      vv.addEventListener("scroll", place);
+    }
+    window.addEventListener("resize", place);
+    window.addEventListener("orientationchange", place);
+    var frames = 0;
     (function tick(){
-      var h = window.innerHeight;
-      if(h === last){ stable++; } else { stable = 0; last = h; }
-      if(stable >= 3 || ++frames > 40){ g.classList.add("splash-ready"); return; }
-      requestAnimationFrame(tick);
+      place();
+      if(++frames < 90) requestAnimationFrame(tick);
     })();
   })();
 </script>
@@ -28728,7 +28825,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-57";
+const APP_BUILD = "2026-09-21-58";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
