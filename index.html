@@ -5427,6 +5427,25 @@
        the same complaint the intro cards and Pick your class got. */
     .cosmic-welcome-hint{ margin-top:.6rem; font-size:1rem; max-width:28rem; }
   }
+  /* Letting laptops into the block above was right for Home and too much
+     for Welcome. Home gained real clearance (a MacBook Pro 14" sits 34px
+     above the tab bar), but Welcome is a hero, a title, a sub and two
+     buttons stacked in a column, and at tablet SPACING - a 1.5rem flex
+     gap and a 2.4rem margin under the sphere - that column ran 34px off
+     the bottom of a 1512x852 window, with a 1920x1080 Dell down to 20px
+     of clearance. The type stays enlarged, which is what a laptop
+     actually needed; only the spacing comes back to something a short
+     viewport can carry. 64rem of height is 1024px, which takes in every
+     laptop window in the matrix including a MacBook Pro 16"; paired with
+     64rem of WIDTH it still cannot reach an iPad, because the only one
+     that is 1024px tall is 768px wide and the only one that is 1024px
+     wide is 1366px tall. */
+  @media (min-width:64rem) and (max-height:64rem){
+    .cosmic-welcome{ gap:.55rem; }
+    .cosmic-welcome-title{ margin-top:1.1rem; }
+    .cosmic-welcome-actions{ gap:.6rem; }
+    .cosmic-welcome-hint{ margin-top:.3rem; }
+  }
   /* The mirror image of the tall-tablet block above, and the reason it
      exists: on a SHORT viewport Home does not fit, and the Start
      Studying button lands underneath the fixed bottom tab bar. Measured
@@ -28276,7 +28295,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-49";
+const APP_BUILD = "2026-09-21-50";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
