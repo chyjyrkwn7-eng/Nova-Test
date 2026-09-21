@@ -630,12 +630,28 @@
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 6%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 6%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
+    /* background-attachment:fixed, and it is the whole fix for the grey
+       bar along the bottom edge. background-size pins the gradient to one
+       viewport, but with the default `scroll` attachment that box is
+       anchored to the top of the DOCUMENT, not the viewport - so on any
+       screen taller than the viewport, everything past the first 100lvh
+       is bare var(--paper). Measured at 1210x834 (an iPad Pro 11" on its
+       side): the document is 842px, and the last 8px scrolled to a flat
+       #12161B with no glow in it at all. On a real device it was 29px,
+       reported as a grey bar that disappears while scrolling and creeps
+       back - body::before is fixed and normally covers it, which is why
+       it is a strip at the safe-area edge rather than a solid block.
+       `fixed` makes the positioning area the viewport, so this layer is
+       identical to body::before at every scroll offset and there is no
+       "below the gradient" region left to be flat. */
     background-size:100vw 100lvh;
     background-repeat:no-repeat;
+    background-attachment:fixed;
   }
   /* Kept pixel-identical to the body::before stack above - that is the
      whole point of this rule (see its note), so every layer, every
-     percentage and every position has to be copied, not approximated. */
+     percentage and every position has to be copied, not approximated.
+     background-attachment included: see the note on the rule above. */
   html[data-theme="dark"][data-layout="modern"]{
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
@@ -644,6 +660,7 @@
       var(--paper);
     background-size:100vw 100lvh;
     background-repeat:no-repeat;
+    background-attachment:fixed;
   }
   /* Toned down specifically while a question is actively on screen \u2014
      per explicit feedback that the full ambient glow read as a bit
@@ -744,10 +761,20 @@
     transition:opacity .5s ease;
   }
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
+  /* Held at opacity:0 until the viewport stops changing - see the
+     script under the markup. The sizing above (100vw/100lvh rather than
+     inset:0 alone) was the previous attempt at the bottom-right launch
+     and it was not enough: those units resolve against the same viewport
+     iOS is still settling, so for the first frames the box is bigger than
+     the screen and a centred group sits low and right of the real centre.
+     Rather than keep guessing at a unit that measures correctly during a
+     launch, this simply does not paint the group until two measurements
+     agree. Nothing mis-positioned is ever on screen to move. */
   #splash-group{
     display:flex; flex-direction:column; align-items:center; gap:.7rem;
-    opacity:0; animation:splash-in .4s ease forwards;
+    opacity:0;
   }
+  #splash-group.splash-ready{ animation:splash-in .4s ease forwards; }
   /* The Nova wordmark, in the same warm gradient as the app icon and
      welcome-screen sphere, so the very first thing anyone sees already
      carries the brand's own color identity. */
@@ -3884,6 +3911,28 @@
   @media (min-width:40rem) and (min-height:30rem){
     body.has-bottomtabs:not(.has-floatbtn) .backtotop{ bottom:8.1rem; }
   }
+  /* Down into the actual corner on anything wide enough for the corner
+     to be empty. Reported as sitting "above the corner quite a bit", and
+     measured it was: 130px up, with the bottom-right of the screen bare
+     underneath it. The reason it is lifted at all is the tab bar, but on
+     a tablet that bar is a 432px centred pill with 156-467px of clear
+     space to its right (measured on an iPad mini through a Dell
+     Latitude), so there is nothing to clear - it can sit beside the bar
+     rather than above it, at the bar's own offset from the bottom.
+     Phones keep the lift: there the same pill leaves only 15-48px beside
+     it, which a 44px button does not fit into.
+     44rem rather than 40rem so the narrowest tablet still has real
+     clearance instead of the 8px a 40rem gate works out to. The :has()
+     excludes any screen carrying the daily question button, which already
+     owns this corner. right: uses the corner formula, NOT the one on
+     .daily-question-fab - that one is relative to the centred tab bar and
+     grows away from the edge as the viewport widens. */
+  @media (min-width:44rem){
+    body.has-bottomtabs:not(.has-floatbtn):not(:has(.daily-question-fab)) .backtotop{
+      bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+      right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
+    }
+  }
 
   /* Matched to the app's actual standard Liquid Glass recipe (the
      same one the searchbox and other glass surfaces use) rather than
@@ -5035,6 +5084,15 @@
      the viewBox (see buildCosmicHero): that changes the element's own
      aspect ratio and shifts the greeting/title below it on Home. */
   .cosmic-hero-svg{ width:100%; height:auto; display:block; overflow:visible; }
+  /* Reported from a device: tapping the sphere flashes a black box round
+     it before the bubble appears. That is iOS's default tap highlight.
+     The blanket rule near the top of this file only covers `button`, and
+     the sphere's click listener lives on an SVG circle, so it was never
+     included. Set on the wrapper and everything under it because the
+     highlight is drawn for whichever node actually receives the tap, and
+     inside an SVG that can be any of several children. */
+  .cosmic-hero-wrap,
+  .cosmic-hero-wrap *{ -webkit-tap-highlight-color:transparent; }
   .cosmic-orbit-ring{ fill:none; stroke:rgba(255,255,255,.16); stroke-width:1; }
   [data-theme="light"] .cosmic-orbit-ring{ stroke:rgba(18,26,32,.14); }
   /* The permanent post-Supernova ring treatment \u2014 a warm, Nova-toned
@@ -6760,26 +6818,31 @@
     background:rgba(28,33,40,.55);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
   }
-  /* Solid white, deliberately NOT the glass treatment every other
-     control on this screen uses. Reported as blending in, and that is
-     what glass does here: a translucent, blurred surface sitting on a
-     dark, low-contrast background reads as part of the background
-     rather than as something tappable. This is the one control on the
-     screen that has to be findable, so it takes the same solid,
-     high-contrast surface the primary action buttons use. Placed after
-     the dark rule above because they have equal specificity - order is
-     what decides it. */
+  /* Solid, deliberately NOT the glass treatment every other control on
+     this screen uses - glass on a dark, low-contrast background reads as
+     part of the background rather than as something tappable, and this
+     is the one control on the screen that has to be findable. It was
+     solid WHITE for that reason and has been asked for in black: the
+     colour is the request, the solidity is what makes it work, so only
+     the colour moves. #0A0A0C and the matte shadow stack are lifted
+     from .next.ghost (Welcome's "Sign in with a code"), so this is
+     recognisably the app's own black button rather than a new one.
+     Placed after the dark rule above because they have equal
+     specificity - order is what decides it. */
   [data-layout="modern"] .more-toggle.adv-toggle,
   [data-theme="dark"][data-layout="modern"] .more-toggle.adv-toggle{
-    background:#F3F5F7;
-    color:#12161B;
+    background:#0A0A0C;
+    color:#F3F5F7;
     backdrop-filter:none; -webkit-backdrop-filter:none;
-    box-shadow:0 2px 10px rgba(0,0,0,.3);
+    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
   }
-  /* The chevron draws itself from var(--ink), which is near-white in
-     dark mode and would disappear entirely against a white button. */
+  [data-layout="modern"] .more-toggle.adv-toggle:active{ background:#000; }
+  /* The chevron draws itself from var(--ink). Near-white is right on
+     this button now that the button is black - it was overridden to
+     near-black only because the button used to be white. */
   .more-toggle.adv-toggle .more-toggle-icon{
-    border-right-color:#12161B; border-bottom-color:#12161B;
+    border-right-color:#F3F5F7; border-bottom-color:#F3F5F7;
   }
   [data-layout="modern"] .stat-card{ border-radius:14px; }
   [data-layout="modern"] .tick{ border-radius:3px; height:8px; }
@@ -7083,6 +7146,28 @@
     <div id="splash-track"><div id="splash-fill"></div></div>
   </div>
 </div>
+<script>
+  /* Reveal the splash group only once the viewport has settled, so the
+     bottom-right-then-jump-to-centre launch cannot be seen. Three
+     consecutive frames reporting the same innerHeight is the signal;
+     the counter is a hard ceiling so a viewport that never stops
+     reporting new numbers still shows the splash rather than a blank
+     screen. ~40 frames is about two thirds of a second against a splash
+     that runs 8 seconds on a first run. Runs from <head>-adjacent markup
+     with no dependencies, deliberately: anything deferred loses the race
+     with the frames it is trying to hide. */
+  (function(){
+    var g = document.getElementById("splash-group");
+    if(!g) return;
+    var last = -1, stable = 0, frames = 0;
+    (function tick(){
+      var h = window.innerHeight;
+      if(h === last){ stable++; } else { stable = 0; last = h; }
+      if(stable >= 3 || ++frames > 40){ g.classList.add("splash-ready"); return; }
+      requestAnimationFrame(tick);
+    })();
+  })();
+</script>
 <script>
   (function(){
     /* The actual fix for the splash screen not reflecting a saved
@@ -23830,9 +23915,11 @@ function showReleaseHistory(){
   const panel = document.createElement("section");
   panel.className = "panel";
 
-  const back = buildBackLink("Back to Main menu", showHome);
-  panel.appendChild(back);
-
+  /* No back link. Per explicit request, and consistent with the rule
+     the rest of the app already follows: a screen the bottom tab bar
+     can already leave does not get its own exit. Release History is
+     reached from Home's version label and every tab is one tap away
+     from here. */
   const head = document.createElement("p");
   head.className = "slab section-divider";
   head.textContent = "Release History";
@@ -25522,7 +25609,7 @@ function startMainMenuTour(){
        through the tour when it's a natural continuation of the
        screen the person is already looking at. */
     { target: ".daily-question-fab", align: "right", vplacement: "above",
-      text: "One question, one attempt, resets daily \u2014 get it right for a genuine 100 points, no second tries and no retakes." },
+      text: "This is your daily question \u2014 one a day, one attempt, worth 100 points. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
       text: "Those circles orbiting the sphere are your Flares \u2014 one for each Mastery Ladder tier. They light up as you climb, and you can tap any of them to see exactly what is left to unlock." },
     { target: "#nextbtn", align: "left", vplacement: "above",
@@ -25555,14 +25642,13 @@ function startMainMenuTour(){
    pulse, so earning points always feels like it's "going somewhere"
    instead of just appearing silently in a stat block. */
 function showPointsFlyEffect(message){
-  /* Destination changed from Profile to Rewards, per explicit request
-     to use my own judgment here \u2014 Rewards is where the app's own
-     dedicated Points/Stars boxes actually live (per the app's own
-     established design, referenced directly in its own release notes:
-     "Right there in Rewards... your Points and Stars box"), so flying
-     there matches where the thing just earned actually lives, rather
-     than Profile, which is about identity and settings. */
-  const avatarBtn = document.getElementById("bottomtab-rewards");
+  /* Back to Profile, per explicit request. It was moved to Rewards on
+     my own judgment - Rewards holds the Points and Stars boxes, so that
+     seemed to be where an earned thing belongs - and seen on a device
+     that is not how it reads: the tab that just lit up is the one you
+     expect to open and find yourself in. Judgment call reversed; the
+     ask is the answer. */
+  const avatarBtn = document.getElementById("bottomtab-profile");
   const banner = document.createElement("div");
   banner.id = "welcomebonus-banner";
   banner.textContent = message;
@@ -25924,7 +26010,16 @@ function showDailyQuestionLockedPopup(){
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
   const timeLeft = h > 0 ? h + "h " + m + "m" : m + "m";
-  showToast("Already done for today \u2014 resets in " + timeLeft + " (5pm daily).");
+  /* A top banner, not a toast. Reported from a device: tapping the "?"
+     after the question is already answered put the message behind the
+     bottom tab bar. That is the same thing already measured and written
+     up for the daily reset announcement - a toast lands in the bottom
+     corner and Home's bottom corner is full (the "?" itself, Start
+     Studying and the tab bar), with only 26px between the two things it
+     can collide with, so there is no height down there that works.
+     showDailyAlert() is the banner built for exactly this message and it
+     already positions itself under the update notice when one is up. */
+  showDailyAlert("Already done for today \u2014 resets in " + timeLeft + " (5pm daily).");
 }
 
 function showHome(){
@@ -28412,7 +28507,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-54";
+const APP_BUILD = "2026-09-21-55";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -30042,8 +30137,25 @@ function showAppearance(){
        correctly, but any other failure now falls through to the same
        clipboard fallback used when the API is missing entirely,
        so the button always does something visible either way. */
+    /* iPadOS presents navigator.share() as a POPOVER anchored to the
+       element that received the tap, not as the sheet an iPhone gets.
+       Reported from an iPad: the sheet opens partly off-screen and
+       cannot be used. Share sits low in Settings on a screen that
+       scrolls, and an anchor near or past the edge of the viewport is
+       exactly what puts the popover off it. Centring the button first
+       gives WebKit an anchor with room on every side; the rAF pair is
+       there because the scroll has to have actually happened before the
+       call, and scrollIntoView is asynchronous.
+       There is no web API to position that popover, so this is a
+       mitigation rather than a guarantee - and it cannot be verified
+       from a desktop Chromium, which has no such popover at all. If it
+       still lands off-screen on a device, the answer is to stop calling
+       navigator.share on iPad and go straight to the copy-link path
+       below, which always works. */
     if(navigator.share){
       try {
+        shareBtn.scrollIntoView({ block: "center", behavior: "auto" });
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         await navigator.share(shareData);
         return;
       } catch(e){
