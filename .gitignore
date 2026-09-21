@@ -3,3 +3,8 @@
 # scripts). Nothing in here belongs in the repo.
 __pycache__/
 *.pyc
+
+# Screenshots written by tools/shoot-flow.py (and anything else pointed at
+# SHOOT_OUT). Regenerated on every run, ~130MB a time, and nothing at runtime
+# reads them - they exist to be looked at once and sent on.
+tools/walk/
