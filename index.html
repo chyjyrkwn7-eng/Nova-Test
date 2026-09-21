@@ -8240,18 +8240,6 @@
   }
   .badge-quiet-note.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* The lobby's level badge, the same object the rankings rows carry so
-     the two screens agree about what a level looks like. */
-  .vroom-avatar-wrap{ position:relative; }
-  .vroom-level{
-    position:absolute; right:-.22rem; bottom:-.22rem;
-    min-width:1.15rem; height:1.15rem; padding:0 .22rem;
-    display:flex; align-items:center; justify-content:center;
-    border-radius:999px; box-sizing:border-box;
-    background:#2563EB; color:#FFFFFF;
-    font-family:var(--mono); font-size:.62rem; font-weight:800; line-height:1;
-    border:1.5px solid var(--paper);
-  }
 
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -23209,30 +23197,30 @@ function buildRankEmblemSVG(rankKey, lit){
   return svg;
 }
 
-/* A person's character with their rank and level hung off it. Every
-   list that shows somebody - the three rankings boards, the Virtual
-   Room lobby, the Virtual Room results - calls this, so a classmate
-   looks the same wherever they turn up.
-   The rank emblem goes top-left and the level bottom-right, both
-   ON the avatar rather than beside it: a row already carries a place
-   marker, a name and a stat line, and on a 320px phone there is no
-   spare width for two more boxes in the flow. */
+/* A person's character with their rank on it. Every list that shows
+   somebody - the three rankings boards, the Virtual Room lobby, the
+   Virtual Room results - calls this, so a classmate looks the same
+   wherever they turn up.
+   The rank emblem hangs ON the avatar rather than beside it: a row
+   already carries a place marker, a name and a stat line, and on a
+   320px phone there is no spare width for another box in the flow.
+   It used to carry a small blue level number in the opposite corner as
+   well - asked for, built, and then asked against ("forget the little
+   level thing next to the characters, I do like the rank icon
+   though"). A rank already says roughly where somebody is, the boards
+   rank on the number itself, and two marks on one 42px character is
+   one too many. Don't add it back. */
 function decorateAvatar(avatarSpan, level, badges, mystery){
   const key = rankOfStats(level || 1, badges || 0, mystery || 0);
-  if(key){
-    const mark = document.createElement("span");
-    mark.className = "lb-rankmark";
-    mark.title = RANK_DISPLAY_NAME[key];
-    mark.style.setProperty("--rank-color", ACCENT_SWATCH[key]);
-    mark.appendChild(buildRankEmblemSVG(key, true));
-    avatarSpan.appendChild(mark);
-  }
-  const lvl = document.createElement("span");
-  lvl.className = "vroom-level";
-  /* A room or a board entry written by an older build carries no
-     level; 1 is the floor, so it reads as a level rather than a gap. */
-  lvl.textContent = String(level || 1);
-  avatarSpan.appendChild(lvl);
+  /* Nothing at all below Rookie, which is correct: there is no rank to
+     show, and a placeholder would be saying otherwise. */
+  if(!key) return avatarSpan;
+  const mark = document.createElement("span");
+  mark.className = "lb-rankmark";
+  mark.title = RANK_DISPLAY_NAME[key];
+  mark.style.setProperty("--rank-color", ACCENT_SWATCH[key]);
+  mark.appendChild(buildRankEmblemSVG(key, true));
+  avatarSpan.appendChild(mark);
   return avatarSpan;
 }
 
@@ -30778,7 +30766,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-72";
+const APP_BUILD = "2026-09-21-73";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33609,7 +33597,7 @@ function showVirtualRoomLobby(){
            it does not know, and three classmates once vanished off the
            leaderboard because of it. */
         const avatarWrap = document.createElement("span");
-        avatarWrap.className = "lb-avatar vroom-avatar-wrap";
+        avatarWrap.className = "lb-avatar";
         avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
         decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
         const nameWrap = document.createElement("span");

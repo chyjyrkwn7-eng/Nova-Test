@@ -176,7 +176,7 @@ def main():
 
         ctx.add_init_script("try{localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
 
-        def open_tab(name, avatar, points, code):
+        def open_tab(name, avatar, points, code, badges=0):
             pg = ctx.new_page()
             pg.route("**/index.html", lambda r: r.fulfill(
                 status=200, headers={"content-type": "text/html; charset=utf-8"},
@@ -189,12 +189,24 @@ def main():
               store.firstName = a.name;
               store.avatarChar = a.avatar;
               store.lifetime.points = a.points;
+              /* Badges as well as points, because a rank needs both and
+                 the lobby shows the rank. Mastering the first N units
+                 is the cheapest way to hold a given one. */
+              store.unitPerfects = {};
+              topicsIn(QUESTIONS).slice(0, a.badges).forEach(u => {
+                store.unitPerfects[u] = BADGE_THRESHOLD;
+              });
               syncCode = a.code;
-            }""", {"name": name, "avatar": avatar, "points": points, "code": code})
+            }""", {"name": name, "avatar": avatar, "points": points, "code": code,
+                   "badges": badges})
             return pg
 
-        host = open_tab("Madison", "ninja", 14820, "HOST-0001")
-        guest = open_tab("Devonte", "ghost", 3100, "GUES-0002")
+        # Different ranks on purpose: Madison clears Veteran (level 20,
+        # 4 badges) and Devonte only Rookie (level 5, 1 badge), so a row
+        # showing the wrong emblem cannot pass by showing the same one
+        # twice.
+        host = open_tab("Madison", "ninja", 14820, "HOST-0001", 4)
+        guest = open_tab("Devonte", "ghost", 3100, "GUES-0002", 1)
         # Only one tab can be in front, and a background tab has its rAF
         # throttled - which showed up as the host "starting a second late"
         # when it was simply not being given frames. Two phones are both
@@ -238,9 +250,15 @@ def main():
               seen["ready"] >= 1, seen)
 
         print("\n3. the lobby says who you are up against")
-        levels = host.evaluate("""()=>[...document.querySelectorAll('.vroom-row')]
-          .map(r=>{const l=r.querySelector('.vroom-level'); return l ? l.textContent : null;})""")
-        check("every row carries a level", len(levels) >= 2 and all(v for v in levels), levels)
+        # The small blue level number that used to sit here is gone -
+        # that used to sit here is gone - asked for, built, and then
+        # asked against. The rank emblem is what stayed.
+        ranks = host.evaluate("""()=>[...document.querySelectorAll('.vroom-row')]
+          .map(r=>{const m=r.querySelector('.lb-rankmark'); return m ? m.title : null;})""")
+        check("every row carries its person's rank",
+              sorted(r for r in ranks if r) == ["Rookie", "Veteran"], ranks)
+        check("no level number beside the character",
+              host.evaluate("()=>!document.querySelector('.vroom-level')"), "none")
 
         print("\n4. everybody starts at the same instant")
         host.evaluate("()=>document.querySelector('.vroom-readyup-btn')?.click()")

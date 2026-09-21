@@ -958,14 +958,24 @@ is the rank.
   Home, the theme colour, and the rank's emblem beside your name. The
   reference lists four per tier and it would have been easy to pad;
   a reward that does not exist is worse than a short list.
-- **A person's rank and level hang off their character, not beside it.**
+- **A person's rank hangs off their character, not beside it.**
   `decorateAvatar()` is the one builder — the three rankings boards, the
   Virtual Room lobby and the Virtual Room results all call it, so a
-  classmate looks the same wherever they turn up. Emblem top-left on a
-  dark coin (Rookie's is grey by design and vanished against a dark
-  avatar), level bottom-right. In the flow they would not fit: a row
-  already carries a place marker, a name and a stat line, and a 320px
-  phone has no spare width.
+  classmate looks the same wherever they turn up. It goes top-left on a
+  dark coin: Rookie's emblem is grey by design and vanished against a
+  dark avatar, and the coin gives every rank the same footprint. In the
+  flow it would not fit — a row already carries a place marker, a name
+  and a stat line, and a 320px phone has no spare width.
+  **There is no level number beside it, and there was.** A small blue
+  one sat in the opposite corner, asked for on the Virtual Room lobby
+  and then asked against everywhere ("forget the little level thing next
+  to the characters, I do like the rank icon though"). A rank already
+  says roughly where somebody is, the Level board ranks on the number
+  itself so it is already printed on the row, and two marks on one 42px
+  character is one too many. Somebody below Rookie gets nothing, which
+  is correct: there is no rank to show and a placeholder would say
+  otherwise. `check-behaviour` and `check-vroom` both assert its
+  absence, so it cannot come back by accident.
 
 ### Badges
 

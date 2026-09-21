@@ -430,16 +430,20 @@ def check_ranks(br):
     row = pg.evaluate("""()=>{const a=document.createElement('span');
       a.className='lb-avatar'; a.appendChild(buildAvatarCharSVGSafe('ninja'));
       decorateAvatar(a, 34, 6, 0);
-      const m=a.querySelector('.lb-rankmark'), l=a.querySelector('.vroom-level');
       const un=document.createElement('span'); un.className='lb-avatar';
       decorateAvatar(un, 1, 0, 0);
-      return {rank:m&&m.title, level:l&&l.textContent,
+      return {rank:(a.querySelector('.lb-rankmark')||{}).title,
+              level:!!a.querySelector('.vroom-level'),
               unranked:!un.querySelector('.lb-rankmark'),
-              unrankedLevel:(un.querySelector('.vroom-level')||{}).textContent};}""")
-    check("a person's row carries their rank and their level",
-          row["rank"] == "Vanguard" and row["level"] == "34", row)
-    check("somebody below Rookie gets a level and no emblem",
-          row["unranked"] and row["unrankedLevel"] == "1", row)
+              unrankedExtras:un.childNodes.length};}""")
+    check("a person's row carries their rank", row["rank"] == "Vanguard", row)
+    # The small blue level number beside the character was asked for,
+    # built, and then asked against. Two marks on one 42px character is
+    # one too many, and a board that ranks on the number is already
+    # printing it.
+    check("no level number beside the character", not row["level"], row)
+    check("somebody below Rookie gets nothing at all",
+          row["unranked"] and row["unrankedExtras"] == 0, row)
     ctx.close()
 
 
