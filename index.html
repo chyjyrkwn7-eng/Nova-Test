@@ -7865,6 +7865,12 @@ const BANK_TITLE = "Nova \u2014 Class 26E Study";
 const PASS_MARK = 70;
 const POINTS_PER_QUESTION = 10;
 const PERFECT_BONUS = 100;
+/* Paid once per EXTRA unit in a run: two units is +15, three is +30, and
+   so on. It rewards sitting several units in one go rather than picking
+   them off one at a time, and it is deliberately small next to
+   PERFECT_BONUS - taking more units on is worth something, acing one is
+   worth a lot more. The daily question never earns it. */
+const MULTI_TEST_BONUS = 15;
 
 /* After this many wrong attempts on one question, the drill offers to point
    at the correct answer. You still have to select it to move on. */
@@ -21575,7 +21581,7 @@ const RANKING_BOARDS = [
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos, two perfect bonuses, and mastery progress on both. The daily question does not count." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam or Game alike. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos, two perfect bonuses, and mastery progress on both. The daily question does not count." }
 ];
 
 
@@ -23470,8 +23476,18 @@ function allFullyMastered(){
   return all.length > 0 && all.every(isFullyMastered);
 }
 
+/* Every test type counts now, not just Drill - asked for directly.
+   Exam and Game runs that cover a unit in full and finish clean earn the
+   same mastery progress a Drill run does; the mode you chose to sit it in
+   is not what makes a 100% worth something.
+   The daily question is the one exclusion, and it is explicit rather than
+   relying on the coverage check below: it is a single question, so it
+   would fail isFullUnitRun() anyway on every real unit, but a unit that
+   ever had exactly one question would silently start minting mastery
+   once a day. */
 function recordUnitPerfectIfEligible(pct){
-  if(cfg.mode !== "drill" || cfg.source !== "all" || !isFullUnitRun() || pct !== 100) return null;
+  if(runLabel === "Daily question") return null;
+  if(cfg.source !== "all" || !isFullUnitRun() || pct !== 100) return null;
   const name = cfg.units[0];
   const before = unitLevel(name);
   store.unitPerfects[name] = unitPerfectCount(name) + 1;
@@ -23491,7 +23507,10 @@ function recordUnitPerfectIfEligible(pct){
    list of unit names that newly earned their Drill star this run, for
    the celebration banner. */
 function recordMultiUnitPerfectsIfEligible(order, missed){
-  if(cfg.mode !== "drill" || cfg.source !== "all" || cfg.units.length < 2) return { perfected: [], newlyStarred: [] };
+  /* Same widening as the single-unit function above: any test type, never
+     the daily question. */
+  if(runLabel === "Daily question") return { perfected: [], newlyStarred: [] };
+  if(cfg.source !== "all" || cfg.units.length < 2) return { perfected: [], newlyStarred: [] };
   const missedSet = new Set(missed);
   const perfected = [];
   const newlyStarred = [];
@@ -28959,7 +28978,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-21-61";
+const APP_BUILD = "2026-09-21-62";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -29495,6 +29514,7 @@ function summarize(){
   let newFarthest = false;
   let pointsEarned = 0;
   let perfectBonusEarned = 0;
+  let multiTestBonusEarned = 0;
   let hundosEarned = 0;
   let newlyUnlockedColors = [];
   if(runTrackable && !timedOut && total > 0){
@@ -29537,7 +29557,15 @@ function summarize(){
       ? (isPerfect ? 100 : 0)
       : good * POINTS_PER_QUESTION;
     perfectBonusEarned = PERFECT_BONUS * hundosEarned;
-    store.lifetime.points += pointsEarned + perfectBonusEarned;
+    /* One MULTI_TEST_BONUS per unit beyond the first. Counted off
+       cfg.units - what you chose to sit - not off how many you aced, so
+       it is a reward for taking more on rather than a second perfect
+       bonus. The daily question is excluded the same way everything else
+       here is. */
+    multiTestBonusEarned = (runLabel === "Daily question")
+      ? 0
+      : Math.max(0, (cfg.units.length - 1)) * MULTI_TEST_BONUS;
+    store.lifetime.points += pointsEarned + perfectBonusEarned + multiTestBonusEarned;
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
     else if(runMode === "game") store.lifetime.gamePlays += 1;
@@ -29629,7 +29657,7 @@ function summarize(){
       toTop();
       exitBtn.focus({ preventScroll: true });
     }
-    const totalEarned = pointsEarned + perfectBonusEarned;
+    const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
     if(totalEarned > 0){
       showPointsFlyEffect("+" + totalEarned + " points!");
     }
@@ -29736,11 +29764,21 @@ function summarize(){
       );
       ptsWrap.appendChild(ptsRow2);
     }
+    if(multiTestBonusEarned > 0){
+      const ptsRow3 = document.createElement("p");
+      ptsRow3.className = "points-line";
+      ptsRow3.append(
+        Object.assign(document.createElement("span"), { className: "points-label",
+          textContent: cfg.units.length + " units \u00d7 " + MULTI_TEST_BONUS + " multi-test bonus" }),
+        Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + multiTestBonusEarned })
+      );
+      ptsWrap.appendChild(ptsRow3);
+    }
     const ptsTotal = document.createElement("p");
     ptsTotal.className = "points-total";
     ptsTotal.append(
       Object.assign(document.createElement("span"), { className: "points-label", textContent: "Points earned" }),
-      Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + (pointsEarned + perfectBonusEarned) })
+      Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned) })
     );
     ptsWrap.appendChild(ptsTotal);
     panel.appendChild(ptsWrap);
@@ -30018,7 +30056,7 @@ function summarize(){
   stage.replaceChildren(panel);
   toTop();
   actions.firstChild.focus({ preventScroll: true });
-  const totalEarned = pointsEarned + perfectBonusEarned;
+  const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
   if(totalEarned > 0){
     showPointsFlyEffect("+" + totalEarned + " points!");
   }
