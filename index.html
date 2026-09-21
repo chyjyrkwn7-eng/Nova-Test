@@ -6639,7 +6639,53 @@
   }
   .tierladder-node svg{ width:1.95rem; height:1.95rem; }
   .tierladder-node.current{ border-color:var(--tier-color, var(--accent)); box-shadow:0 0 8px 2px var(--tier-color, var(--accent)); color:var(--tier-color, var(--accent)); }
-  .tierladder-node.done{ background:var(--tier-color, var(--accent)); border-color:var(--tier-color, var(--accent)); color:#fff; }
+  /* A reached tier is LIT, not filled flat. It was a solid disc of the
+     tier's colour with a tick on it, which is the least interesting
+     thing on a ladder whose whole subject is progress. Now: a domed
+     fill of its own colour, a bright inner rim, an outer halo, and a
+     slow sheen crossing it, so the tiers you have reached are the ones
+     that catch the eye. */
+  .tierladder-node.done{
+    border-color:var(--tier-color, var(--accent)); color:#fff;
+    background:
+      radial-gradient(120% 110% at 32% 22%, rgba(255,255,255,.55), rgba(255,255,255,0) 55%),
+      radial-gradient(120% 120% at 50% 118%, rgba(0,0,0,.35), rgba(0,0,0,0) 60%),
+      var(--tier-color, var(--accent));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.65),
+      inset 0 -6px 12px -6px rgba(0,0,0,.5),
+      0 0 0 3px color-mix(in srgb, var(--tier-color, var(--accent)) 26%, transparent),
+      0 0 18px -2px var(--tier-color, var(--accent));
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  .tierladder-node.done svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)); }
+  /* The sheen moves by BACKGROUND-POSITION, not by transform. A
+     translated pseudo-element needs overflow:hidden on the node to stay
+     inside the circle, and that same overflow sliced the corner seal in
+     half - visible in the first screenshot as a half-moon. Moving the
+     gradient inside a fixed box keeps the sheen in the circle and lets
+     the seal sit proud of it. */
+  .tierladder-node.done::after{
+    content:""; position:absolute; inset:0; border-radius:50%;
+    background-image:linear-gradient(100deg, rgba(255,255,255,0) 40%,
+      rgba(255,255,255,.42) 50%, rgba(255,255,255,0) 60%);
+    background-size:260% 100%; background-repeat:no-repeat;
+    animation:tier-sheen 4.5s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes tier-sheen{
+    0%{ background-position:-160% 0; }
+    55%, 100%{ background-position:260% 0; }
+  }
+  /* The tick, as a seal on the rim rather than in place of the icon. */
+  .tierladder-seal{
+    position:absolute; right:-2px; bottom:-2px; z-index:2;
+    width:1.35rem; height:1.35rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:900; line-height:1;
+    color:#12161B; background:linear-gradient(180deg, #FFFFFF, #CBD4DD);
+    box-shadow:0 1px 3px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.9);
+  }
   /* The actual color bug, found by tracing the CSS: this rule applied
      unconditionally to every state (locked, current, and done alike),
      forcing white regardless \u2014 which only makes sense once .done also
@@ -6672,13 +6718,23 @@
   .tierladder-connector-inner{
     width:4px; height:100%; background:var(--rule); border-radius:999px; overflow:hidden;
   }
-  /* A fixed green now, not var(--accent) \u2014 per explicit request, this
-     should read as a universal "leveling up" color regardless of
-     whatever theme color the person happens to have chosen, rather
-     than tying the progress-fill feel to the Nova branding system
-     (which is exactly what would make it feel overdone here). */
+  /* The rail is a groove, and what fills it runs from the tier below
+     into the tier above. It was a flat #22C55E - a universal "levelling
+     up" green, chosen so it would not track the theme accent - and it
+     read as a green pipe drawn down the page. A gradient between the
+     two tiers it actually joins carries the same meaning and says
+     which two, and it thickens slightly so the filled part reads as
+     the live one. */
+  .tierladder-connector-inner{
+    width:5px;
+    background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.2));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  }
   .tierladder-connector-fill{
-    width:100%; height:0%; background:#22C55E; border-radius:999px;
+    width:100%; height:0%; border-radius:999px;
+    background:linear-gradient(180deg,
+      var(--tier-from, var(--accent)), var(--tier-to, var(--accent)));
+    box-shadow:0 0 8px -1px var(--tier-from, var(--accent));
     transition:height 1s cubic-bezier(.22,.9,.32,1);
   }
   @media (prefers-reduced-motion:reduce){
@@ -8017,6 +8073,19 @@
     max-width:min(26rem, calc(100vw - 2rem));
   }
   .badge-quiet-note.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* The lobby's level badge, the same object the rankings rows carry so
+     the two screens agree about what a level looks like. */
+  .vroom-avatar-wrap{ position:relative; }
+  .vroom-level{
+    position:absolute; right:-.22rem; bottom:-.22rem;
+    min-width:1.15rem; height:1.15rem; padding:0 .22rem;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:999px; box-sizing:border-box;
+    background:#2563EB; color:#FFFFFF;
+    font-family:var(--mono); font-size:.62rem; font-weight:800; line-height:1;
+    border:1.5px solid var(--paper);
+  }
 
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -32753,7 +32822,7 @@ function createVirtualRoomLobby(units, timeLimit){
     startAt: null,
     createdAt: Date.now(),
     participants: {
-      [syncCode || code]: { name: myName, avatarChar: store.avatarChar || "ninja", joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      [syncCode || code]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }
   };
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
@@ -32825,7 +32894,12 @@ function joinVirtualRoomLobby(code){
       return;
     }
     fbDb.collection("vrooms").doc(code).update({
-      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      /* level rides along with the participant, per explicit request:
+         the lobby should say who you are up against the way the
+         rankings rows do. Written once at join - it cannot change
+         while somebody is sitting in a lobby - and read with a
+         fallback, so a room created by an older build still renders. */
+      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }).then(() => {
       vroomCode = code; vroomIsHost = false; vroomUnits = data.units;
       vroomMyKey = myKey;
@@ -33000,9 +33074,21 @@ function showVirtualRoomLobby(){
       entries.forEach(([key, p]) => {
         const row = document.createElement("div");
         row.className = "lb-row vroom-row" + (p.ready ? " is-ready" : "");
+        /* The same avatar-with-a-level-badge the rankings rows carry,
+           per explicit request - "a small blue number". buildAvatarChar
+           SVGSafe, not the bare builder: that one returns null for an id
+           it does not know, and three classmates once vanished off the
+           leaderboard because of it. */
         const avatarWrap = document.createElement("span");
-        avatarWrap.className = "lb-avatar";
-        avatarWrap.appendChild(buildAvatarCharSVG(p.avatarChar || "ninja"));
+        avatarWrap.className = "lb-avatar vroom-avatar-wrap";
+        avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+        const lvl = document.createElement("span");
+        lvl.className = "vroom-level";
+        /* A room created by an older build has no level on its
+           participants; 1 is the floor, so it reads as a level rather
+           than as a gap. */
+        lvl.textContent = String(p.level || 1);
+        avatarWrap.appendChild(lvl);
         const nameWrap = document.createElement("span");
         nameWrap.className = "lb-name-wrap";
         const name = document.createElement("span");
@@ -35186,12 +35272,19 @@ function buildRewardTabs(){
       nodeEl.className = "tierladder-node" + (percent >= 100 ? " done" : percent > 0 ? " current" : " locked") +
         (step.key === "titan" ? " legend-dot" : "");
       nodeEl.style.setProperty("--tier-color", ACCENT_SWATCH[step.key]);
+      /* The icon stays. A reached tier used to REPLACE its own icon
+         with a tick, so the ladder's most interesting nodes - the ones
+         you had actually earned - were the only plain ones on it, and
+         you could no longer tell Spark from Ember at a glance. The tick
+         is a small seal in the corner now, and the node itself gets the
+         lit treatment. */
+      nodeEl.appendChild(buildTierIconSVG(step.key));
       if(percent >= 100){
-        const inner = document.createElement("span");
-        inner.textContent = "\u2713";
-        nodeEl.appendChild(inner);
-      } else {
-        nodeEl.appendChild(buildTierIconSVG(step.key));
+        const seal = document.createElement("span");
+        seal.className = "tierladder-seal";
+        seal.setAttribute("aria-hidden", "true");
+        seal.textContent = "\u2713";
+        nodeEl.appendChild(seal);
       }
       /* Clickable, same as the Home Flares — tapping any tier here
          shows exactly what that tier requires, using the same
@@ -35222,6 +35315,15 @@ function buildRewardTabs(){
         inner.className = "tierladder-connector-inner";
         const fill = document.createElement("div");
         fill.className = "tierladder-connector-fill";
+        /* From this tier's colour into the next one's, rather than a
+           flat green pipe running the length of the ladder. The green
+           was chosen to read as a universal "levelling up" colour and
+           was reported as not working; a gradient between the two
+           tiers it actually joins says the same thing and says which
+           two. */
+        connector.style.setProperty("--tier-from", ACCENT_SWATCH[step.key]);
+        connector.style.setProperty("--tier-to",
+          ACCENT_SWATCH[(tierSteps[i + 1] || step).key] || ACCENT_SWATCH[step.key]);
         fillsToAnimate.push({ fill, percent: Math.min(100, percent) });
         inner.appendChild(fill);
         connector.appendChild(inner);
