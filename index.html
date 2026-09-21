@@ -7823,6 +7823,29 @@
     }
   }
 
+  /* The unit card's mastery line: its own badge, a label, and a
+     hairline bar that only exists while there is progress left. */
+  .pick-badge{ display:inline-flex; width:1.35rem; height:1.35rem; flex-shrink:0; }
+  .pick-badge svg{ width:100%; height:100%; display:block; }
+  .pick-badge.earned svg{ filter:drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
+  /* .pick is a GRID with explicit placement, not a column - appended
+     without a grid-row of its own the bar auto-placed into the first
+     free cell and drew itself across the TOP of the card, beside the
+     checkbox. Row 5 puts it under .pick-stars in both of that rule's
+     placements (row 3 bare, row 4 inside .picks). */
+  .pick-bar-track{
+    grid-column:1 / -1; grid-row:5;
+    display:block; width:100%; height:3px; margin-top:.5rem; border-radius:999px;
+    background:rgba(255,255,255,.1); overflow:hidden;
+  }
+  .pick-bar-fill{
+    display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg, #5FA3EA, #9CCEFF);
+  }
+  @media (min-width:40rem){
+    .pick-badge{ width:1.7rem; height:1.7rem; }
+  }
+
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -21989,19 +22012,25 @@ const TIER_UNLOCKS = {
      scaled by the same 25/16 increase in total available material,
      since points accumulate from answering questions across every
      unit and there are now proportionally more of them to earn from. */
-  rookie:   { stars: 2,  points: 5000,   label: "Reach 2 stars and 5,000 XP" },
-  ranger:   { stars: 7,  points: 19000,  label: "Reach 7 stars and 19,000 XP" },
-  veteran:  { stars: 13, points: 39000,  label: "Reach 13 stars and 39,000 XP" },
-  vanguard: { stars: 20, points: 66000,  label: "Reach 20 stars and 66,000 XP" },
-  adept:    { stars: 28, points: 101000, label: "Reach 28 stars and 101,000 XP" },
-  elite:    { stars: 38, points: 148000, label: "Reach 38 stars and 148,000 XP" },
+  /* Levels and badges, not XP and stars. The ladder climbed on a raw
+     XP total and a star count that no longer exists as an award; both
+     of the things it now asks for are numbers shown on Profile, so a
+     tier says something you can check against your own screen. Levels
+     come steadily and badges do not - 35 hundos each - which is what
+     gives the gaps their shape. */
+  rookie:   { level: 5,  badges: 1,  label: "Reach level 5 and 1 badge" },
+  ranger:   { level: 12, badges: 2,  label: "Reach level 12 and 2 badges" },
+  veteran:  { level: 20, badges: 4,  label: "Reach level 20 and 4 badges" },
+  vanguard: { level: 30, badges: 6,  label: "Reach level 30 and 6 badges" },
+  adept:    { level: 42, badges: 8,  label: "Reach level 42 and 8 badges" },
+  elite:    { level: 56, badges: 11, label: "Reach level 56 and 11 badges" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
      "Secret Flares" for display, distinct from the Mastery Ladder's
      own "Flares" (the orbiting badges) since these are a different,
      hidden thing to find rather than a tier to climb. */
-  titan:    { stars: 50, points: 226000, mysteryStars: 3, label: "Reach 50 stars, 226,000 XP, and find all 3 Secret Flares" }
+  titan:    { level: 70, badges: 14, mysteryStars: 3, label: "Reach level 70, 14 badges, and find all 3 Secret Flares" }
 };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
@@ -22323,11 +22352,34 @@ const RANKING_BOARDS = [
 ];
 
 
+/* Where you stand against a tier, in the two numbers the ladder now
+   climbs on. One place, because six call sites used to each do their
+   own version of this arithmetic and each phrase the result its own
+   way. */
+function tierProgressNow(){
+  return { level: levelOf(store), badges: badgeCountOf(store) };
+}
+/* What is still missing for a tier, already worded. Empty means ready. */
+function tierShortfall(rule){
+  if(!rule) return [];
+  const now = tierProgressNow();
+  const parts = [];
+  const lvl = Math.max(0, (rule.level || 0) - now.level);
+  const bdg = Math.max(0, (rule.badges || 0) - now.badges);
+  if(lvl > 0) parts.push(lvl + " more " + (lvl === 1 ? "level" : "levels"));
+  if(bdg > 0) parts.push(bdg + " more " + (bdg === 1 ? "badge" : "badges"));
+  if(typeof rule.mysteryStars === "number" && mysteryColorsFoundCount() < rule.mysteryStars){
+    parts.push(mysteryColorsFoundCount() + "/" + rule.mysteryStars + " Secret Flares found");
+  }
+  return parts;
+}
+
 function tierColorUnlocked(name){
   const rule = TIER_UNLOCKS[name];
   if(!rule) return true;
-  const starsOk = totalStarsEarned(topicsIn(QUESTIONS)) >= rule.stars;
-  const pointsOk = store.lifetime.points >= rule.points;
+  const now = tierProgressNow();
+  const starsOk = now.badges >= (rule.badges || 0);
+  const pointsOk = now.level >= (rule.level || 0);
   /* Only Supernova's rule carries a mysteryStars field — everything
      else is unaffected, since this check is skipped entirely when
      the field is absent. */
@@ -25765,20 +25817,9 @@ function buildCosmicHero(useTierIcons){
           showContextualInfo(badge, tierName + " reached \u2014 this flare is fully lit.");
           return;
         }
-        const rule = TIER_UNLOCKS[pos.tier];
-        const starsNow = totalStarsEarned(topicsIn(QUESTIONS));
-        const pointsNow = store.lifetime.points;
-        const starsLeft = Math.max(0, rule.stars - starsNow);
-        const pointsLeft = Math.max(0, rule.points - pointsNow);
-        const parts = [];
-        if(pointsLeft > 0) parts.push(pointsLeft.toLocaleString() + " more " + (pointsLeft === 1 ? "point" : "points"));
-        if(starsLeft > 0) parts.push(starsLeft + " more " + (starsLeft === 1 ? "star" : "stars"));
-        /* Supernova specifically also calls out the Secret Flares
-           requirement — the single biggest tier deserves its own
-           extra condition spelled out here, not left implicit. */
-        if(typeof rule.mysteryStars === "number"){
-          parts.push(mysteryColorsFoundCount() + "/" + rule.mysteryStars + " Secret Flares found");
-        }
+        /* Levels and badges now, worded in the one place that words
+           them - Supernova's Secret Flares condition included. */
+        const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
         showContextualInfo(badge, tierName + ": " + (parts.length ? parts.join(", ") + " to light this flare." : "ready to unlock."));
       };
       badge.addEventListener("click", showFlareInfo);
@@ -26825,7 +26866,7 @@ function startMainMenuTour(){
     { target: ".daily-question-fab", align: "right", vplacement: "above",
       text: "This is your daily question \u2014 one a day, one attempt, worth 100 XP. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
-      text: "Those circles orbiting the sphere are your Flares \u2014 one for each Mastery Ladder tier. They light up as you climb, and you can tap any of them to see exactly what is left to unlock." },
+      text: "Those circles orbiting the sphere are your Flares \u2014 one for each Mastery Ladder tier. They light up as you climb, and tapping one tells you the levels and badges still to go." },
     { target: "#nextbtn", align: "left", vplacement: "above",
       text: "Good luck \u2014 tap here whenever you are ready to start studying. You will see a few more tips like these as you explore the rest of the app." }
   ];
@@ -27866,7 +27907,16 @@ function showSetup(){
        bug, and it didn't match the progress label right below it,
        which was already correctly mode-aware. One star, matching one
        mode: earn it by completing that mode's own requirement. */
-    const activeStarIcon = cfg.mode === "game" ? gameStarIcon : drillStarIcon;
+    /* In Drill (and everything that is not Game) the marker is the
+       unit's own BADGE, not a star - that is what mastering a unit
+       earns now, and a card that still promised a star would be
+       promising something the app no longer gives out. Game keeps its
+       star, which is a separate award for beating all three speeds. */
+    const badgeMark = document.createElement("span");
+    badgeMark.className = "pick-badge" + (drillStarEarned ? " earned" : "");
+    badgeMark.appendChild(buildUnitBadgeSVG(name, drillStarEarned));
+    badgeMark.title = drillStarEarned ? name + " badge earned" : name + " badge not yet earned";
+    const activeStarIcon = cfg.mode === "game" ? gameStarIcon : badgeMark;
 
     const progLabel = document.createElement("span");
     progLabel.className = "pick-progress-label";
@@ -27902,10 +27952,20 @@ function showSetup(){
          "times taken" count rather than the number simply stopping
          being shown at all once it's no longer needed to unlock
          anything. */
+      /* "0/40 perfect runs" was reported as needing to read better,
+         and it also no longer said the right thing: the threshold is
+         35 and what it earns is a badge. Past the threshold it keeps
+         counting rather than freezing, which was an earlier explicit
+         request and still holds. */
+      /* Short, because the card is narrow: two of these sit side by
+         side on a phone and "Badge earned - 35 hundos" pushed the
+         badge itself out past .pick's overflow:hidden, so the one
+         thing the row is about disappeared on exactly the devices
+         most people use. The glyph beside it carries the meaning. */
       progLabel.textContent = drillStarEarned
-        ? perfectCount.toLocaleString() + "\u00d7"
-        : perfectCount + "/" + DRILL_STAR_THRESHOLD + " perfect runs";
-      progCurrent = Math.min(perfectCount, DRILL_STAR_THRESHOLD); progMax = DRILL_STAR_THRESHOLD;
+        ? "Mastered \u00b7 " + perfectCount.toLocaleString()
+        : perfectCount + " / " + BADGE_THRESHOLD;
+      progCurrent = Math.min(perfectCount, BADGE_THRESHOLD); progMax = BADGE_THRESHOLD;
     }
     /* Text first, star second — per explicit report, the progress
        text (the actually meaningful part) needs to sit to the left,
@@ -27916,16 +27976,35 @@ function showSetup(){
        text flush at the start of the row instead gives it the most
        room, with the small star glyph now trailing at the end where
        it's the one that can get tight against the edge instead. */
-    starsWrap.appendChild(progLabel);
-    starsWrap.appendChild(activeStarIcon);
+    /* Badge first now, then the label. The note above about text-first
+       was written when the marker was a star that stayed INVISIBLE
+       until earned and still reserved its width - a badge is drawn
+       either way, so leading with it costs nothing and gives the
+       glyph the edge that cannot get clipped. */
+    if(cfg.mode === "game"){
+      starsWrap.appendChild(progLabel);
+      starsWrap.appendChild(activeStarIcon);
+    } else {
+      starsWrap.appendChild(activeStarIcon);
+      starsWrap.appendChild(progLabel);
+    }
     row.appendChild(starsWrap);
 
-    /* The progress bar that used to render here has been removed
-       entirely, per explicit request \u2014 the text label right above
-       (e.g. "12/40 perfect runs") already conveys the same progress,
-       and on a screen with many cards stacked vertically, a bar under
-       every single one read as visual clutter rather than useful
-       information.  */
+    /* A bar again, per explicit request, and deliberately not the one
+       that was taken out before: that was a thick bar under every card
+       and read as clutter down a long list. This is a 3px hairline
+       that only appears while there is progress left to make - a
+       mastered unit shows its badge and its count and no bar at all,
+       so the list only draws bars for the units still going. */
+    if(progMax > 1 && progCurrent < progMax){
+      const barTrack = document.createElement("span");
+      barTrack.className = "pick-bar-track";
+      const barFill = document.createElement("span");
+      barFill.className = "pick-bar-fill";
+      barFill.style.width = Math.round((progCurrent / progMax) * 1000) / 10 + "%";
+      barTrack.appendChild(barFill);
+      row.appendChild(barTrack);
+    }
 
     const bestMs = bestMsForUnitAnyMode(name);
     if(bestMs != null){
@@ -34629,7 +34708,7 @@ function buildRewardTabs(){
 
   (function buildAchievementsTab(){
   const head1c = document.createElement("p");
-  head1c.className = "slab section-divider"; head1c.textContent = "Achievements";
+  head1c.className = "slab section-divider"; head1c.textContent = "Ladder";
   achievementsTab.appendChild(head1c);
 
   /* The big-picture ladder every per-unit path is ultimately building
@@ -34648,7 +34727,7 @@ function buildRewardTabs(){
     ladderSect.appendChild(ladderHead);
     const ladderNote = document.createElement("p");
     ladderNote.className = "tierladder-note";
-    ladderNote.textContent = "Each tier takes both stars (mastering units) and XP (studying overall) together \u2014 not either one alone.";
+    ladderNote.textContent = "Each tier takes a level and a number of badges together \u2014 not either one alone. Levels come from everything you do; badges come from mastering a unit.";
     ladderSect.appendChild(ladderNote);
     /* Collected here, then animated in one requestAnimationFrame batch
        right before this section returns \u2014 the fill elements start at
@@ -34666,8 +34745,8 @@ function buildRewardTabs(){
     const ladder = document.createElement("div");
     ladder.className = "tierladder";
     const ladderUnits = topicsIn(QUESTIONS);
-    const ladderStarsNow = totalStarsEarned(ladderUnits);
-    const ladderPointsNow = store.lifetime.points;
+    const ladderBadgesNow = badgeCountOf(store);
+    const ladderLevelNow = levelOf(store);
     /* A tier's progress is the SLOWER of its two requirements, not
        their average \u2014 reaching it genuinely takes both, so whichever
        one is further behind is what's actually gating the person, and
@@ -34675,8 +34754,8 @@ function buildRewardTabs(){
     function tierStepPct(tierKey){
       const rule = TIER_UNLOCKS[tierKey];
       if(!rule) return 0;
-      const starPct = rule.stars > 0 ? ladderStarsNow / rule.stars : 1;
-      const pointPct = rule.points > 0 ? ladderPointsNow / rule.points : 1;
+      const starPct = (rule.badges || 0) > 0 ? ladderBadgesNow / rule.badges : 1;
+      const pointPct = (rule.level || 0) > 0 ? ladderLevelNow / rule.level : 1;
       return Math.min(1, starPct, pointPct);
     }
     const TIER_KEYS = TIER_ORDER_FULL;
@@ -34711,14 +34790,7 @@ function buildRewardTabs(){
           showContextualInfo(nodeEl, step.label + " reached \u2014 fully unlocked.");
           return;
         }
-        const starsLeft = Math.max(0, rule.stars - ladderStarsNow);
-        const pointsLeft = Math.max(0, rule.points - ladderPointsNow);
-        const parts = [];
-        if(pointsLeft > 0) parts.push(pointsLeft.toLocaleString() + " more " + (pointsLeft === 1 ? "point" : "points"));
-        if(starsLeft > 0) parts.push(starsLeft + " more " + (starsLeft === 1 ? "star" : "stars"));
-        if(typeof rule.mysteryStars === "number"){
-          parts.push(mysteryColorsFoundCount() + "/" + rule.mysteryStars + " Secret Flares found");
-        }
+        const parts = tierShortfall(rule);
         showContextualInfo(nodeEl, step.label + ": " + (parts.length ? parts.join(", ") + " needed." : "ready to unlock."));
       };
       nodeEl.addEventListener("click", showTierInfo);
@@ -34749,15 +34821,9 @@ function buildRewardTabs(){
     const nextTier = TIER_KEYS.find(key => tierStepPct(key) < 1);
     if(nextTier){
       const rule = TIER_UNLOCKS[nextTier];
-      const starsLeft = Math.max(0, rule.stars - ladderStarsNow);
-      const pointsLeft = Math.max(0, rule.points - ladderPointsNow);
-      const parts = [];
-      if(pointsLeft > 0) parts.push(pointsLeft.toLocaleString() + " " + (pointsLeft === 1 ? "point" : "points"));
-      if(starsLeft > 0) parts.push(starsLeft + " " + (starsLeft === 1 ? "star" : "stars"));
-      if(typeof rule.mysteryStars === "number"){
-        const mysteryLeft = Math.max(0, rule.mysteryStars - mysteryColorsFoundCount());
-        if(mysteryLeft > 0) parts.push(mysteryLeft + " Secret " + (mysteryLeft === 1 ? "Flare" : "Flares"));
-      }
+      /* Same wording as the node popovers and the flares on Home,
+         because it is the same question asked in a third place. */
+      const parts = tierShortfall(rule).map(t => t.replace(" more ", " "));
       const nextNote = document.createElement("p");
       nextNote.className = "tierladder-next-note";
       /* Colored with the upcoming tier's own accent, per explicit
@@ -34784,7 +34850,7 @@ function buildRewardTabs(){
   const pointsSect = document.createElement("div");
   pointsSect.className = "points-progress-sect";
   const pointsHead = document.createElement("p");
-  pointsHead.className = "slab motion-summary"; pointsHead.textContent = "XP";
+  pointsHead.className = "slab motion-summary"; pointsHead.textContent = "Where you stand";
   pointsSect.appendChild(pointsHead);
 
   /* Each gets its own distinct Liquid Glass box, side by side, rather
@@ -34793,22 +34859,26 @@ function buildRewardTabs(){
   const statsRow = document.createElement("div");
   statsRow.className = "points-stats-row";
 
+  /* Level and badges, not XP and stars - the two numbers the ladder
+     above actually climbs on, so what it asks for and what this says
+     you have are the same units. Blue and silver, both under the same
+     shine the Profile tab uses, per explicit request. */
   const pointsBox = document.createElement("div");
   pointsBox.className = "points-stat-box";
   const pointsTotal = document.createElement("p");
-  pointsTotal.className = "points-progress-total";
-  pointsTotal.textContent = store.lifetime.points.toLocaleString();
+  pointsTotal.className = "points-progress-total shine-blue";
+  pointsTotal.textContent = levelOf(store).toLocaleString();
   const pointsLabel = document.createElement("p");
-  pointsLabel.className = "points-stat-label"; pointsLabel.textContent = "XP";
+  pointsLabel.className = "points-stat-label"; pointsLabel.textContent = "Level";
   pointsBox.append(pointsTotal, pointsLabel);
 
   const starsBox = document.createElement("div");
   starsBox.className = "points-stat-box";
   const starsTotal = document.createElement("p");
-  starsTotal.className = "points-progress-stars";
-  starsTotal.textContent = totalStarsEarned(topicsIn(QUESTIONS)).toLocaleString();
+  starsTotal.className = "points-progress-stars shine-silver";
+  starsTotal.textContent = badgeCountOf(store) + "/" + topicsIn(QUESTIONS).length;
   const starsLabel = document.createElement("p");
-  starsLabel.className = "points-stat-label"; starsLabel.textContent = "Stars";
+  starsLabel.className = "points-stat-label"; starsLabel.textContent = "Badges";
   starsBox.append(starsTotal, starsLabel);
 
   statsRow.append(pointsBox, starsBox);
@@ -34981,7 +35051,12 @@ function buildRewardTabs(){
     statusRow.className = "unlock-status";
     statusRow.textContent = u.got ? "UNLOCKED" : "LOCKED";
     const name = document.createElement("span");
-    name.className = "unlock-name"; name.textContent = u.name;
+    /* An unlocked colour's name carries the same shine the level and
+       badge numbers do, per explicit request. Only once it is actually
+       unlocked: a locked row is a thing you have not got, and polishing
+       it would say the opposite. */
+    name.className = "unlock-name" + (u.got ? " shine-silver" : "");
+    name.textContent = u.name;
     info.append(statusRow, name);
     if(!u.got){
       const barWrap = document.createElement("span");
@@ -34995,7 +35070,7 @@ function buildRewardTabs(){
       barTrack.appendChild(barFill);
       const barLabel = document.createElement("span");
       barLabel.className = "unlock-barlabel";
-      barLabel.textContent = u.current + "/" + u.max;
+      barLabel.textContent = u.current + "/" + u.max + (u.unitWord ? " " + u.unitWord : "");
       barWrap.append(barTrack, barLabel);
       info.appendChild(barWrap);
       const req = document.createElement("span");
@@ -35016,11 +35091,16 @@ function buildRewardTabs(){
   unlocksTab.appendChild(basicColorsNote);
 
   const maxStarsForUnlocks = totalUnitsForUnlocks.length * 2;
-  const starsNowForUnlocks = totalStarsEarned(totalUnitsForUnlocks);
+  const badgesNowForUnlocks = badgeCountOf(store);
   function tierUnlockRow(key, accentKey){
     const rule = TIER_UNLOCKS[key];
     return { name: "\"" + ACCENT_DISPLAY_NAME[key] + "\" color", got: tierColorUnlocked(key),
-      req: rule.label, current: Math.min(starsNowForUnlocks, rule.stars), max: rule.stars,
+      /* The bar tracks BADGES, which is the slow half of the
+         requirement; the line under it names both. Saying which it is
+         stops "3/4" beside "Reach level 20 and 4 badges" reading as
+         some third number. */
+      req: rule.label, current: Math.min(badgesNowForUnlocks, rule.badges), max: rule.badges,
+      unitWord: "badges",
       preview: () => { const s = document.createElement("span"); s.className = "unlock-preview"; s.style.background = ACCENT_SWATCH[accentKey || key]; return s; } };
   }
   const modeUnlocks = [
