@@ -544,8 +544,21 @@
   [data-layout="modern"]{ --statusbar-mix2:3.3%; --statusbar-mix3:3%; }
   [data-theme="dark"][data-layout="modern"]{ --statusbar-mix2:7.4%; --statusbar-mix3:7.25%; }
   [data-layout="modern"] body{ background:transparent; }
+  /* Anchored to the BOTTOM, not inset:0, and that is deliberate.
+     The reported strip is at the bottom of the screen. If the fixed
+     viewport iOS gives this layer is ever SHORTER than the screen -
+     which is the only explanation left for a strip that no page layer
+     reaches - then inset:0 leaves the shortfall uncovered at the bottom,
+     which is exactly where it was seen. Hanging the box off the bottom
+     edge instead puts any shortfall at the TOP, where the status bar's
+     own colour (theme-color, read at launch) already covers it and where
+     this file's whole iOS section says that problem was actually solved.
+     Identical whenever the viewport is the full screen - 100lvh is the
+     screen height, so top:0 and bottom:0 describe the same box - and
+     measured at 0 levels of difference across every device here. */
   [data-layout="modern"] body::before{
-    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    content:""; position:fixed; left:0; right:0; bottom:0; height:100lvh;
+    z-index:-1; pointer-events:none;
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 6%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 6%, transparent), transparent var(--bg-glow-r2)),
@@ -722,7 +735,16 @@
       radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
-    background-size:100vw 100lvh, 100vw 100lvh, 100vw 100%, 100vw 100lvh, 100vw 100lvh, auto;
+    /* 200lvh, not 100%. `100%` resolves against HTML'S OWN BOX, which is
+       its content height - measured at 796px against an 800px viewport -
+       not the document, so the gold stopped after roughly one screen and
+       every long page went flat below it (sampled at the bottom of a
+       seeded Home: a dead #12161B, delta 23). 200lvh is past the point
+       all three glows are transparent anyway: the gold's centre is at
+       104lvh with a 55lvh radius, so it is gone by ~159lvh, and the
+       corner glows' radius is at most one viewport from 8lvh. Beyond
+       that, flat paper IS the right answer. */
+    background-size:100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, auto;
     background-position:0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0;
     background-repeat:no-repeat;
   }
