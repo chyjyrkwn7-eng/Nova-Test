@@ -22954,113 +22954,20 @@ function badgeThemeFor(unitName){
       [Object.keys(BADGE_FAMILY)[(parseInt(hashOf(name), 36) >>> 0) % 21]];
   }
   const p = BADGE_FAMILY[pair[0]];
-  return {
-    p: p,
-    /* The inner field is a darker sibling on some and a lighter one on
-       others, decided by the unit's own hash. All-darker was one reason
-       these read as repeated: sixteen tokens with the same tonal move
-       in them look like sixteen printings of one design. */
-    /* -0.30, not -0.46. Enamel can go nearly black and still read as
-       enamel; glass cannot, because the whole idea of it is that light
-       gets through. glassTint() below puts a floor under this as well,
-       but starting the darker sibling closer to its parent is what keeps
-       the two panes reading as the SAME colour at two depths rather than
-       as a colour and a hole. */
-    s: pair[1] ? BADGE_FAMILY[pair[1]]
-               : badgeShade(p, ((parseInt(hashOf(name), 36) >>> 0) & 1) ? -0.3 : 0.5),
-    a: badgeShade(p, 0.62)
-  };
+  /* One colour per badge now. There used to be a secondary and an accent
+     for the inner fields, back when a badge was concentric bands of
+     colour; the plates are cut from one plate by silver channels, so the
+     second and third shades had nothing left to fill. The pairs in
+     UNIT_BADGE_THEME that name two families still resolve - the second
+     name is simply unused, and kept so the table still reads as the
+     record of which unit nods at which colour. */
+  return { p: p, s: pair[1] ? BADGE_FAMILY[pair[1]] : p };
 }
 
-function badgeGeometry(unitName){
-  const seed = parseInt(hashOf(String(unitName || "")), 36) >>> 0;
-  const rnd = badgeRandom(seed);
-  /* Six to ten vertices. Below six it reads as a plain polygon; above
-     ten the faces get too narrow to shade distinctly at the size a grid
-     of sixteen actually gets. */
-  const n = 6 + Math.floor(rnd() * 5);
-  const far = 44;
-  /* A wide near/far ratio is most of the shape variety there is: at
-     0.54-0.82 every badge came out a pentagon-ish blob with a dent in
-     it, and only the seeds that happened to land at the bottom of the
-     range read as anything else. */
-  const near = far * (0.4 + rnd() * 0.46);
-
-  /* The radii follow a repeating PATTERN, and the angles are even. The
-     first version jittered both per vertex and several badges came out
-     as lumps - a torn scrap, a lopsided blob - because a shape with no
-     repeat in it reads as damage rather than as design. A pattern of
-     two or three is what makes a crystal look cut instead of chipped,
-     and it still gives every seed a different object.
-
-     SYMMETRY IS BY CONSTRUCTION, not by luck. Vertices sit at even
-     angles starting straight up, and that angle set is already closed
-     under a reflection in the vertical axis: reflecting -90 + i*360/n
-     gives -90 + (n-i)*360/n, another vertex of the same set. So the
-     only thing that can break the mirror is unequal radii - the half
-     is generated and copied across, jitter included. The free rotation
-     the first version applied is gone for the same reason: it is
-     exactly what stopped the shapes reading as designed rather than
-     found. */
-  /* Every pattern carries at least one near radius. The all-far one is
-     gone: it draws a regular polygon, which is the one shape a seed can
-     land on that looks like nothing was designed - and with n starting
-     at five it produced three plain pentagons out of sixteen. */
-  const patterns = [[1, 0], [1, 1, 0], [1, 0, 0], [1, 1, 0, 0], [1, 0, 1, 0, 0], [1, 1, 0, 1, 0]];
-  const pat = patterns[Math.floor(rnd() * patterns.length)];
-  /* One axis squashed, mildly, so none of them is circular in its
-     bounds. A VERTICAL squash only - it scales y, which leaves a
-     mirror in the vertical axis exactly where it was. */
-  const squash = 0.74 + rnd() * 0.52;
-  const radii = new Array(n);
-  for(let i = 0; i <= Math.floor(n / 2); i++){
-    const r = (pat[i % pat.length] ? far : near) * (0.97 + rnd() * 0.06);
-    radii[i] = r;
-    if(i > 0) radii[n - i] = r;
-  }
-  const pts = [];
-  for(let i = 0; i < n; i++){
-    const ang = -Math.PI / 2 + (i * 2 * Math.PI / n);
-    pts.push([Math.cos(ang) * radii[i], Math.sin(ang) * radii[i] * squash]);
-  }
-
-  /* Normalised to one envelope, so sixteen badges are sixteen objects
-     of the same size on a shelf. Without this the radius the seed
-     happened to pick decided how big the badge looked, and a grid of
-     them stepped about. */
-  let maxR = 0;
-  pts.forEach(p => { maxR = Math.max(maxR, Math.hypot(p[0], p[1])); });
-  const k = 44 / (maxR || 1);
-  const placed = pts.map(p => [50 + p[0] * k, 50 + p[1] * k]);
-
-  return {
-    pts: placed,
-    /* Multiplied through a large odd constant before the modulo: the raw
-       hash clumped, and two badges side by side in the same green is the
-       one thing a set of sixteen cannot afford. */
-    theme: badgeThemeFor(unitName),
-    /* Twelve marks and four inner-field shapes, so the device on one
-       badge repeats on another about as often as the silhouette does -
-       which is to say rarely. Eight marks alone put the same one on two
-       badges in sixteen often enough to be reported. */
-    motif: Math.floor(rnd() * 12),
-    innerKind: Math.floor(rnd() * 4),
-    /* Two or three colour fields, never one. One is a flat disc of a
-       single colour with a mark on it, which is exactly the "the entire
-       badge is not a solid colour" the reference set never does. */
-    bands: rnd() < 0.5 ? 2 : 3
-  };
-}
-
-/* Takes "#RRGGBB" or the "rgb(r,g,b)" that badgeShade itself returns.
-   That second case is not hypothetical and it is not cosmetic: the
-   secondary pane colour IS a badgeShade() result for half the sixteen
-   units, so anything that shaded it a second time parsed "rgb(..." as
-   hex, got NaN for all three channels and painted the pane BLACK. It
-   worked for as long as that colour was only ever used as a flat fill,
-   where a string the browser understands is enough - the moment it
-   became the input to a gradient ramp, four badges lost their inner
-   colour entirely. */
+/* Shading, and it takes "rgb(r,g,b)" as well as "#RRGGBB" - its own
+   output goes back into it in several places, and a second pass that
+   parsed "rgb(..." as hex got NaN for all three channels and painted
+   black. The rank emblems are the main caller now. */
 function badgeHexRgb(h){
   h = String(h).trim();
   if(h.charAt(0) !== "#"){
@@ -23080,107 +22987,108 @@ function badgeShade(hex, t){
   return "rgb(" + c.map((v, i) => Math.round(v + (to[i] - v) * k)).join(",") + ")";
 }
 
-/* No pane may be so dark that light stops getting through it. Four of
-   the sixteen families are deep enough that a darker sibling of them,
-   shaded again by the glass ramp, came out effectively black - and a
-   black pane in a silver setting is a hole, not a piece of glass. This
-   lifts anything below a luminance floor just far enough to clear it and
-   leaves everything else exactly as it is. */
-function glassTint(hex){
-  const c = badgeHexRgb(hex);
-  const lum = (c[0] * 0.299 + c[1] * 0.587 + c[2] * 0.114) / 255;
-  if(lum < 0.3) return badgeShade(hex, (0.3 - lum) * 1.7);
-  /* And a ceiling, for the same reason at the other end. The setting is
-     a blue-silver now, so a pale pane sitting inside it has nothing to
-     be: one family came out as a white badge in a white rim. This is the
-     "no colour may be close to the setting" rule, applied where the
-     colour is actually used rather than where it is declared. */
-  if(lum > 0.72) return badgeShade(hex, -(lum - 0.72) * 1.9);
-  return hex;
-}
-/* Rounded corners, and they are the difference between a shape and an
-   object. A hard-cornered polygon cut into a lining reads as a vector
-   path, which is what "the empty cut outs look bad and inconsistent and
-   not very smooth" was pointing at; every badge in the reference has a
-   moulded edge, and so does the recess it sits in. The same rounding
-   goes on the badge and on its slot because they are the same outline -
-   round one and they stop fitting each other.
-   The radius is clamped to under half the shorter of the two edges
-   meeting at a vertex, so a narrow spike (a star's point) keeps its
-   point instead of collapsing into an arc. */
-function badgeOutline(pts, radius){
-  const n = pts.length;
-  const R = radius === undefined ? 3.4 : radius;
-  const f = (p) => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  if(R <= 0 || n < 3) return "M" + pts.map(f).join("L") + "Z";
-  let d = "";
-  for(let i = 0; i < n; i++){
-    const cur = pts[i];
-    const prev = pts[(i - 1 + n) % n];
-    const next = pts[(i + 1) % n];
-    const v1 = [prev[0] - cur[0], prev[1] - cur[1]];
-    const v2 = [next[0] - cur[0], next[1] - cur[1]];
-    const l1 = Math.hypot(v1[0], v1[1]) || 1;
-    const l2 = Math.hypot(v2[0], v2[1]) || 1;
-    const k1 = Math.min(R, l1 / 2.4), k2 = Math.min(R, l2 / 2.4);
-    const p1 = [cur[0] + v1[0] / l1 * k1, cur[1] + v1[1] / l1 * k1];
-    const p2 = [cur[0] + v2[0] / l2 * k2, cur[1] + v2[1] / l2 * k2];
-    d += (i === 0 ? "M" : "L") + f(p1) + "Q" + f(cur) + " " + f(p2);
-  }
-  return d + "Z";
-}
-function badgeScalePts(pts, k, cx, cy){
-  return pts.map(p => [cx + (p[0] - cx) * k, cy + (p[1] - cy) * k]);
-}
-
 /* ---------- The badge case ----------
-   These are TOKENS, not gems. The previous set cut every badge like a
-   stone - a pavilion of shaded faces around a bright table - and it
-   read as sixteen jewels. The reference (a Sinnoh badge case) is
-   nothing like that: a heavy dark keyline, two or three FLAT colour
-   fields inside it, one small bright mark, and that is the whole
-   drawing. Flat is the style, not a shortcut.
+   SIXTEEN HAND-BUILT BADGES. Everything before this generated the
+   silhouette from a hash - even angles, jittered radii, a pattern of
+   near and far points - and every version of it came back worse than
+   the last, ending at "the badges look worse and worse by the turn.
+   Let's do this. Start fresh with the actual badges themselves."
 
-   The other half of the reference is the case itself. Every badge sits
-   in a recess cut to its own outline, which is why an empty slot still
-   tells you the shape of what goes in it and a filled one reads as
-   something placed rather than something printed. So the slot is drawn
-   for every badge, earned or not, and the token sits in it. */
-/* Not a keyline any more - a hairline. It shows on either side of
-   the silver setting and nowhere else. */
-const BADGE_EDGE = "#1B1F25";
-function badgeTokenPaths(geo){
-  /* The inner fields. All four kinds keep the vertical mirror: a
-     concentric copy and a circle obviously do, and a 180-degree turn
-     does too - reflect-then-turn is a reflection in the other axis, so
-     a shape with a vertical mirror keeps it. A free rotation would not,
-     which is why there isn't one. */
-  const outline = badgeOutline(geo.pts);
-  const mid = badgeScalePts(geo.pts, 0.66, 50, 50);
-  const turn = mid.map(pt => [100 - pt[0], 100 - pt[1]]);
-  const n = geo.pts.length;
-  const ring = [];
-  for(let i = 0; i < n; i++){
-    const a = -Math.PI / 2 + (i + 0.5) * 2 * Math.PI / n;
-    ring.push([50 + Math.cos(a) * 27, 50 + Math.sin(a) * 27]);
-  }
-  /* Kind 0 is a CONCENTRIC INSET, not the outline itself. Using the
-     outline meant the second pane covered the whole badge and the first
-     one never showed - invisible while every pane carried a rim of its
-     own, obvious the moment the rims became single lines of leading. */
-  const concentric = badgeScalePts(geo.pts, 0.8, 50, 50);
-  const inner = [badgeOutline(concentric), badgeOutline(mid),
-                 badgeOutline(turn), badgeOutline(ring)][geo.innerKind];
-  return { outline: outline, inner: inner, mid: mid };
+   Generation was the mistake, not the settings. A hash can make sixteen
+   DIFFERENT polygons; it cannot make sixteen DESIGNED ones, and the
+   reference is sixteen designed ones - a ringed heptagon, a diamond, a
+   trefoil of spheres, a run of peaks, a medal with a ribbon. Those were
+   drawn. So these are drawn too.
+
+   What the reference badges actually share, which is the whole recipe:
+     - a dark keyline round the outside, and it IS dominant. An earlier
+       pass here decided "black is not a material" and led with silver;
+       looked at properly, the reference leads with the dark line and
+       the silver sits inside it.
+     - a broad silver band following the silhouette, even in width.
+     - the colour as flat PLATES inset inside that band, each with its
+       own thin dark edge.
+     - silver CHANNELS between the plates - the band showing through,
+       not lines drawn on top of the colour. That is why the inside of a
+       gym badge reads as assembled rather than printed.
+   No gloss streak, no sparkle, no glass. Those were all tried here and
+   each one came back as "too shiny". */
+const BADGE_SHAPE = {
+  gate:       { c: [50.0, 49.0], cuts: ["M-6 50H106"],
+    d: "M44.4 10.2Q50.0 8.0 55.6 10.2L70.4 15.8Q76.0 18.0 78.5 23.4L85.5 38.6Q88.0 44.0 88.0 50.0L88.0 56.0Q88.0 62.0 85.0 67.2L75.0 84.8Q72.0 90.0 66.0 90.0L34.0 90.0Q28.0 90.0 25.0 84.8L15.0 67.2Q12.0 62.0 12.0 56.0L12.0 50.0Q12.0 44.0 14.5 38.6L21.5 23.4Q24.0 18.0 29.6 15.8Z" },
+  diamond:    { c: [50.0, 50.0], cuts: ["M50 -10V110", "M-10 50H110"],
+    d: "M45.1 10.9Q50.0 6.0 54.9 10.9L89.1 45.1Q94.0 50.0 89.1 54.9L54.9 89.1Q50.0 94.0 45.1 89.1L10.9 54.9Q6.0 50.0 10.9 45.1Z" },
+  disc:       { c: [44.0, 47.0], cuts: ["M-10 52H110"],
+    d: "M6 50A44 44 0 0 1 94 50L94 78A6 6 0 0 1 88 84L12 84A6 6 0 0 1 6 78Z" },
+  trefoil:    { c: [25.0, 38.8], cuts: [],
+    d: "M26.1 36.2A26.0 26.0 0 1 1 73.9 36.2A26.0 26.0 0 1 1 50.0 77.6A26.0 26.0 0 1 1 26.1 36.2Z" },
+  peaks:      { c: [50.0, 51.0], cuts: ["M-10 62H110"],
+    d: "M13.0 88.0Q8.0 88.0 8.0 83.0L8.0 55.0Q8.0 50.0 10.6 45.7L24.4 22.3Q27.0 18.0 29.8 22.1L47.2 47.9Q50.0 52.0 52.6 47.7L70.4 18.3Q73.0 14.0 75.3 18.4L89.7 45.6Q92.0 50.0 92.0 55.0L92.0 83.0Q92.0 88.0 87.0 88.0Z" },
+  wedge:      { c: [50.0, 55.0], cuts: ["M50 4V104"],
+    d: "M10.8 21.3Q8.0 16.0 14.0 16.0L32.0 16.0Q38.0 16.0 41.9 20.6L46.1 25.4Q50.0 30.0 53.9 25.4L58.1 20.6Q62.0 16.0 68.0 16.0L86.0 16.0Q92.0 16.0 89.2 21.3L52.8 88.7Q50.0 94.0 47.2 88.7Z" },
+  hex:        { c: [50.0, 50.0], cuts: ["M-6 34H106", "M-6 66H106"],
+    d: "M43.9 8.4Q50.0 5.0 56.1 8.4L84.9 24.6Q91.0 28.0 91.0 35.0L91.0 65.0Q91.0 72.0 84.9 75.4L56.1 91.6Q50.0 95.0 43.9 91.6L15.1 75.4Q9.0 72.0 9.0 65.0L9.0 35.0Q9.0 28.0 15.1 24.6Z" },
+  cross:      { c: [50.0, 50.0], cuts: ["M50 -10V110"],
+    d: "M36.0 13.0Q36.0 8.0 41.0 8.0L59.0 8.0Q64.0 8.0 64.0 13.0L64.0 31.0Q64.0 36.0 69.0 36.0L87.0 36.0Q92.0 36.0 92.0 41.0L92.0 59.0Q92.0 64.0 87.0 64.0L69.0 64.0Q64.0 64.0 64.0 69.0L64.0 87.0Q64.0 92.0 59.0 92.0L41.0 92.0Q36.0 92.0 36.0 87.0L36.0 69.0Q36.0 64.0 31.0 64.0L13.0 64.0Q8.0 64.0 8.0 59.0L8.0 41.0Q8.0 36.0 13.0 36.0L31.0 36.0Q36.0 36.0 36.0 31.0Z" },
+  spire:      { c: [50.0, 49.5], cuts: ["M-10 46H110"],
+    d: "M44.7 9.6Q50.0 5.0 55.3 9.6L82.7 33.4Q88.0 38.0 86.5 44.8L77.5 87.2Q76.0 94.0 69.0 94.0L31.0 94.0Q24.0 94.0 22.5 87.2L13.5 44.8Q12.0 38.0 17.3 33.4Z" },
+  fan:        { c: [50.0, 45.0], cuts: ["M-10 56H110"],
+    d: "M45.1 16.7Q50.0 8.0 54.9 16.7L87.1 73.3Q92.0 82.0 82.0 82.0L18.0 82.0Q8.0 82.0 12.9 73.3Z" },
+  burstplate: { c: [50.0, 50.0], cuts: ["M50 -10V110", "M-10 50H110"],
+    d: "M48.3 8.6Q50.0 5.0 51.7 8.6L58.2 22.4Q59.9 26.0 63.7 24.6L78.1 19.5Q81.8 18.2 80.5 21.9L75.4 36.3Q74.0 40.1 77.6 41.8L91.4 48.3Q95.0 50.0 91.4 51.7L77.6 58.2Q74.0 59.9 75.4 63.7L80.5 78.1Q81.8 81.8 78.1 80.5L63.7 75.4Q59.9 74.0 58.2 77.6L51.7 91.4Q50.0 95.0 48.3 91.4L41.8 77.6Q40.1 74.0 36.3 75.4L21.9 80.5Q18.2 81.8 19.5 78.1L24.6 63.7Q26.0 59.9 22.4 58.2L8.6 51.7Q5.0 50.0 8.6 48.3L22.4 41.8Q26.0 40.1 24.6 36.3L19.5 21.9Q18.2 18.2 21.9 19.5L36.3 24.6Q40.1 26.0 41.8 22.4Z" },
+  cring:      { c: [43.0, 22.0], cuts: ["M-6 50H106"],
+    d: "M50 6A44 44 0 1 1 26 86L34 68A25 25 0 1 0 50 24Z" },
+  bolt:       { c: [50.0, 51.0], cuts: [],
+    d: "M17.8 14.0Q18.0 10.0 22.0 10.0L66.0 10.0Q70.0 10.0 68.1 13.5L53.9 40.5Q52.0 44.0 56.0 44.0L80.0 44.0Q84.0 44.0 81.1 46.8L36.9 89.2Q34.0 92.0 35.3 88.2L44.7 59.8Q46.0 56.0 42.0 56.0L20.0 56.0Q16.0 56.0 16.2 52.0Z" },
+  star5:      { c: [50.0, 45.6], cuts: ["M-10 46H110"],
+    d: "M47.2 9.3Q50.0 4.0 52.8 9.3L61.3 25.3Q64.1 30.6 70.0 31.6L87.8 34.7Q93.7 35.8 89.6 40.1L77.0 53.1Q72.8 57.4 73.7 63.4L76.2 81.3Q77.0 87.2 71.6 84.6L55.4 76.6Q50.0 74.0 44.6 76.6L28.4 84.6Q23.0 87.2 23.8 81.3L26.3 63.4Q27.2 57.4 23.0 53.1L10.4 40.1Q6.3 35.8 12.2 34.7L30.0 31.6Q35.9 30.6 38.7 25.3Z" },
+  keystone:   { c: [50.0, 50.0], cuts: ["M-10 54H110"],
+    d: "M28.1 13.7Q30.0 8.0 36.0 8.0L64.0 8.0Q70.0 8.0 71.9 13.7L76.1 26.3Q78.0 32.0 83.0 35.3L85.0 36.7Q90.0 40.0 90.0 46.0L90.0 86.0Q90.0 92.0 84.0 92.0L16.0 92.0Q10.0 92.0 10.0 86.0L10.0 46.0Q10.0 40.0 15.0 36.7L17.0 35.3Q22.0 32.0 23.9 26.3Z" },
+  quatre:     { c: [36.5, 36.5], cuts: [],
+    d: "M27.1 27.1A23.0 23.0 0 1 1 72.9 27.1A23.0 23.0 0 1 1 72.9 72.9A23.0 23.0 0 1 1 27.1 72.9A23.0 23.0 0 1 1 27.1 27.1Z" },
+};
+/* One shape per unit, by hand, because sixteen units and sixteen shapes
+   is a pairing and not a lottery - a hash into this table would double
+   up on some and skip others, which is the "they all have the same
+   common" problem in a different form. A unit the table does not know
+   falls back to the hash, for the same reason badgeThemeFor does: the
+   leaderboard lost three classmates to a builder returning null for an
+   id it did not know. */
+const UNIT_BADGE_SHAPE = {
+  "Professionalism and Ethics":                    "gate",
+  "Professional Policing":                         "diamond",
+  "Fitness, Wellness, and Stress Management":      "peaks",
+  "TCOLE Rules":                                   "hex",
+  "Multiculturalism and Human Relations":          "trefoil",
+  "Racial Profiling":                              "burstplate",
+  "US and Texas Constitution and Rights":          "cross",
+  "Penal Code":                                    "keystone",
+  "Code of Criminal Procedure and Bill of Rights": "spire",
+  "Arrest, Search, and Seizure":                   "cring",
+  "Victims of Crime":                              "quatre",
+  "Missing and Exploited Children":                "star5",
+  "Identity Crimes":                               "bolt",
+  "Sexual Assault and Family Violence":            "fan",
+  "Verbal Communication":                          "disc",
+  "Civil Process and Liability":                   "wedge"
+};
+const BADGE_SHAPE_KEYS = Object.keys(BADGE_SHAPE);
+function badgeShapeFor(unitName){
+  const name = String(unitName || "");
+  const key = UNIT_BADGE_SHAPE[name];
+  if(key && BADGE_SHAPE[key]) return BADGE_SHAPE[key];
+  const i = (parseInt(hashOf(name), 36) >>> 0) % BADGE_SHAPE_KEYS.length;
+  return BADGE_SHAPE[BADGE_SHAPE_KEYS[i]];
 }
 
 let badgeSvgSeq = 0;
 
 function buildUnitBadgeSVG(unitName, earned){
   const NS = "http://www.w3.org/2000/svg";
-  const geo = badgeGeometry(unitName);
-  const paths = badgeTokenPaths(geo);
-  const outline = paths.outline;
+  const shape = badgeShapeFor(unitName);
+  const theme = badgeThemeFor(unitName);
+  const outline = shape.d;
+  const cx = shape.c[0], cy = shape.c[1];
   const uid = "bdg" + (++badgeSvgSeq);
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 100 100");
@@ -23189,11 +23097,13 @@ function buildUnitBadgeSVG(unitName, earned){
 
   const defs = document.createElementNS(NS, "defs");
   svg.appendChild(defs);
-  function clip(id, d){
+  function clip(id, d, transform){
     const cp = document.createElementNS(NS, "clipPath");
     cp.setAttribute("id", id);
     const pa = document.createElementNS(NS, "path");
-    pa.setAttribute("d", d); cp.appendChild(pa); defs.appendChild(cp);
+    pa.setAttribute("d", d);
+    if(transform) pa.setAttribute("transform", transform);
+    cp.appendChild(pa); defs.appendChild(cp);
     return "url(#" + id + ")";
   }
   function add(d, attrs, parent){
@@ -23209,39 +23119,31 @@ function buildUnitBadgeSVG(unitName, earned){
     (parent || svg).appendChild(g);
     return g;
   }
+  function ramp(id, stops, x1, y1, x2, y2){
+    const g = document.createElementNS(NS, "linearGradient");
+    g.setAttribute("id", id);
+    g.setAttribute("x1", x1); g.setAttribute("y1", y1);
+    g.setAttribute("x2", x2); g.setAttribute("y2", y2);
+    stops.forEach(([o, c, a]) => {
+      const st = document.createElementNS(NS, "stop");
+      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
+      if(a !== undefined) st.setAttribute("stop-opacity", String(a));
+      g.appendChild(st);
+    });
+    defs.appendChild(g);
+    return "url(#" + id + ")";
+  }
 
   /* ---- the slot, cut into the tray ----
-     The reference is a badge CASE: the slots are cut into a soft lining
-     and you can read the shape of an empty one at a glance. Reported as
-     "the empty cut outs look bad and inconsistent and not very smooth
-     ... you can just tell those cutouts are on a soft material".
-     Three things make a hole read as a hole in something soft rather
-     than a dark shape printed on a card:
-       - the recess is not black. It is the lining seen in shadow, so it
-         is a desaturated blue-grey, the same family as the metal.
-       - a recess lit from the top-left has its SHADOW on the top-left
-         inner edge and its catch-light on the bottom-right, which is the
-         opposite of a raised object.
-       - the lip around it is soft. Wide, low-opacity strokes read as
-         material giving way; a hairline reads as a drawn outline, which
-         is what the first version looked like.
-     Two copies of the same outline, offset in opposite directions and
-     clipped to it, do all of that without a filter - filters are the one
-     SVG feature that has bitten this app on real iOS hardware. */
+     A recess lit from the top-left has its SHADOW on the top-left inner
+     edge and its catch-light on the bottom-right, which is the opposite
+     of a raised object and the whole reason it reads as a hole. Two
+     copies of the outline offset in opposite directions and clipped to
+     it do that without a filter - filters are the one SVG feature that
+     has bitten this app on real iOS hardware. The lip is wide and low
+     opacity so the hole reads as cut into something soft. */
   const slotClip = clip(uid + "-slot", outline);
   add(outline, { fill: "#171B22" });
-  add(outline, { fill: "url(#" + uid + "-hole)" });
-  const hole = document.createElementNS(NS, "linearGradient");
-  hole.setAttribute("id", uid + "-hole");
-  hole.setAttribute("x1", "0"); hole.setAttribute("y1", "0");
-  hole.setAttribute("x2", ".4"); hole.setAttribute("y2", "1");
-  [[0, "#0D1016", 0.95], [0.55, "#161B23", 0.8], [1, "#222A35", 0.7]].forEach(([o, c, a]) => {
-    const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-    st.setAttribute("stop-opacity", String(a));
-    hole.appendChild(st);
-  });
-  defs.appendChild(hole);
   const slotShade = group({ "clip-path": slotClip });
   add(outline, { fill: "none", stroke: "rgba(0,0,0,.5)", "stroke-width": "7",
                  "stroke-linejoin": "round", transform: "translate(2.4 2.8)" }, slotShade);
@@ -23249,165 +23151,60 @@ function buildUnitBadgeSVG(unitName, earned){
                  "stroke-linejoin": "round", transform: "translate(1.2 1.4)" }, slotShade);
   add(outline, { fill: "none", stroke: "rgba(190,214,242,.16)", "stroke-width": "4.5",
                  "stroke-linejoin": "round", transform: "translate(-2 -2.3)" }, slotShade);
-  /* The lip of the cut, on the tray side. Soft and cool rather than
-     white, so the hole sits IN the lining instead of on top of it. */
   add(outline, { fill: "none", stroke: "rgba(198,218,244,.17)", "stroke-width": "1.6",
                  "stroke-linejoin": "round" });
 
   if(!earned) return svg;
 
   /* ---- the badge, placed in it ----
-     ONE MAKER made all sixteen, and what says so is the SETTING: a broad
-     rim of the same blue-silver following each badge's own outline, with
-     the colour held inside it.
-     The colour is STAINED GLASS, not enamel - "it almost looks like the
-     colored stuff is colored stained glass, within the nice blue/silver
-     looking metal and its all shiny". Two things make that true rather
-     than described: every pane carries its own light (bright where the
-     light falls, deep where it does not, which is what a translucent
-     material does and a painted one does not), and the divisions between
-     panes are LEADING - one thin line of the same metal - rather than
-     each pane being a separately rimmed object stacked on the one below.
-     That stacking is exactly what came back as "some badges have details
-     or pieces where it looks like metal is sitting on metal": the old
-     drawing gave every inner field a dark stroke AND a silver stroke,
-     then laid a metal motif on a dark underlay on top of that. Three
-     rings of metal and an ornament, on a badge 60px wide.
      Scaled under the slot so the cut edge stays visible all the way
      round. A badge exactly the size of its hole looks printed on. */
   const token = group({ transform: "translate(50 50) scale(.9) translate(-50 -50)" });
-  const tokenClip = clip(uid + "-tok", outline);
 
-  /* Polished, and BLUE. A neutral grey rim is a drawn line; this ramp
-     runs from a near-white highlight through steel to a bright bottom
-     edge, and every stop carries blue in it, which is what the case in
-     the reference is made of. */
-  const silver = document.createElementNS(NS, "linearGradient");
-  silver.setAttribute("id", uid + "-ag");
-  silver.setAttribute("x1", "0"); silver.setAttribute("y1", "0");
-  silver.setAttribute("x2", ".3"); silver.setAttribute("y2", "1");
-  [[0, "#F4F9FF"], [0.2, "#D3E2F4"], [0.46, "#93A8C4"], [0.68, "#5E7191"],
-   [0.86, "#AFC5E0"], [1, "#E8F2FF"]].forEach(([o, c]) => {
-    const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-    silver.appendChild(st);
-  });
-  defs.appendChild(silver);
-  const AG = "url(#" + uid + "-ag)";
+  /* The metal. Lit from the top-left, through shadow, back up at the
+     bottom edge - a flat grey band is a drawn line, a ramp is a piece of
+     metal catching light. */
+  const AG = ramp(uid + "-ag",
+    [[0, "#F6F9FC"], [0.28, "#CCD5DE"], [0.56, "#8D98A5"], [0.8, "#697683"], [1, "#D2DBE4"]],
+    "0", "0", ".35", "1");
+  /* The plate. The reference's colour fields are not flat - they carry a
+     soft fall across them - but they are not glass either, which is what
+     the version before this tried and what came back as too shiny. */
+  const PL = ramp(uid + "-pl",
+    [[0, theme.p, 0.82], [0.45, theme.p], [1, theme.p, 0.78]], ".15", "0", ".8", "1");
 
-  /* A pane of glass: lit from the top-left, deepening away from it, with
-     the far edge coming back up a little the way light does through a
-     translucent sheet. */
-  function pane(id, raw){
-    const hex = glassTint(raw);
-    const g = document.createElementNS(NS, "linearGradient");
-    g.setAttribute("id", id);
-    g.setAttribute("x1", "0.05"); g.setAttribute("y1", "0");
-    g.setAttribute("x2", "0.85"); g.setAttribute("y2", "1");
-    /* Gentle. The first pass ran +0.42 to -0.30 across the pane and,
-       under the shine on top of it, every badge came out black in one
-       corner and white in the other - a lighting effect rather than a
-       colour. Glass shades; it does not go out. */
-    [[0, badgeShade(hex, 0.3)], [0.4, badgeShade(hex, 0.08)],
-     [0.78, badgeShade(hex, -0.12)], [1, badgeShade(hex, 0.02)]].forEach(([o, c]) => {
-      const st = document.createElementNS(NS, "stop");
-      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-      g.appendChild(st);
+  const FIELD = "translate(" + cx + " " + cy + ") scale(.8) translate(" + (-cx) + " " + (-cy) + ")";
+
+  /* The dark keyline first, then the silver band inside it. What shows
+     of the dark is a line on either side of the metal - outside it
+     against the case, inside it against the colour. */
+  add(outline, { fill: "none", stroke: "#14171C", "stroke-width": "13",
+                 "stroke-linejoin": "round" }, token);
+  add(outline, { fill: AG, stroke: AG, "stroke-width": "9",
+                 "stroke-linejoin": "round" }, token);
+  /* The plate, inset about the SHAPE'S OWN centre rather than the
+     frame's. Half these silhouettes are not centred on 50,50 - the ring
+     and the bolt least of all - and scaling about the frame put their
+     colour off to one side of their own metal. */
+  add(outline, { fill: PL, stroke: "#14171C", "stroke-width": "4.5",
+                 "stroke-linejoin": "round", transform: FIELD }, token);
+
+  /* The channels: the band showing THROUGH the plate, not lines drawn on
+     top of it. Clipped to the plate so a channel stops at the colour's
+     edge instead of cutting the band in half, and flat silver rather
+     than the ramp - a linear gradient resolves against its path's
+     bounding box, and a straight line's box is zero wide in one axis, so
+     the ramp degenerates and the channel comes out as a dark bar. */
+  if(shape.cuts.length){
+    const cutClip = clip(uid + "-fld", outline, FIELD);
+    const cuts = group({ "clip-path": cutClip }, token);
+    shape.cuts.forEach(c => {
+      add(c, { fill: "none", stroke: "#14171C", "stroke-width": "13" }, cuts);
+      add(c, { fill: "none", stroke: "#9FACBA", "stroke-width": "9" }, cuts);
+      add(c, { fill: "none", stroke: "#E4ECF4", "stroke-width": "2.6", opacity: ".45",
+               transform: "translate(-1 -1.2)" }, cuts);
     });
-    defs.appendChild(g);
-    return "url(#" + id + ")";
   }
-  const glassP = pane(uid + "-p", geo.theme.p);
-
-  /* Glass first, then the setting laid over its edge as two strokes on
-     the same path: a dark one, and the metal a little narrower on top.
-     What shows of the dark is a hairline on either side of the metal -
-     outside it against the case, inside it against the glass - which is
-     what stops the metal dissolving into either. */
-  add(outline, { fill: glassP }, token);
-  add(outline, { fill: "none", stroke: BADGE_EDGE, "stroke-width": "11.4",
-                 "stroke-linejoin": "round" }, token);
-  add(outline, { fill: "none", stroke: AG, "stroke-width": "8.2",
-                 "stroke-linejoin": "round" }, token);
-
-  /* The inner panes. ONE line of leading each, not a rim of its own -
-     that is the whole difference between a stained-glass division and a
-     second badge sitting on the first. The thin dark line under it is
-     the shadow the lead casts on the glass, at a third of its width, and
-     is what keeps the lead from dissolving into a pale pane. */
-  function lead(d, w){
-    add(d, { fill: "none", stroke: "rgba(0,0,0,.45)", "stroke-width": String(w + 1.1),
-             "stroke-linejoin": "round", "stroke-linecap": "round" }, token);
-    add(d, { fill: "none", stroke: AG, "stroke-width": String(w),
-             "stroke-linejoin": "round", "stroke-linecap": "round" }, token);
-  }
-  if(geo.bands >= 2){
-    add(paths.inner, { fill: pane(uid + "-s", geo.theme.s) }, token);
-    lead(paths.inner, 2.6);
-  }
-  if(geo.bands >= 3){
-    const core = badgeOutline(badgeScalePts(geo.pts, 0.34, 50, 50));
-    add(core, { fill: pane(uid + "-a", geo.theme.a) }, token);
-    lead(core, 2.2);
-  }
-
-  /* NO DEVICE. There were twelve small marks, one per badge, and after
-     two passes at making them read as leading rather than as ornament
-     they came back as "each one of them has a random thing on them that
-     looks bad, like I see a lot of upside down v's that looks bad like
-     they were stuck on top of them". A mark in the middle of a pane is
-     an object on the glass however it is drawn, and these are 60px wide.
-     What replaces it is real leading: one or two straight lines running
-     edge to edge across the badge, clipped to its own outline, which is
-     how an actual window is divided. A line that reaches the rim is
-     structure; a shape that stops short of it is decoration.
-     Variety does not depend on it either - sixteen silhouettes by four
-     inner-pane shapes by two band counts by sixteen distinct colours,
-     and now four leading patterns on top of that. */
-  const leadClip = clip(uid + "-lead", outline);
-  const leadGroup = group({ "clip-path": leadClip }, token);
-  /* A FLAT silver, not the AG ramp. A linear gradient resolves against
-     the path's own bounding box, and a straight line's box is zero wide
-     in one axis - so the ramp degenerates and the lead came out as a
-     flat dark bar, which is the opposite of metal. The rim can carry a
-     ramp because it has area; a 2.6-wide line cannot show one anyway. */
-  function leadLine(d){
-    add(d, { fill: "none", stroke: "rgba(0,0,0,.42)", "stroke-width": "4.2" }, leadGroup);
-    add(d, { fill: "none", stroke: "#C9D9EE", "stroke-width": "2.6" }, leadGroup);
-    add(d, { fill: "none", stroke: "#FFFFFF", "stroke-width": ".9", opacity: ".7",
-             transform: "translate(-.5 -.6)" }, leadGroup);
-  }
-  const leadKind = geo.motif % 4;
-  if(leadKind === 1 || leadKind === 3) leadLine("M50 -6V106");
-  if(leadKind === 2 || leadKind === 3) leadLine("M-6 50H106");
-
-  /* The shine, clipped to the badge. Glass takes a hard-edged reflection
-     of whatever is in front of it, so this is a straight-sided band and
-     a narrow bright streak across it - not a dome, which is what made an
-     earlier set read as a plastic bubble. The third, lower band is the
-     light coming back off the far face of the glass. */
-  const gleam = group({ "clip-path": tokenClip }, token);
-  /* Turned down, twice. "Now they are too shiny looking" - the wash and
-     the streak together were bleaching the upper half of every badge and
-     doing it identically on all sixteen, which is also part of why they
-     read as having too much in common. Glass catches a little light, not
-     a lot; the colour is what the badge is for. */
-  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF", opacity: ".05" }, gleam);
-  add("M-12 34L58 -14L74 -14L-12 52Z", { fill: "#FFFFFF", opacity: ".12" }, gleam);
-  add("M-12 66L30 36L41 36L-12 74Z", { fill: "#E9F3FF", opacity: ".06" }, gleam);
-
-  /* The glint, proud of the rim at the top-left where the light is
-     coming from. Drawn OUTSIDE the token group so it can overlap the
-     silhouette's edge - a sparkle that stops at the outline is a
-     sparkle painted on the badge rather than one coming off it. */
-  let gx = 100, gy = 100;
-  geo.pts.forEach(pt => { if(pt[0] + pt[1] < gx + gy){ gx = pt[0]; gy = pt[1]; } });
-  const gs = 5.6;
-  add("M" + gx + " " + (gy - gs) + "Q" + gx + " " + (gy - gs * 0.22) + " " + (gx + gs) + " " + gy +
-      "Q" + gx + " " + (gy + gs * 0.22) + " " + gx + " " + (gy + gs) +
-      "Q" + gx + " " + (gy + gs * 0.22) + " " + (gx - gs) + " " + gy +
-      "Q" + gx + " " + (gy - gs * 0.22) + " " + gx + " " + (gy - gs) + "Z",
-      { fill: "#FFFFFF", opacity: ".72" });
   return svg;
 }
 
