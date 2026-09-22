@@ -8437,13 +8437,72 @@
   .profile-hero{ padding:1.9rem 1.45rem 1.6rem; }
   .profile-hero .profile-hero-top{ gap:1.1rem; }
   .profile-hero .profile-hero-avatar{ width:6.2rem; height:6.2rem; }
-  .profile-hero .profile-name-display{ font-size:1.62rem; }
+  /* 1.45, not 1.62: at the larger size "Madison" plus a button that now
+     says Customize wrapped onto two lines on a 440px phone, which pushed
+     the rank chip down and left the row looking broken. */
+  .profile-hero .profile-name-display{ font-size:1.45rem; }
+  .profile-hero .profile-edit-btn{ padding:.38rem .7rem; font-size:.74rem; }
   .profile-hero .profile-level{ padding-top:1.15rem; margin-top:1.15rem; }
   .profile-hero .profile-classline{ margin-top:1.25rem; padding:.95rem 1.05rem; }
   @media (min-width:40rem){
     .profile-hero{ padding:2.5rem 2rem 2rem; }
     .profile-hero .profile-hero-avatar{ width:7.8rem; height:7.8rem; }
     .profile-hero .profile-name-display{ font-size:2.05rem; }
+  }
+  /* The class box, below the identity card. Its own surface, because it
+     is about the course rather than about you - the same reasoning that
+     keeps the two boxes on this tab distinct rather than one long slab. */
+  .profile-classcard{
+    margin-top:1rem; padding:1.15rem 1.15rem 1.05rem; border-radius:18px;
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .profile-classcard-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:.6rem; flex-wrap:wrap; margin-bottom:.85rem;
+  }
+  .profile-classcard-title{
+    font-family:var(--serif); font-size:1.12rem; font-weight:800; margin:0;
+    color:var(--ink);
+  }
+  .profile-classcard-count{
+    font-size:.76rem; font-weight:800; letter-spacing:.03em;
+    color:var(--theme-c1); font-variant-numeric:tabular-nums;
+  }
+  /* Label in a fixed column, body beside it, so Today and Next line up
+     down the left edge whatever length their text runs to. */
+  .profile-classday{
+    display:flex; gap:.7rem; padding:.55rem 0;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+  .profile-classday-label{
+    flex:0 0 3.1rem; font-size:.68rem; font-weight:800; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--soft); padding-top:.18rem;
+  }
+  .profile-classday-body{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
+  .profile-classday-when{
+    font-size:.72rem; font-weight:700; color:var(--soft); letter-spacing:.02em;
+  }
+  .profile-classday-what{
+    font-size:.87rem; font-weight:600; line-height:1.3; color:var(--ink);
+    overflow-wrap:break-word;
+  }
+  .profile-classday.is-today .profile-classday-what{ color:var(--theme-c1); }
+  .profile-classday-what.is-holiday{ color:var(--soft); font-style:italic; }
+  .profile-classday-what.is-none{ color:var(--soft); }
+  .profile-classcard-btns{
+    display:flex; gap:.6rem; margin-top:.95rem; flex-wrap:wrap;
+  }
+  .profile-classcard-btn{
+    flex:1 1 8rem; min-width:0; font-size:.8rem;
+    padding:.7rem .6rem; line-height:1.25;
+  }
+  @media (min-width:40rem){
+    .profile-classcard{ padding:1.5rem 1.6rem 1.4rem; }
+    .profile-classcard-title{ font-size:1.3rem; }
+    .profile-classday-what{ font-size:.95rem; }
+    .profile-classcard-btn{ font-size:.92rem; }
   }
   /* Customize: the name and its Change button on one line. */
   .customize-namerow{
@@ -8494,19 +8553,28 @@
   }
   .profile-classline-arrow{ font-size:1.2rem; line-height:1; opacity:.7; }
 
-  /* Three stats now, not two - level, badges and hundos - so the row
-     has to survive a 320px screen. It wraps and each item can shrink;
-     the gap comes down to match. */
+  /* Three stats now, not two - level, badges and hundos. A flex row with
+     space-between wrapped the third onto its own line on a phone, which
+     reads as a mistake rather than as a layout; three equal columns fit
+     at every width down to 320 and keep the numbers on one line. */
+  /* auto / 1fr / auto, not three equal columns. Equal thirds squeezed the
+     widest item, which is the one that matters: "LEVEL 43" came out
+     clipped to "LEVEL 4". The two side columns size to their own content
+     and the middle one takes what is left. */
   .profile-level-row{
-    display:flex; align-items:flex-end; justify-content:space-between;
-    gap:.5rem 1rem; margin-bottom:.85rem; flex-wrap:wrap; min-width:0;
+    display:grid; grid-template-columns:auto minmax(0, 1fr) auto;
+    align-items:flex-end; gap:.75rem; margin-bottom:.85rem;
   }
   .profile-level-row > *{ min-width:0; }
+  .profile-level-num{ justify-content:flex-start; }
+  .profile-badgestat{ text-align:center; }
+  .profile-hundostat{ text-align:right; }
   .profile-level-num{ display:flex; align-items:baseline; gap:.45rem; min-width:0; }
   .profile-level-word{
     font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
   }
-  .profile-level-value{ font-size:2.7rem; font-weight:900; line-height:.9; }
+  .profile-level-value{ font-size:2.4rem; font-weight:900; line-height:.9; }
+  @media (min-width:40rem){ .profile-level-value{ font-size:2.9rem; } }
   .profile-badgestat{
     display:flex; flex-direction:column; align-items:flex-end; gap:.1rem;
     background:none; border:none; padding:.35rem 0 .35rem .5rem; margin:-.35rem 0;
@@ -23287,6 +23355,32 @@ function classDaysRemaining(){
   const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
   return CALENDAR_DATA.filter(d => d.date >= todayStr && d.date <= GRADUATION_DATE && !d.holiday).length;
 }
+/* Today's local date as the plain ISO string CALENDAR_DATA is keyed by.
+   Built from the local parts rather than toISOString(), which converts to
+   UTC first and therefore reports tomorrow's date all evening in Texas -
+   the sort of thing that is invisible until somebody opens the app at
+   9pm and is told the wrong day. */
+function todayCalendarKey(){
+  const d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+/* The entry for today, if today is a class day at all. */
+function todaysClassEntry(){
+  const k = todayCalendarKey();
+  return CALENDAR_DATA.find(d => d.date === k) || null;
+}
+/* The next class day strictly after today, skipping holidays - a holiday
+   is on the calendar but it is not a day anybody turns up for. */
+function nextClassEntry(){
+  const k = todayCalendarKey();
+  return CALENDAR_DATA.find(d => d.date > k && !d.holiday) || null;
+}
+/* "Tue, Jun 15" - short, because these sit on one line inside a card. */
+function formatCalendarDate(iso){
+  const p = String(iso).split("-").map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
 
 
 function applySaved(){
@@ -36617,21 +36711,80 @@ function showProfile(defaultTab){
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
+  /* The class gets a box of its own below the card, not one line inside
+     it - "add a box below the top box and make it dedicated to the class
+     calendar and class days remaining, maybe you could show what's on the
+     schedule for today and the next class day". So it says what today is,
+     what the next class day is, how many are left, and carries the two
+     buttons. .profile-classline stays as a class name so the Profile
+     tour's step still has something to point at. */
+  const classSect = document.createElement("div");
+  classSect.className = "profile-classcard";
+
+  const classHead = document.createElement("div");
+  classHead.className = "profile-classcard-head";
+  const classTitle = document.createElement("p");
+  classTitle.className = "profile-classcard-title";
+  classTitle.textContent = "Class 26E";
+  const daysLeftNow = classDaysRemaining();
+  const classCount = document.createElement("span");
+  classCount.className = "profile-classcard-count";
+  classCount.textContent = daysLeftNow + (daysLeftNow === 1 ? " class day left" : " class days left");
+  classHead.append(classTitle, classCount);
+  classSect.appendChild(classHead);
+
+  /* Today, then next. One builder, because the only thing that differs is
+     the label and which entry it reads. */
+  function classDayRow(label, entry, isToday){
+    const row = document.createElement("div");
+    row.className = "profile-classday" + (isToday ? " is-today" : "");
+    const lab = document.createElement("span");
+    lab.className = "profile-classday-label";
+    lab.textContent = label;
+    const body = document.createElement("span");
+    body.className = "profile-classday-body";
+    if(entry){
+      const when = document.createElement("span");
+      when.className = "profile-classday-when";
+      when.textContent = formatCalendarDate(entry.date);
+      const what = document.createElement("span");
+      what.className = "profile-classday-what" + (entry.holiday ? " is-holiday" : "");
+      what.textContent = entry.text;
+      body.append(when, what);
+    } else {
+      const what = document.createElement("span");
+      what.className = "profile-classday-what is-none";
+      /* Two genuinely different "nothing" cases: no class today is an
+         ordinary Saturday, no class ever again is the course being over. */
+      what.textContent = isToday ? "No class today" : "No class days left";
+      body.appendChild(what);
+    }
+    row.append(lab, body);
+    return row;
+  }
+  classSect.appendChild(classDayRow("Today", todaysClassEntry(), true));
+  classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
+
+  const classBtns = document.createElement("div");
+  classBtns.className = "profile-classcard-btns";
+  const daysBtn = document.createElement("button");
+  daysBtn.type = "button";
+  daysBtn.className = "next ghost profile-classcard-btn";
+  daysBtn.textContent = "Class days remaining";
+  daysBtn.addEventListener("click", () => {
+    const n = classDaysRemaining();
+    showDailyAlert(n === 0
+      ? "No class days left \u2014 the course is done."
+      : n + (n === 1 ? " class day" : " class days") + " left before graduation.");
+  });
+
   const classLine = document.createElement("button");
   classLine.type = "button";
-  classLine.className = "profile-classline";
-  /* Just the destination. The remaining-day count was reported as not
-     belonging on this row - a number that changes daily, sitting inside
-     what is otherwise a plain link, and the calendar it opens says the
-     same thing with the dates attached. */
-  const classLineText = document.createElement("span");
-  classLineText.textContent = "View class calendar";
-  const classLineArrow = document.createElement("span");
-  classLineArrow.className = "profile-classline-arrow";
-  classLineArrow.setAttribute("aria-hidden", "true");
-  classLineArrow.textContent = "›";
-  classLine.append(classLineText, classLineArrow);
+  classLine.className = "next profile-classcard-btn profile-classline";
+  classLine.textContent = "View class calendar";
   classLine.addEventListener("click", showCalendar);
+  classBtns.append(daysBtn, classLine);
+  classSect.appendChild(classBtns);
 
   /* ---------- level and badges ----------------------------------------
      The level bar, per explicit request, and it is the reason this
@@ -36713,13 +36866,13 @@ function showProfile(defaultTab){
      card it was the one tappable thing in a block of read-only text. */
   levelSect.classList.add("profile-level-joined");
   heroSect.appendChild(levelSect);
-  /* The calendar row is back INSIDE the card, where it was before this
-     batch - "the class calendar button looks better where it was before
-     I think". Below the card it read as a second, competing destination
-     beside the test review; inside it, it is one line at the foot of
-     who-you-are, which is what it always was. */
-  heroSect.appendChild(classLine);
+  /* The class no longer rides at the foot of the identity card. It was
+     one line there because it was one line of content; now that it is
+     today's schedule, the next class day and a count, it is its own box
+     directly below - which is also what gave the card above the room to
+     grow. */
   identityTab.appendChild(heroSect);
+  identityTab.appendChild(classSect);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden, and a bar
