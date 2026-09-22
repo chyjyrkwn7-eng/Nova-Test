@@ -221,6 +221,14 @@ def check_swipe(br):
         pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(250)
         pg.evaluate("()=>showHome()"); pg.wait_for_timeout(250)
         pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
+        # READ OFF THE SCREEN, never hard-coded. This asserted the
+        # literal "Badges" and went red the day the boards became This
+        # Week / Level / Hundos - failing the app for a change that was
+        # asked for. What the check is actually about is "exactly one
+        # step, not two", so it wants the SECOND tab whatever it is
+        # called, and it now asks the app which that is.
+        tabs = pg.evaluate("()=>[...document.querySelectorAll('.panel .navsegment .iconbtn')]"
+                           ".map(b=>b.textContent)")
         _swipe(cdp, w * 0.75, h * 0.45, -w * 0.5, 18)
         pg.wait_for_timeout(400)
         once = pg.evaluate(ACTIVE_TAB)
@@ -229,7 +237,7 @@ def check_swipe(br):
         pg.wait_for_timeout(400)
         still_home = pg.evaluate("()=>!!document.querySelector('.panel.home')")
         check("%s a second visit still steps exactly one tab" % label,
-              once == "Badges", once)
+              len(tabs) > 1 and once == tabs[1], "%s of %s" % (once, tabs))
         check("%s leaving detaches the swipe" % label, still_home)
         ctx.close()
 
