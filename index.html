@@ -1605,7 +1605,32 @@
      the line every other onboarding screen shares - the single most
      load-bearing row in the whole position table. Two rows of six
      costs nothing anywhere else. */
-  .avatarchar-grid{ display:grid; grid-template-columns:repeat(6, 1fr); gap:.5rem .35rem; justify-items:center; }
+  /* FOUR across on the sign-up picker, not six. Six was right when this
+     screen showed all twelve characters - two even rows. The locked four
+     came off it, so eight in six columns is a row of six and a ragged row
+     of two, which reads as a mistake. Four is two even rows again.
+     The column count follows the number of items, which is the actual
+     rule here: this file already learned it once when adding four
+     characters turned two even rows into three and pushed the level card
+     off the top of an SE. */
+  .avatarchar-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:.6rem .45rem; justify-items:center; }
+  /* Four columns instead of six leaves room for each one to be bigger,
+     which is the point of the change rather than a side effect: eight
+     characters shown larger is a better picker than twelve shown small. */
+  .panel.home.charselect-panel .avatarchar-option{ max-width:4.6rem; }
+  @media (min-width:40rem){
+    .panel.home.charselect-panel .avatarchar-option{ max-width:6rem; }
+  }
+  /* The name field is sized for the widest screen it appears on and was
+     reported as wider than it needs to be on a phone - "a good size for
+     the larger devices but could be a smidge shortened for the phones".
+     A ceiling only below 32rem, so nothing on a tablet moves. */
+  @media (max-width:32rem){
+    .panel.home.onboarding-shortform-panel .searchbox{ max-width:15rem; }
+  }
+  /* The customise screen still shows all twelve, locked ones included, so
+     it keeps six. */
+  .avatarchar-grid.avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); }
   /* No circular frame or background \u2014 just the character itself,
      sized generously since there's no longer a small circle
      constraining it. Selection shows as a gentle lift and glow
@@ -21342,12 +21367,42 @@ new MutationObserver(() => {
 
    Not reproducible in Chromium, which has no soft keyboard and no visual
    viewport offset to leave behind; this is the standard remedy for it. */
+/* BLUR BEFORE THE SCREEN CHANGES, not after it. The observer below is the
+   backstop and it was the only remedy for a long time, but it runs on the
+   mutation - by which point iOS has already torn the keyboard down and
+   left the page panned, and window.scrollTo(0,0) in that same tick is
+   fighting a scroll restoration that has not finished happening.
+   pointerdown fires before the click, before any navigation, and before
+   the keyboard starts to go: blurring there lets iOS dismiss and restore
+   the scroll on its own, the way it does everywhere else in the OS.
+   Capture phase, because a handler on the button itself would run after
+   the browser had already decided what to do with focus. */
+document.addEventListener("pointerdown", (e) => {
+  const a = document.activeElement;
+  if(!a || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+  /* Not when the tap is on the field itself, or inside it - moving the
+     caret must not dismiss the keyboard. */
+  if(a === e.target || (a.contains && a.contains(e.target))) return;
+  a.blur();
+}, true);
+
 new MutationObserver(() => {
   const focused = document.activeElement;
   if(focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)){
     focused.blur();
-    window.scrollTo(0, 0);
   }
+  /* Correct the scroll more than once. iOS restores it asynchronously as
+     the keyboard animates away (~250ms), so a single scrollTo in this tick
+     is applied and then undone by the restoration that follows it - which
+     is exactly the "it stays that way for the rest of the session" this
+     was supposed to have fixed. Three passes cover the animation without
+     ever fighting a scroll the person made themselves: each one only acts
+     if the page is still pushed down. */
+  const settle = () => { if(window.scrollY > 0) window.scrollTo(0, 0); };
+  settle();
+  requestAnimationFrame(settle);
+  setTimeout(settle, 160);
+  setTimeout(settle, 400);
 }).observe(stage, { childList: true });
 
 /* Only the setup screen's Start button and the in-question Next button
@@ -32452,7 +32507,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-90";
+const APP_BUILD = "2026-09-22-91";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
