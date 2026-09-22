@@ -361,11 +361,14 @@ def check_ranks(br):
     edges = pg.evaluate("""()=>({
       exact: rankOfStats(20, 4, 0), levelShort: rankOfStats(19, 4, 0),
       badgeShort: rankOfStats(20, 3, 0), nothing: rankOfStats(1, 0, 0),
-      titanNoFlares: rankOfStats(70, 14, 0), titan: rankOfStats(70, 14, 3)})""")
-    check("a rank needs BOTH halves, and Supernova needs the flares too",
+      top: rankOfStats(70, 14, 0), topShort: rankOfStats(70, 13, 0)})""")
+    # The third argument is the old Secret Flare count. It is passed as 0
+    # everywhere now and the top rank reaches anyway, which is the whole
+    # point of the check: nothing gates on it any more.
+    check("a rank needs both halves of its rule, and only those two",
           edges["exact"] == "veteran" and edges["levelShort"] == "ranger" and
           edges["badgeShort"] == "ranger" and edges["nothing"] is None and
-          edges["titanNoFlares"] == "elite" and edges["titan"] == "titan", edges)
+          edges["top"] == "titan" and edges["topShort"] == "elite", edges)
 
     pg.evaluate("()=>showProfile('ranks')")
     pg.wait_for_timeout(1500)
@@ -433,45 +436,45 @@ def check_ranks(br):
     check("one full-width row per rank on a tablet too",
           lay["beside"] and lay["perRow"] == 1 and lay["full"], lay)
 
-    # SEVEN DIFFERENT MARKS, not one mark at seven sizes. The set this
-    # replaced was generated from a single table and was reported as
-    # "all nearly identical just different in size", so the check is
-    # structural rather than a look: the three lowest are chevrons (a
-    # path of straight segments with no curve in it), the top rank is the
-    # only one carrying an arc command, and no two ranks produce the same
-    # shape signature.
+    # SEVEN DIFFERENT MARKS, not one mark at seven sizes - and not the
+    # chevron set that replaced it either ("I'm not a fan of the iron
+    # bronze silver icons after all"). They are seven celestial bodies
+    # now: a dead rock, a ringed world, a crescent, a sun, a comet, a
+    # galaxy, and the burst. The check is structural rather than a look:
+    # no two ranks produce the same shape signature, and the top one is
+    # the most elaborate thing in the set.
     shapes = pg.evaluate("""()=>{
       const out={};
       TIER_ORDER_FULL.forEach(k=>{
         const svg=buildRankEmblemSVG(k);
         const ds=[...svg.querySelectorAll('path')].map(p=>p.getAttribute('d')||'');
-        out[k]={n:ds.length,
-                chevron:ds.some(d=>(d.match(/L/g)||[]).length===5 && d.indexOf('Q')===-1),
-                arc:ds.some(d=>d.indexOf('A')!==-1),
-                sig:ds.join('|').length};
+        out[k]={n:ds.length, sig:ds.join('|').length};
       });
       return out;}""")
     order = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]
-    check("the three lowest ranks are chevrons and the top three are not",
-          all(shapes[k]["chevron"] for k in order[:3]) and
-          not any(shapes[k]["chevron"] for k in order[4:]),
-          {k: shapes[k]["chevron"] for k in order})
-    check("only the top rank carries a blast shell",
-          shapes["titan"]["arc"] and not any(shapes[k]["arc"] for k in order[:6]),
-          {k: shapes[k]["arc"] for k in order})
     check("no two ranks draw the same thing",
           len({shapes[k]["sig"] for k in order}) == 7,
           {k: shapes[k]["sig"] for k in order})
+    check("the top rank is the busiest mark in the set",
+          shapes["titan"]["n"] > max(shapes[k]["n"] for k in order[:6]),
+          {k: shapes[k]["n"] for k in order})
 
-    # The Secret Flares unlock box came off this tab: it was the one
-    # thing on it that was not a rank, with its own header and its own
-    # vocabulary. The requirement itself is untouched - the top rank's
-    # own card still lists the three flares like any other requirement.
-    secret = pg.evaluate("""()=>({box:!!document.querySelector('.ranks-tab .unlock-row'),
-      onTopCard:[...document.querySelectorAll('.rankcard-req')]
-        .some(p=>/Secret Flares/.test(p.textContent))})""")
-    check("no separate unlock box, and the flares still show as a requirement",
-          not secret["box"] and secret["onTopCard"], secret)
+    # The Secret Flares are gone: the hunt, the Eclipse colour it
+    # unlocked, and the clause it put on the top rank's requirement.
+    # "The mystery flares should be scrapped and moved. That means the
+    # requirement they have, the theme, the unlock."
+    gone = pg.evaluate("""()=>({
+      box: !!document.querySelector('.ranks-tab .unlock-row'),
+      anyMention: /Secret Flare/i.test(document.querySelector('.ranks-tab').textContent),
+      topReq: [...document.querySelectorAll('.rankcard-req')].pop().textContent,
+      eclipse: ACCENTS.indexOf('mystery') !== -1
+    })""")
+    check("no unlock box and nothing on the tab mentions a Secret Flare",
+          not gone["box"] and not gone["anyMention"], gone)
+    check("the top rank asks for levels and badges and nothing else",
+          "Secret" not in gone["topReq"] and "Level" in gone["topReq"], gone["topReq"])
+    check("the Eclipse colour is off the list of themes",
+          not gone["eclipse"], gone)
     ctx.close()
     ctx2, pg2 = booted(br, 393, 852, seed=seed)
     pg2.evaluate("()=>showProfile('ranks')")

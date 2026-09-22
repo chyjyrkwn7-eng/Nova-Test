@@ -232,24 +232,44 @@
   [data-theme="dark"][data-accent="indigo"]{  --accent:#7B68EE; --accent-ink:#F5F3FF; }
   [data-accent="legend"]{ --accent:#B8860B; --accent-ink:#1A1500; }
   [data-theme="dark"][data-accent="legend"]{ --accent:#FFD84D; --accent-ink:#1A1500; }
-  [data-accent="rookie"]{ --accent:#6B7280; --accent-ink:#F7F8F9; --theme-c1:color-mix(in srgb, white 70%, #6B7280); --theme-c2:#6B7280; --theme-c3:color-mix(in srgb, black 45%, #6B7280); }
-  [data-theme="dark"][data-accent="rookie"]{ --accent:#9CA3AF; --accent-ink:#16181A; }
-  [data-accent="ranger"]{ --accent:#16A34A; --accent-ink:#F0FBF4; --theme-c1:color-mix(in srgb, white 70%, #16A34A); --theme-c2:#16A34A; --theme-c3:color-mix(in srgb, black 45%, #16A34A); }
-  [data-theme="dark"][data-accent="ranger"]{ --accent:#4ADE80; --accent-ink:#052E11; }
-  [data-accent="veteran"]{ --accent:#2563EB; --accent-ink:#F0F5FF; --theme-c1:color-mix(in srgb, white 70%, #2563EB); --theme-c2:#2563EB; --theme-c3:color-mix(in srgb, black 45%, #2563EB); }
-  [data-theme="dark"][data-accent="veteran"]{ --accent:#7CA6FF; --accent-ink:#0A1530; }
-  [data-accent="vanguard"]{ --accent:#9333EA; --accent-ink:#FAF3FF; --theme-c1:color-mix(in srgb, white 70%, #9333EA); --theme-c2:#9333EA; --theme-c3:color-mix(in srgb, black 45%, #9333EA); }
-  [data-theme="dark"][data-accent="vanguard"]{ --accent:#D19CFF; --accent-ink:#20092E; }
+  /* THE NAME IS THE COLOUR, here too. Ember was green, Comet was blue,
+     Star was purple, Giant was magenta and Nova was orange - seven
+     astronomical names over seven colours that had nothing to do with
+     them, which is the same problem the ranks had before they were
+     renamed. Only Supernova was already right.
+
+     And each one is a TRIAD, not one colour three times. Every accent
+     used to derive its three glow stops from itself - white+accent,
+     accent, black+accent - so the whole backdrop came out as a single
+     hue at three brightnesses, against a default that runs gold to
+     orange to magenta across three genuinely different hues. Reported
+     as exactly that: "the default background is like orange and purple,
+     the themes are a single colored background". Each triad below is a
+     light edge, the accent, and a deeper hue rotated away from it, the
+     same shape the default has.
+
+     The DARK --accent is the one that shows - the app is dark-only - so
+     that is the value ACCENT_SWATCH carries, and the two have to be
+     changed together or the swatch stops matching what picking it
+     paints. */
+  [data-accent="rookie"]{ --accent:#C07E12; --accent-ink:#2A1B00; --theme-c1:#FFE6AE; --theme-c2:#F0A93C; --theme-c3:#B7503C; }
+  [data-theme="dark"][data-accent="rookie"]{ --accent:#F6C25A; --accent-ink:#2A1B00; }
+  [data-accent="ranger"]{ --accent:#C2440F; --accent-ink:#FFF3ED; --theme-c1:#FFCB92; --theme-c2:#E2571E; --theme-c3:#8E2F5C; }
+  [data-theme="dark"][data-accent="ranger"]{ --accent:#F4713C; --accent-ink:#2A0C00; }
+  [data-accent="veteran"]{ --accent:#1189AD; --accent-ink:#EFFBFF; --theme-c1:#C6F2FF; --theme-c2:#35C4E8; --theme-c3:#2F55AE; }
+  [data-theme="dark"][data-accent="veteran"]{ --accent:#5AD4F2; --accent-ink:#04222C; }
+  [data-accent="vanguard"]{ --accent:#5B84C4; --accent-ink:#F4F9FF; --theme-c1:#EDF5FF; --theme-c2:#9FC2F5; --theme-c3:#5B4BC4; }
+  [data-theme="dark"][data-accent="vanguard"]{ --accent:#BBD4FA; --accent-ink:#0B1730; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
-     already set to rather than the intended magenta \u2014 selecting this
-     color visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --accent:#D946EF; --accent-ink:#FDF4FF; --theme-c1:color-mix(in srgb, white 70%, #D946EF); --theme-c2:#D946EF; --theme-c3:color-mix(in srgb, black 45%, #D946EF); }
-  [data-theme="dark"][data-accent="adept"]{ --accent:#F0ABFC; --accent-ink:#2E0A2E; }
-  [data-accent="elite"]{ --accent:#EA580C; --accent-ink:#FFF6EF; --theme-c1:color-mix(in srgb, white 70%, #EA580C); --theme-c2:#EA580C; --theme-c3:color-mix(in srgb, black 45%, #EA580C); }
-  [data-theme="dark"][data-accent="elite"]{ --accent:#FF9457; --accent-ink:#2A0E00; }
-  [data-accent="titan"]{ --accent:#DC2626; --accent-ink:#FFF2F2; --theme-c1:color-mix(in srgb, white 70%, #DC2626); --theme-c2:#DC2626; --theme-c3:color-mix(in srgb, black 45%, #DC2626); }
-  [data-theme="dark"][data-accent="titan"]{ --accent:#FF6B6B; --accent-ink:#2A0808; }
+     already set to rather than the intended colour \u2014 selecting this
+     colour visibly did nothing anywhere in the app. */
+  [data-accent="adept"]{ --accent:#B53551; --accent-ink:#FFF2F5; --theme-c1:#FFC6D1; --theme-c2:#D8546E; --theme-c3:#7C2A6E; }
+  [data-theme="dark"][data-accent="adept"]{ --accent:#EE7A90; --accent-ink:#2E0711; }
+  [data-accent="elite"]{ --accent:#5A3BD0; --accent-ink:#F5F2FF; --theme-c1:#D2C2FF; --theme-c2:#7E5BF5; --theme-c3:#2E3FA0; }
+  [data-theme="dark"][data-accent="elite"]{ --accent:#9C7DFF; --accent-ink:#160A33; }
+  [data-accent="titan"]{ --accent:#C4241A; --accent-ink:#FFF2F1; --theme-c1:#FFD08A; --theme-c2:#EE3A2F; --theme-c3:#8C1E63; }
+  [data-theme="dark"][data-accent="titan"]{ --accent:#FF5B4E; --accent-ink:#2A0705; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
   [data-accent="scholar"]{ --accent:#5B6B7A; --accent-ink:#F5F7F8; }
@@ -7047,9 +7067,25 @@
     border-color:color-mix(in srgb, var(--rank-color, var(--accent)) 22%, transparent);
     border-left-color:color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
   }
-  .rankcard.is-locked .rankcard-art{ opacity:.6; }
+  /* A rank you have not reached is a GHOST of itself - "all the ones you
+     haven't reached need that same style where they look kind of ghost
+     like and ones that are unlocked have full color". Three things make
+     that read, and all three are needed: the colour drains most of the
+     way out, the emblem drops to a third, and the glow it casts goes
+     entirely. What is left still carries the rank's hue, so you can see
+     what you are heading towards - which was the other explicit ask, and
+     the reason these are not simply redrawn in grey.
+     The rank you are climbing to keeps a little more of itself than the
+     ones beyond it, because it is the one you are actually working on. */
+  .rankcard.is-locked .rankcard-art{ opacity:.34; filter:saturate(.35); }
   .rankcard.is-locked .rankcard-art svg{ filter:none; }
-  .rankcard.is-locked .rankcard-bg svg{ opacity:.07; }
+  .rankcard.is-locked .rankcard-bg svg{ opacity:.05; }
+  .rankcard.is-locked .rankcard-name{ opacity:.7; }
+  .rankcard.is-next .rankcard-art{ filter:saturate(.7); }
+  /* And the other half of the same statement: a rank you HOLD is at full
+     strength, with its own glow. Both sides have to move or "ghost like"
+     and "full color" end up a few percent apart. */
+  .rankcard.is-held .rankcard-art{ opacity:1; filter:none; }
   .rankcard.is-locked .rankcard-name{
     color:color-mix(in srgb, var(--rank-color, var(--accent)) 62%, var(--soft));
   }
@@ -7456,7 +7492,19 @@
      the way the avatar grid above it is (a 4-column grid with
      justify-items:center, so it always fills and centers itself
      regardless of item count). */
-  .swatches{ display:flex; flex-wrap:wrap; justify-content:center; gap:.6rem; }
+  /* A grid on the same tracks as the character row above it, not a
+     wrapping flex row. "On the iPhone it should be as wide as the colors
+     below it" - the two only read as one block if they share a column
+     count, and a flex row that wraps puts its last line wherever the
+     arithmetic lands. Four across on a phone, eight (one row) from tablet
+     up, exactly like the characters. */
+  .swatches{
+    display:grid; grid-template-columns:repeat(4, minmax(0, 1fr));
+    justify-items:center; gap:1rem .6rem;
+  }
+  @media (min-width:40rem){
+    .swatches{ grid-template-columns:repeat(8, minmax(0, 1fr)); gap:0 .5rem; }
+  }
   .swatch{
     width:2.9rem; height:2.9rem; border-radius:50%; border:2px solid var(--rule);
     cursor:pointer; display:grid; place-items:center; padding:0; background:var(--panel);
@@ -8318,21 +8366,23 @@
      box is for, so the box grows with it rather than closing up. */
   .swatch{ width:3.9rem; height:3.9rem; }
   .swatch .dot{ width:3.1rem; height:3.1rem; }
-  /* Four equal columns across a wide panel put the characters at the
-     centre of cells nearly twice their own width - "the avatar spacing is
-     kinda weird on some devices, very spread out". Capping the track to
-     the character's own size and centring the tracks keeps the row
-     together whatever the panel is doing around it. */
+  /* Capping the tracks to the character's own size and centring them was
+     the fix for "very spread out" and it overshot: "the avatar layout
+     looks bad, now it looks way too smushed together". The right answer
+     is neither - it is that this grid should span the same width as the
+     colour swatches under it, so the two rows read as one block. Four
+     equal FULL-WIDTH columns on a phone; eight on a tablet, which is one
+     row for all eight characters. */
   .avatarchar-grid-appearance{
-    grid-template-columns:repeat(4, minmax(0, 3.7rem));
-    justify-content:center; gap:.9rem .75rem;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    justify-items:center; gap:1rem .6rem;
   }
   @media (min-width:27rem){
     .badge-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
   }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
-    .avatarchar-grid-appearance{ grid-template-columns:repeat(4, minmax(0, 4.5rem)); gap:1.1rem .9rem; }
+    .avatarchar-grid-appearance{ grid-template-columns:repeat(8, minmax(0, 1fr)); gap:0 .5rem; }
     /* 6rem, not the 7rem an earlier pass tried: that one came back as
        "absolutely massive". This is a third bigger than what a large
        screen was actually getting and still short of that. */
@@ -22639,7 +22689,7 @@ function rememberConfig(){
    "freebie" extras available from the start. */
 const ACCENTS = ["ink",
                   "rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan",
-                  "mystery"];
+                  ];
 
 /* One unified Mastery Ladder now, not points and stars as two
    disconnected progressions \u2014 each tier requires BOTH a star count
@@ -22698,7 +22748,7 @@ const TIER_UNLOCKS = {
      "Secret Flares" for display, distinct from the Mastery Ladder's
      own "Flares" (the orbiting badges) since these are a different,
      hidden thing to find rather than a tier to climb. */
-  titan:    { level: 70, badges: 14, mysteryStars: 3, label: "Reach level 70, 14 badges, and find all 3 Secret Flares" }
+  titan:    { level: 70, badges: 14, label: "Reach level 70 and 14 badges" }
 };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
@@ -23291,13 +23341,35 @@ function buildUnitBadgeSVG(unitName, earned){
     lead(core, 2.2);
   }
 
-  /* The device, as leading across the innermost pane - a line of metal
-     dividing the glass, not an ornament laid on it. Drawn once, in the
-     metal, with no dark underlay: the underlay was there to separate an
-     ornament from the colour behind it, and leading does not need
-     separating from the thing it divides. */
-  const R = geo.bands >= 3 ? 11 : 16;
-  drawBadgeMotif(add, token, geo.motif, 50, 50, R, AG, geo.theme);
+  /* NO DEVICE. There were twelve small marks, one per badge, and after
+     two passes at making them read as leading rather than as ornament
+     they came back as "each one of them has a random thing on them that
+     looks bad, like I see a lot of upside down v's that looks bad like
+     they were stuck on top of them". A mark in the middle of a pane is
+     an object on the glass however it is drawn, and these are 60px wide.
+     What replaces it is real leading: one or two straight lines running
+     edge to edge across the badge, clipped to its own outline, which is
+     how an actual window is divided. A line that reaches the rim is
+     structure; a shape that stops short of it is decoration.
+     Variety does not depend on it either - sixteen silhouettes by four
+     inner-pane shapes by two band counts by sixteen distinct colours,
+     and now four leading patterns on top of that. */
+  const leadClip = clip(uid + "-lead", outline);
+  const leadGroup = group({ "clip-path": leadClip }, token);
+  /* A FLAT silver, not the AG ramp. A linear gradient resolves against
+     the path's own bounding box, and a straight line's box is zero wide
+     in one axis - so the ramp degenerates and the lead came out as a
+     flat dark bar, which is the opposite of metal. The rim can carry a
+     ramp because it has area; a 2.6-wide line cannot show one anyway. */
+  function leadLine(d){
+    add(d, { fill: "none", stroke: "rgba(0,0,0,.42)", "stroke-width": "4.2" }, leadGroup);
+    add(d, { fill: "none", stroke: "#C9D9EE", "stroke-width": "2.6" }, leadGroup);
+    add(d, { fill: "none", stroke: "#FFFFFF", "stroke-width": ".9", opacity: ".7",
+             transform: "translate(-.5 -.6)" }, leadGroup);
+  }
+  const leadKind = geo.motif % 4;
+  if(leadKind === 1 || leadKind === 3) leadLine("M50 -6V106");
+  if(leadKind === 2 || leadKind === 3) leadLine("M-6 50H106");
 
   /* The shine, clipped to the badge. Glass takes a hard-edged reflection
      of whatever is in front of it, so this is a straight-sided band and
@@ -23305,9 +23377,14 @@ function buildUnitBadgeSVG(unitName, earned){
      earlier set read as a plastic bubble. The third, lower band is the
      light coming back off the far face of the glass. */
   const gleam = group({ "clip-path": tokenClip }, token);
-  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF", opacity: ".09" }, gleam);
-  add("M-12 34L58 -14L74 -14L-12 52Z", { fill: "#FFFFFF", opacity: ".21" }, gleam);
-  add("M-12 66L30 36L41 36L-12 74Z", { fill: "#E9F3FF", opacity: ".11" }, gleam);
+  /* Turned down, twice. "Now they are too shiny looking" - the wash and
+     the streak together were bleaching the upper half of every badge and
+     doing it identically on all sixteen, which is also part of why they
+     read as having too much in common. Glass catches a little light, not
+     a lot; the colour is what the badge is for. */
+  add("M-10 -10H110L-10 74Z", { fill: "#FFFFFF", opacity: ".05" }, gleam);
+  add("M-12 34L58 -14L74 -14L-12 52Z", { fill: "#FFFFFF", opacity: ".12" }, gleam);
+  add("M-12 66L30 36L41 36L-12 74Z", { fill: "#E9F3FF", opacity: ".06" }, gleam);
 
   /* The glint, proud of the rim at the top-left where the light is
      coming from. Drawn OUTSIDE the token group so it can overlap the
@@ -23315,93 +23392,14 @@ function buildUnitBadgeSVG(unitName, earned){
      sparkle painted on the badge rather than one coming off it. */
   let gx = 100, gy = 100;
   geo.pts.forEach(pt => { if(pt[0] + pt[1] < gx + gy){ gx = pt[0]; gy = pt[1]; } });
-  const gs = 7.5;
+  const gs = 5.6;
   add("M" + gx + " " + (gy - gs) + "Q" + gx + " " + (gy - gs * 0.22) + " " + (gx + gs) + " " + gy +
       "Q" + gx + " " + (gy + gs * 0.22) + " " + gx + " " + (gy + gs) +
       "Q" + gx + " " + (gy + gs * 0.22) + " " + (gx - gs) + " " + gy +
       "Q" + gx + " " + (gy - gs * 0.22) + " " + gx + " " + (gy - gs) + "Z",
-      { fill: "#FFFFFF", opacity: ".92" });
+      { fill: "#FFFFFF", opacity: ".72" });
   return svg;
 }
-
-/* Twelve marks, all symmetric about the vertical axis and none of them
-   a picture of anything. Twelve because eight put the same device on
-   two badges in a set of sixteen often enough to be reported as
-   "repeated in a lot of ways", and because the inner field has four
-   shapes of its own, so twelve marks is forty-eight combinations
-   before the silhouette is even counted. */
-function drawBadgeMotif(add, into, kind, ax, ay, R, ink, theme){
-  const f = (v) => v.toFixed(2);
-  const disc = (cx, cy, r, fill) => add(
-    "M" + f(cx - r) + " " + f(cy) + "a" + f(r) + " " + f(r) + " 0 1 0 " + f(r * 2) + " 0" +
-    "a" + f(r) + " " + f(r) + " 0 1 0 " + f(-r * 2) + " 0Z", { fill: fill }, into);
-  const ring = (r, w) => add(
-    "M" + f(ax - r) + " " + f(ay) + "a" + f(r) + " " + f(r) + " 0 1 0 " + f(r * 2) + " 0" +
-    "a" + f(r) + " " + f(r) + " 0 1 0 " + f(-r * 2) + " 0Z",
-    { fill: "none", stroke: ink, "stroke-width": f(w) }, into);
-  const poly = (k, r, rot, attrs) => {
-    const d = [];
-    for(let i = 0; i < k; i++){
-      const a = rot + i * 2 * Math.PI / k;
-      d.push(f(ax + Math.cos(a) * r) + " " + f(ay + Math.sin(a) * r));
-    }
-    return add("M" + d.join("L") + "Z", attrs, into);
-  };
-  const star = (k, r, inner, attrs) => {
-    const d = [];
-    for(let i = 0; i < k * 2; i++){
-      const a = -Math.PI / 2 + i * Math.PI / k;
-      const rr = i % 2 === 0 ? r : r * inner;
-      d.push(f(ax + Math.cos(a) * rr) + " " + f(ay + Math.sin(a) * rr));
-    }
-    return add("M" + d.join("L") + "Z", attrs, into);
-  };
-  const UP = -Math.PI / 2;
-  const solid = { fill: ink };
-  const line = (w) => ({ fill: "none", stroke: ink, "stroke-width": f(w),
-                         "stroke-linecap": "round", "stroke-linejoin": "round" });
-  switch(kind){
-    case 0: ring(R * 0.8, R * 0.3); disc(ax, ay, R * 0.24, ink); break;
-    case 1: poly(4, R, UP, solid); break;
-    case 2:
-      [1, 0.58].forEach(k => add("M" + f(ax - R * k) + " " + f(ay + R * k * 0.46) +
-        "L" + f(ax) + " " + f(ay - R * k * 0.5) + "L" + f(ax + R * k) + " " + f(ay + R * k * 0.46),
-        line(R * 0.26)));
-      break;
-    case 3: [[0, -0.6], [-0.56, 0.42], [0.56, 0.42]].forEach(([dx, dy]) =>
-        disc(ax + dx * R, ay + dy * R, R * 0.3, ink)); break;
-    case 4:
-      for(let i = 0; i < 6; i++){
-        const a = UP + i * Math.PI / 3;
-        add("M" + f(ax + Math.cos(a) * R * 0.28) + " " + f(ay + Math.sin(a) * R * 0.28) +
-            "L" + f(ax + Math.cos(a) * R) + " " + f(ay + Math.sin(a) * R), line(R * 0.2));
-      }
-      disc(ax, ay, R * 0.26, ink); break;
-    case 5: ring(R, R * 0.17); ring(R * 0.52, R * 0.17); break;
-    case 6: poly(6, R, UP, line(R * 0.22)); disc(ax, ay, R * 0.24, ink); break;
-    case 7: star(4, R, 0.3, solid); break;
-    case 8: star(6, R, 0.48, solid); break;
-    case 9:
-      /* A bar of three, tapering. Symmetric because the outer two are
-         a mirrored pair and the middle sits on the axis. */
-      [[-0.62, 0.52], [0, 1], [0.62, 0.52]].forEach(([dx, h]) =>
-        add("M" + f(ax + dx * R) + " " + f(ay - R * h) + "L" + f(ax + dx * R) + " " + f(ay + R * h),
-            line(R * 0.24)));
-      break;
-    case 10:
-      /* A lens: two arcs meeting top and bottom. */
-      add("M" + f(ax) + " " + f(ay - R) + "Q" + f(ax + R * 0.95) + " " + f(ay) + " " +
-          f(ax) + " " + f(ay + R) + "Q" + f(ax - R * 0.95) + " " + f(ay) + " " +
-          f(ax) + " " + f(ay - R) + "Z", solid);
-      disc(ax, ay, R * 0.22, theme.s); break;
-    default:
-      /* Three nested chevrons pointing up. */
-      [1, 0.66, 0.32].forEach(k => add("M" + f(ax - R * k) + " " + f(ay + R * 0.5) +
-        "L" + f(ax) + " " + f(ay - R * k * 0.72) + "L" + f(ax + R * k) + " " + f(ay + R * 0.5),
-        line(R * 0.17)));
-  }
-}
-
 
 function hundosOf(st){
   return (st && st.lifetime && st.lifetime.perfectTests) || 0;
@@ -23460,10 +23458,14 @@ function tierColorUnlocked(name){
   const mysteryOk = typeof rule.mysteryStars !== "number" || mysteryColorsFoundCount() >= rule.mysteryStars;
   return starsOk && pointsOk && mysteryOk;
 }
+/* These are the DARK --accent values from the CSS above, because dark is
+   the only mode the app has - a swatch that shows the light-mode value is
+   a swatch that does not match what picking it does. Change one and change
+   the other. */
 const ACCENT_SWATCH = {
   ink:"#5C6E78", teal:"#0A7A8C", indigo:"#4438A8",
-  rookie:"#6B7280", ranger:"#16A34A", veteran:"#2563EB", vanguard:"#9333EA",
-  adept:"#D946EF", elite:"#EA580C", titan:"#DC2626"
+  rookie:"#F6C25A", ranger:"#F4713C", veteran:"#5AD4F2", vanguard:"#BBD4FA",
+  adept:"#EE7A90", elite:"#9C7DFF", titan:"#FF5B4E"
 };
 /* The full progression, escalating in real astronomical scale from a
    first tiny light to the biggest, most dramatic stellar event there
@@ -23473,7 +23475,7 @@ const ACCENT_SWATCH = {
    separate "100% complete" achievement bolted on beside it. */
 const ACCENT_DISPLAY_NAME = {
   rookie: "Spark", ranger: "Ember", veteran: "Comet", vanguard: "Star",
-  adept: "Giant", elite: "Nova", titan: "Supernova", mystery: "Eclipse"
+  adept: "Giant", elite: "Nova", titan: "Supernova"
 };
 /* One matching symbol per Mastery Ladder tier, escalating in the same
    spirit as the names themselves \u2014 a small plain sparkle at the
@@ -23496,6 +23498,12 @@ const TIER_ICON_GLYPHS = {
   elite: "M12 2v4.5M12 17.5v4M2 12h4.5M17.5 12h4M12 8.5l1.3 3.2 3.6.3-2.7 2.3.9 3.5L12 15.9l-3.1 1.9.9-3.5-2.7-2.3 3.6-.3z",
   titan: "M12 1v4.5M12 18.5v4M1 12h4.5M18.5 12h4M4.2 4.2l3.2 3.2M16.6 16.6l3.2 3.2M4.2 19.8l3.2-3.2M16.6 7.4l3.2-3.2M12 7l1.8 4.4 4.7.4-3.6 3 1.2 4.6L12 16.8l-4.1 2.6 1.2-4.6-3.6-3 4.7-.4z"
 };
+/* Always 0 now: the hunt is gone and nothing sets these any more. The
+   function stays because the leaderboard and the Virtual Room both
+   publish a `mystery` field, and an older document in either collection
+   still carries one - reading it as 0 is what keeps those rows valid
+   rather than making every remote person's rank depend on a field this
+   build no longer writes. */
 function mysteryColorsFoundCount(){
   return Object.values(store.mysteryColorsFound || {}).filter(Boolean).length;
 }
@@ -23604,24 +23612,6 @@ function buildRankEmblemSVG(rankKey){
     defs.appendChild(g);
     return "url(#" + id + ")";
   }
-  function linear(id, stops, x1, y1, x2, y2){
-    const g = document.createElementNS(NS, "linearGradient");
-    g.setAttribute("id", id);
-    g.setAttribute("x1", x1); g.setAttribute("y1", y1);
-    g.setAttribute("x2", x2); g.setAttribute("y2", y2);
-    stops.forEach(([o, c, a]) => {
-      const st = document.createElementNS(NS, "stop");
-      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-      if(a !== undefined) st.setAttribute("stop-opacity", String(a));
-      g.appendChild(st);
-    });
-    defs.appendChild(g);
-    return "url(#" + id + ")";
-  }
-  /* The metal the low ranks are struck from: lit from the top-left,
-     shaded at the bottom, in the rank's own colour. */
-  const metal = linear(uid + "m", [[0, badgeShade(base, 0.72)], [0.42, base],
-                                   [1, badgeShade(base, -0.42)]], "18%", "0%", "82%", "100%");
   const body  = ramp(uid + "s", [[0, "#FFFFFF"], [0.18, badgeShade(base, 0.66)],
                                  [0.6, base], [1, badgeShade(base, -0.4)]], "50%", "44%", "58%");
   const glow  = ramp(uid + "g", [[0, badgeShade(base, 0.5), 0.55],
@@ -23649,17 +23639,6 @@ function buildRankEmblemSVG(rankKey){
       d += "Q" + P(cx, cy, am, r * waist) + " " + P(cx, cy, a1, r);
     }
     return d + "Z";
-  }
-  /* A chevron: two arms meeting at a point, with a parallel inner edge,
-     so it is a stroke of metal rather than a filled triangle. */
-  function chevron(cy, halfW, rise, thick){
-    const x0 = C - halfW, x1 = C + halfW;
-    return "M" + x0 + " " + (cy + rise) +
-           "L" + C + " " + cy +
-           "L" + x1 + " " + (cy + rise) +
-           "L" + x1 + " " + (cy + rise + thick) +
-           "L" + C + " " + (cy + thick) +
-           "L" + x0 + " " + (cy + rise + thick) + "Z";
   }
   /* A lens streak through the centre. Horizontal and vertical are
      deliberately DIFFERENT lengths - equal ones make a cross, and a
@@ -23698,112 +23677,173 @@ function buildRankEmblemSVG(rankKey){
     [th, Math.PI - th].forEach(fn);
   }
 
-  /* ---- the low ranks: service insignia, flat, struck from metal ---- */
-  const CH = { rise: 17, thick: 9.5, gap: 14.5, halfW: 30 };
-  /* The stack is centred on the frame whatever its count, so one, two
-     and three chevrons sit in the same place rather than drifting up the
-     emblem as the rank climbs. Stacked so the topmost is the one the eye
-     lands on, the way a sleeve reads. `lift` moves the whole group up
-     where something else (Silver's spark) has to share the frame. */
-  function chevrons(n, lift){
-    const H = CH.rise + CH.thick + (n - 1) * CH.gap;
-    const top = C - H / 2 - (lift || 0);
-    for(let i = 0; i < n; i++){
-      add(chevron(top + i * CH.gap, CH.halfW, CH.rise, CH.thick),
-          { fill: metal, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
-    }
-    /* One hairline of light along the top edge of the topmost chevron. A
-       flat stamping with no light on it reads as a cut-out. */
-    add("M" + (C - CH.halfW) + " " + (top + CH.rise) + "L" + C + " " + top +
-        "L" + (C + CH.halfW) + " " + (top + CH.rise),
-        { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.5", opacity: ".5",
-          "stroke-linecap": "round", "stroke-linejoin": "round" });
-    return top;
+  /* ---- seven celestial bodies, not seven stars ----
+     The chevron set that came before this one was rejected outright
+     ("I'm not a fan of the iron bronze silver icons after all"), and the
+     set before THAT was one star at seven sizes. What both got wrong is
+     the same thing: a rank ladder needs seven OBJECTS, and the drama has
+     to come from what the object is, not from how big it is drawn.
+     These are the life of a star told as seven things you can name at a
+     glance - a dead rock, a ringed world, a moon, a sun, a comet, an
+     eclipse, and the thing the app is named after. Every silhouette is
+     different, every one is recognisable at 26px on a rankings row, and
+     the order is a genuine escalation rather than a size ramp. */
+  function clipTo(id, d){
+    const cp = document.createElementNS(NS, "clipPath");
+    cp.setAttribute("id", id);
+    const pa = document.createElementNS(NS, "path");
+    pa.setAttribute("d", d); cp.appendChild(pa); defs.appendChild(cp);
+    return "url(#" + id + ")";
+  }
+  function disc(cx, cy, r){
+    return "M" + (cx - r) + " " + cy + "a" + r + " " + r + " 0 1 0 " + (r * 2) + " 0" +
+           "a" + r + " " + r + " 0 1 0 " + (-r * 2) + " 0Z";
+  }
+  function group(attrs){
+    const g = document.createElementNS(NS, "g");
+    Object.keys(attrs).forEach(k => g.setAttribute(k, attrs[k]));
+    svg.appendChild(g);
+    return g;
+  }
+  function addTo(parent, d, attrs){
+    const el = document.createElementNS(NS, "path");
+    el.setAttribute("d", d);
+    Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k]));
+    parent.appendChild(el);
+    return el;
+  }
+  /* A lit body: the whole disc in shadow, with the lit side drawn as an
+     offset circle clipped back to it. That is a terminator, and it is
+     what makes a circle read as a world rather than as a dot. */
+  function litBody(cx, cy, r, fill){
+    add(disc(cx, cy, r), { fill: badgeShade(base, -0.62) });
+    const g = group({ "clip-path": clipTo(uid + "-b" + Math.round(cx + cy + r), disc(cx, cy, r)) });
+    addTo(g, disc(cx - r * 0.3, cy - r * 0.28, r * 0.96), { fill: fill });
+    add(disc(cx, cy, r), { fill: "none", stroke: dark, "stroke-width": ".9" });
+    return g;
   }
 
   if(rankKey === "rookie"){
-    /* IRON. One chevron. The lowest thing the app can call you, and it
-       has to look like the bottom of a ladder or nothing above it reads
-       as a climb. */
-    chevrons(1);
-  } else if(rankKey === "ranger"){
-    /* BRONZE. Two. */
-    chevrons(2);
-  } else if(rankKey === "veteran"){
-    /* SILVER. Three, and a first small spark above them - the hint that
-       the mark is about to become something else. The stack lifts to
-       make room for it rather than the spark being dropped on top. */
-    const top = chevrons(3, 9);
-    add(burst(C, top - 15, 4, 11, 0.12, UP), { fill: body });
-  } else if(rankKey === "vanguard"){
-    /* GOLD. The turn. The chevrons collapse to a single base and the
-       star takes the frame - the rank where insignia becomes an award.
-       The base is drawn first and the star overlaps it, so the two read
-       as one object rather than a star parked above a chevron. */
+    /* IRON. A cold body with no light of its own - the bottom of a ladder
+       about light has to be something that does not make any. */
     halo(34);
-    /* The base sits just under the star's lowest point rather than
-       behind it. At C+22 the star's own bottom tip landed on the
-       chevron's apex and swallowed it, which left two wings floating
-       either side of the star instead of one mark. */
-    add(chevron(C + 31, 26, 13, 8),
-        { fill: metal, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
-    add(burst(C, C - 8, 6, 36, 0.17, UP),
-        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
-    add(burst(C, C - 8, 6, 19, 0.2, UP), { fill: badgeShade(base, 0.68), opacity: ".85" });
-    add(burst(C, C - 8, 4, 6, 0.1, UP), { fill: "#FFFFFF", opacity: ".9" });
+    const lit = litBody(C, C, 30, body);
+    addTo(lit, disc(C - 9, C - 10, 6.5), { fill: badgeShade(base, -0.34), opacity: ".8" });
+    addTo(lit, disc(C + 8, C + 6, 4.5), { fill: badgeShade(base, -0.34), opacity: ".7" });
+    addTo(lit, disc(C - 2, C + 13, 3.2), { fill: badgeShade(base, -0.34), opacity: ".6" });
+  } else if(rankKey === "ranger"){
+    /* BRONZE. The same body, now with a ring around it. The ring is a
+       TILTED ELLIPSE and it has nothing radial anywhere near it, which is
+       what keeps it a ringed world rather than the wheel this set has
+       read as twice before. Drawn in two passes so the disc sits between
+       the far side and the near side of the ring. */
+    halo(40);
+    const ring = "M" + (C - 46) + " " + C + "a46 13.5 0 1 0 92 0a46 13.5 0 1 0 -92 0Z";
+    const back = group({ transform: "rotate(-17 " + C + " " + C + ")" });
+    addTo(back, ring, { fill: "none", stroke: badgeShade(base, 0.35),
+                        "stroke-width": "4.2", opacity: ".85" });
+    litBody(C, C, 24, body);
+    /* Only the near half of the ring goes back on top - a full second
+       pass would redraw the far side over the body and flatten it. */
+    const front = group({ transform: "rotate(-17 " + C + " " + C + ")" });
+    addTo(front, "M" + (C - 46) + " " + C + "a46 13.5 0 0 0 92 0",
+          { fill: "none", stroke: badgeShade(base, 0.55), "stroke-width": "4.2" });
+  } else if(rankKey === "veteran"){
+    /* SILVER. A crescent with a star in its cradle. The crescent is one
+       path with two subpaths and evenodd fill - the disc, minus an offset
+       disc - so it is a real cut rather than a shape drawn to look like
+       one, and the bite always lands in the same place. */
+    halo(40);
+    const cres = disc(C + 2, C, 33) + disc(C + 17, C - 5, 28);
+    add(cres, { fill: body, "fill-rule": "evenodd",
+                stroke: dark, "stroke-width": ".9", "stroke-linejoin": "round" });
+    add(cres, { fill: "#FFFFFF", "fill-rule": "evenodd", opacity: ".18",
+                transform: "translate(-1.6 -1.8)" });
+    add(burst(C + 26, C + 6, 4, 13, 0.12, UP), { fill: badgeShade(base, 0.55) });
+    add(burst(C + 26, C + 6, 4, 5, 0.1, UP), { fill: "#FFFFFF", opacity: ".9" });
+  } else if(rankKey === "vanguard"){
+    /* GOLD. A sun: a body that finally makes its own light. The corona
+       tongues alternate long and short and every one has concave sides,
+       so the outline reads as flame rather than as teeth on a gear. */
+    halo(52);
+    for(let i = 0; i < 16; i++){
+      const a = UP + i * 2 * Math.PI / 16;
+      const len = (i % 2 === 0) ? 48 : 36;
+      const w = (i % 2 === 0) ? 0.085 : 0.06;
+      const x0 = C + Math.cos(a - w) * 25, y0 = C + Math.sin(a - w) * 25;
+      const x1 = C + Math.cos(a) * len,    y1 = C + Math.sin(a) * len;
+      const x2 = C + Math.cos(a + w) * 25, y2 = C + Math.sin(a + w) * 25;
+      const cx0 = C + Math.cos(a - w * 0.5) * (25 + (len - 25) * 0.45);
+      const cy0 = C + Math.sin(a - w * 0.5) * (25 + (len - 25) * 0.45);
+      const cx2 = C + Math.cos(a + w * 0.5) * (25 + (len - 25) * 0.45);
+      const cy2 = C + Math.sin(a + w * 0.5) * (25 + (len - 25) * 0.45);
+      add("M" + x0 + " " + y0 + "Q" + cx0 + " " + cy0 + " " + x1 + " " + y1 +
+          "Q" + cx2 + " " + cy2 + " " + x2 + " " + y2 + "Z",
+          { fill: badgeShade(base, i % 2 === 0 ? 0.2 : -0.05) });
+    }
+    add(disc(C, C, 26), { fill: body, stroke: dark, "stroke-width": ".9" });
+    add(disc(C - 7, C - 8, 11), { fill: "#FFFFFF", opacity: ".35" });
+    add(disc(C - 8, C - 9, 5), { fill: "#FFFFFF", opacity: ".85" });
   } else if(rankKey === "adept"){
-    /* SAPPHIRE. No base at all any more. A cut stone: an eight-point
-       burst with a faceted core and two crescents held off its flanks,
-       which is where the shape stops being military. */
-    halo(46);
-    [-1, 1].forEach(side => {
-      /* A crescent held off each flank: one arc bowed outwards, pulled
-         back by a second bowed the same way but less far, so the shape
-         has real thickness in the middle and points at both ends. The
-         first version's two control points were 8px apart and it came
-         out as a hairline nobody could see. */
-      const x = C + side * 46;
-      add("M" + x + " " + (C - 24) +
-          "Q" + (C + side * 26) + " " + C + " " + x + " " + (C + 24) +
-          "Q" + (C + side * 38) + " " + C + " " + x + " " + (C - 24) + "Z",
-          { fill: badgeShade(base, 0.3), stroke: dark, "stroke-width": ".7", opacity: ".95" });
+    /* SAPPHIRE. A comet - the first one that is going somewhere. This is
+       the only emblem in the set that is not symmetric, deliberately:
+       direction is the whole idea of a comet, and a symmetric one is
+       just a star with fuzz on it. */
+    halo(50);
+    /* The tail, swept back from the head and tapering to nothing. Two
+       curves meeting at the far point, so it narrows the way a tail does
+       rather than ending in a straight cut. */
+    /* One tail, twice: a wide soft one and a narrower brighter one inside
+       it, both tapering to a point. The first version drew two separate
+       tails at different angles and they read as two blue shards rather
+       than as one thing streaming off a head. */
+    [[30, 0.28, ".4"], [19, 0.5, ".75"]].forEach(([w, tint, op]) => {
+      add("M" + (C - 16) + " " + (C + 6 - w / 2) +
+          "C" + (C + 10) + " " + (C - w * 0.9) + " " + (C + 34) + " " + (C - 18) + " " + (C + 56) + " " + (C - 34) +
+          "C" + (C + 30) + " " + (C - 4) + " " + (C + 8) + " " + (C + 12) + " " + (C - 16) + " " + (C + 6 + w / 2) + "Z",
+          { fill: badgeShade(base, tint), opacity: op });
     });
-    add(burst(C, C, 8, 38, 0.2, UP + Math.PI / 8),
-        { fill: badgeShade(base, -0.18), opacity: ".95" });
-    add(burst(C, C, 8, 41, 0.18, UP),
-        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
-    add(burst(C, C, 8, 22, 0.24, UP), { fill: badgeShade(base, 0.7), opacity: ".85" });
-    add("M" + C + " " + (C - 13) + "L" + (C + 9) + " " + C + "L" + C + " " + (C + 13) +
-        "L" + (C - 9) + " " + C + "Z", { fill: "#FFFFFF", opacity: ".92" });
+    add(disc(C - 16, C + 6, 19), { fill: body, stroke: dark, "stroke-width": ".9" });
+    add(disc(C - 21, C + 1, 8), { fill: "#FFFFFF", opacity: ".4" });
+    add(disc(C - 22, C, 4), { fill: "#FFFFFF", opacity: ".92" });
+    [[C + 30, C + 22, 4.5], [C + 44, C + 6, 3.2], [C + 16, C + 30, 2.6]].forEach(([x, y, r]) => {
+      add(burst(x, y, 4, r, 0.12, UP), { fill: badgeShade(base, 0.6), opacity: ".85" });
+    });
   } else if(rankKey === "elite"){
-    /* AMETHYST. The same stone, crowned. Three peaks above it, sixteen
-       visible points instead of eight, long flares through the middle
-       and sparks thrown clear of it. */
-    halo(56);
-    add(streak(56, 3.2, false), { fill: badgeShade(base, 0.5), opacity: ".45" });
-    add(streak(31, 1.4, false), { fill: "#FFFFFF", opacity: ".55" });
-    add(streak(38, 2.4, true), { fill: badgeShade(base, 0.5), opacity: ".38" });
-    add(streak(19, 1.1, true), { fill: "#FFFFFF", opacity: ".45" });
-    /* The crown: three peaks on one baseline, not a separate object
-       floating above the star. */
-    add("M" + (C - 26) + " " + (C - 40) + "L" + (C - 17) + " " + (C - 54) +
-        "L" + (C - 8) + " " + (C - 42) + "L" + C + " " + (C - 59) +
-        "L" + (C + 8) + " " + (C - 42) + "L" + (C + 17) + " " + (C - 54) +
-        "L" + (C + 26) + " " + (C - 40) + "Z",
-        { fill: metal, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
-    add(burst(C, C, 8, 34, 0.22, UP + Math.PI / 8),
-        { fill: badgeShade(base, -0.15), opacity: ".95" });
-    add(burst(C, C, 8, 44, 0.19, UP),
-        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
-    add(burst(C, C, 8, 26, 0.24, UP), { fill: badgeShade(base, 0.68), opacity: ".85" });
-    [0.62, 1.42, 2.26].forEach((a, i) => {
+    /* AMETHYST. A galaxy. The first version here was an eclipse - a dark
+       disc inside a bright ring - and it came out as exactly the thing
+       this set keeps having to avoid: a ring with light round it reads as
+       a wheel, and it doubled up on Silver, which is already a disc with
+       a bite taken out of it.
+       A spiral has no rim and no spokes. Two arms swept out of a bright
+       core, drawn as curves that thin as they go, with the dust of the
+       disc behind them - every line in it is going somewhere. */
+    halo(58);
+    /* The disc the arms sit in: a wide, faint ellipse turned off the
+       horizontal, so the galaxy reads as tilted rather than flat on. */
+    add(disc(C, C, 46), { fill: glow, transform: "rotate(-24 " + C + " " + C + ") translate(0 " + (C * 0.0) + ") scale(1 .52) translate(0 " + (C * 0.923) + ")" });
+    [1, -1].forEach(side => {
+      /* One arm, as a tapering ribbon: the outer edge sweeps further than
+         the inner one, which is what makes it curl rather than bend. */
+      const f = (x, y) => (C + side * x).toFixed(2) + " " + (C + side * y).toFixed(2);
+      add("M" + f(6, -10) + "C" + f(34, -26) + " " + f(52, -8) + " " + f(44, 20) +
+          "C" + f(48, -4) + " " + f(32, -16) + " " + f(4, -3) + "Z",
+          { fill: badgeShade(base, 0.42), opacity: ".95" });
+      add("M" + f(8, -4) + "C" + f(30, -14) + " " + f(42, -2) + " " + f(37, 16) +
+          "C" + f(40, -1) + " " + f(28, -8) + " " + f(6, 1) + "Z",
+          { fill: "#FFFFFF", opacity: ".3" });
+    });
+    /* The core: a bright bulge, not a disc with an edge. */
+    add(disc(C, C, 15), { fill: badgeShade(base, 0.55), opacity: ".8" });
+    add(disc(C, C, 9), { fill: "#FFFFFF", opacity: ".55" });
+    add(disc(C - 1, C - 1, 5), { fill: "#FFFFFF" });
+    [0.72, 1.5, 2.3].forEach((a, i) => {
       const rr = 50 + (i % 3) * 5;
       pair(a, (th) => {
-        add(burst(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 4, 5 + (i % 2) * 2, 0.1, UP),
-            { fill: badgeShade(base, 0.6), opacity: ".85" });
+        add(burst(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 4, 4 + (i % 2) * 2, 0.1, UP),
+            { fill: badgeShade(base, 0.6), opacity: ".8" });
       });
     });
-    add(burst(C, C, 4, 9, 0.1, UP), { fill: "#FFFFFF", opacity: ".95" });
   } else {
     /* SUPERNOVA. The last one, and it is the app going off.
        Everything here is about a star that has stopped being a star: a
@@ -23904,15 +23944,10 @@ function rankOf(st){
 }
 
 function isLockedAccent(name){
-  if(name === "mystery") return mysteryColorsFoundCount() < 3;
   if(TIER_UNLOCKS[name]) return !tierColorUnlocked(name);
   return false;
 }
 function accentLockMessage(name){
-  if(name === "mystery"){
-    const found = mysteryColorsFoundCount();
-    return "Find all 3 Secret Flares scattered through your drills to unlock this color \u2014 " + found + " of 3 found so far.";
-  }
   const rule = TIER_UNLOCKS[name];
   /* Named by the RANK that hands it over, not by the raw requirement -
      "Reach Veteran" is a thing you can go and look at, and the Ranks
@@ -26303,24 +26338,20 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    run: is a mystery due at all (via the store's countdown), and if
    so, at which single question position and for which still-needed
    color \u2014 guaranteeing at most one appearance per test. */
+/* The Secret Flares are gone - "the mystery flares should be scrapped
+   and moved. That means the requirement they have, the theme, the
+   unlock." All three went together: the hunt that hid a sparkle in a
+   test, the Eclipse colour it unlocked, and the clause it put on the top
+   rank's requirement line.
+   This is left as a no-op rather than deleted at every call site,
+   because the run lifecycle calls it in one place and a function that
+   does nothing is easier to read than a missing call. store's own
+   mysteryColorsFound / testsUntilMystery fields stay defaulted in
+   applyLoadedData for the same reason they always were: an existing
+   account must not see a field appear or vanish as news. */
 function maybeStartMysteryForRun(){
   mysteryAppearsAtPos = -1;
   mysteryColorThisRun = null;
-  if(mysteryColorsFoundCount() >= 3 || order.length === 0) return;
-  if(typeof store.testsUntilMystery !== "number" || store.testsUntilMystery === null){
-    store.testsUntilMystery = 30 + Math.floor(Math.random() * 11); // 30-40
-  }
-  if(store.testsUntilMystery <= 0){
-    const needed = Object.keys(store.mysteryColorsFound).filter(c => !store.mysteryColorsFound[c]);
-    if(needed.length > 0){
-      mysteryColorThisRun = needed[Math.floor(Math.random() * needed.length)];
-      mysteryAppearsAtPos = Math.floor(Math.random() * order.length);
-    }
-    store.testsUntilMystery = 30 + Math.floor(Math.random() * 11);
-  } else {
-    store.testsUntilMystery -= 1;
-  }
-  saveStore();
 }
 
 /* The Practice Test is a fixed, one-tap simulation of the real exam: 250
@@ -30993,22 +31024,6 @@ function render(){
     panel.appendChild(give);
   }
 
-  if(mysteryAppearsAtPos === pos && !mysteryFoundThisSession && !isMissedRetake){
-    const mysteryBtn = document.createElement("button");
-    mysteryBtn.type = "button";
-    mysteryBtn.className = "mysterybtn";
-    mysteryBtn.setAttribute("aria-label", "A curious sparkle");
-    mysteryBtn.textContent = "\u2726";
-    mysteryBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      mysteryFoundThisSession = true;
-      mysteryBtn.classList.add("found");
-      mysteryBtn.disabled = true;
-      showToast("You found something \u2728");
-    });
-    panel.appendChild(mysteryBtn);
-  }
-
   stage.replaceChildren(...(dailyTitleBlock ? [dailyTitleBlock, panel, foot] : [panel, foot]));
   if(!next.hidden) next.focus({ preventScroll: true });
 }
@@ -32343,29 +32358,6 @@ function summarize(){
       banner.append(dot, text);
       panel.appendChild(banner);
     });
-  }
-
-  if(mysteryFoundThisSession && mysteryColorThisRun && !store.mysteryColorsFound[mysteryColorThisRun]){
-    store.mysteryColorsFound[mysteryColorThisRun] = true;
-    saveStore();
-    const foundCount = mysteryColorsFoundCount();
-    const colorLabel = { red: "Red", orange: "Orange", yellow: "Yellow" }[mysteryColorThisRun];
-    if(!theme.muteBanners){
-      const banner = document.createElement("div");
-      banner.className = "unlockbanner mysterybanner";
-      const dot = document.createElement("span");
-      dot.className = "unlockbanner-dot mystery-dot";
-      const text = document.createElement("span");
-      const line1 = document.createElement("span");
-      line1.className = "unlockbanner-kicker"; line1.textContent = "YOU FOUND A HIDDEN STAR";
-      const line2 = document.createElement("span");
-      line2.className = "unlockbanner-name";
-      line2.textContent = colorLabel + " star \u2014 " + foundCount + " of 3 found"
-        + (foundCount >= 3 ? ". \"Mystery\" color unlocked!" : "");
-      text.append(line1, line2);
-      banner.append(dot, text);
-      panel.appendChild(banner);
-    }
   }
 
   /* A badge is the biggest thing a single run can earn, so it gets its
@@ -35698,17 +35690,6 @@ function showProfile(defaultTab){
   classLineArrow.textContent = "›";
   classLine.append(classLineText, classLineArrow);
   classLine.addEventListener("click", showCalendar);
-  const reviewLine = document.createElement("button");
-  reviewLine.type = "button";
-  reviewLine.className = "profile-classline";
-  const reviewLineText = document.createElement("span");
-  reviewLineText.textContent = "Recent test review";
-  const reviewLineArrow = document.createElement("span");
-  reviewLineArrow.className = "profile-classline-arrow";
-  reviewLineArrow.setAttribute("aria-hidden", "true");
-  reviewLineArrow.textContent = "\u203a";
-  reviewLine.append(reviewLineText, reviewLineArrow);
-  reviewLine.addEventListener("click", showTestReviewList);
 
   /* ---------- level and badges ----------------------------------------
      The level bar, per explicit request, and it is the reason this
@@ -35775,9 +35756,13 @@ function showProfile(defaultTab){
      card it was the one tappable thing in a block of read-only text. */
   levelSect.classList.add("profile-level-joined");
   heroSect.appendChild(levelSect);
+  /* The calendar row is back INSIDE the card, where it was before this
+     batch - "the class calendar button looks better where it was before
+     I think". Below the card it read as a second, competing destination
+     beside the test review; inside it, it is one line at the foot of
+     who-you-are, which is what it always was. */
+  heroSect.appendChild(classLine);
   identityTab.appendChild(heroSect);
-  identityTab.appendChild(classLine);
-  identityTab.appendChild(reviewLine);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden, and a bar
@@ -35833,7 +35818,7 @@ function showProfile(defaultTab){
   ACCENTS.forEach(name => {
     const b = document.createElement("button");
     const locked = isLockedAccent(name);
-    const displayName = (name === "mystery" && locked) ? "???" : (ACCENT_DISPLAY_NAME[name] || name);
+    const displayName = ACCENT_DISPLAY_NAME[name] || name;
     b.type = "button"; b.className = "swatch"; b.title = displayName;
     b.setAttribute("aria-label", displayName);
     const dot = document.createElement("span");
@@ -35842,8 +35827,8 @@ function showProfile(defaultTab){
        special swirl now marks titan/Supernova, the genuine top of the
        ladder itself. */
     dot.className = "dot" + (name === "titan" ? " legend-dot" : "") +
-      (name === "mystery" ? (locked ? " mystery-dot" : " mystery-dot-revealed") : "") + tierClass;
-    if(name !== "titan" && name !== "mystery" && !tierClass) dot.style.background = ACCENT_SWATCH[name];
+      tierClass;
+    if(name !== "titan" && !tierClass) dot.style.background = ACCENT_SWATCH[name];
     b.appendChild(dot);
     if(locked){
       b.classList.add("locked");
@@ -35966,10 +35951,17 @@ function showProfile(defaultTab){
      tapping any entry there still opens the same detail view this
      always had. Matches the same "next ghost" button treatment every
      other button on this screen already uses. */
-  /* On the Profile tab, not Stats - "I also think the test review button
-     may not belong in this tab". Stats is a wall of read-only numbers
-     and this is the one thing on it you can open; beside the class
-     calendar row it reads as what it is, a second destination. */
+  /* Back at the bottom of Stats, where it started. It was moved to the
+     Profile tab on the strength of "may not belong in this tab" and came
+     straight back - "the recent test review should probably go back
+     where it was, at the bottom of stats". It is a list of tests, and
+     Stats is the screen about tests. */
+  const reviewBtn = document.createElement("button");
+  reviewBtn.type = "button"; reviewBtn.className = "next ghost";
+  reviewBtn.style.cssText = "width:100%;";
+  reviewBtn.textContent = "Recent test review";
+  reviewBtn.addEventListener("click", showTestReviewList);
+  statsTab.appendChild(reviewBtn);
 
 
   /* No Done button - see the note in showAppearance(). The Home tab
@@ -36637,8 +36629,7 @@ function buildRanksTab(){
     const req = document.createElement("p");
     req.className = "rankcard-req";
     req.textContent = "Level " + rule.level + " · " + rule.badges +
-      (rule.badges === 1 ? " badge" : " badges") +
-      (typeof rule.mysteryStars === "number" ? " · " + rule.mysteryStars + " Secret Flares" : "");
+      (rule.badges === 1 ? " badge" : " badges");
     body.appendChild(req);
 
     /* The meter belongs to the rank you are CLIMBING TO and nothing
