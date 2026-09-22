@@ -6874,9 +6874,37 @@
   .rankhero.is-unranked{
     background:rgba(255,255,255,.045); border-color:var(--rule); box-shadow:none;
   }
-  .rankhero-art{ width:6.6rem; height:6.6rem; flex:0 0 auto; }
-  .rankhero-art svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .rankhero-art{ width:6.6rem; height:6.6rem; flex:0 0 auto; position:relative; }
+  /* THE BIGGEST EMBLEM ON THE SCREEN, and it had no glow at all - every
+     glow rule was written against .rankcard, which is the list below.
+     The hero is the one that says "this is you", so it gets the
+     strongest version of the same treatment the cards use: a pool of
+     light behind it, two drop-shadows at different radii rather than
+     one, and a slow breath. `--rank-color` is set on .rankhero itself,
+     so all of this inherits without a second lookup.
+     The global [data-reduce-motion="true"] *{animation:none} rule
+     switches the breath off without this having to name it. */
+  .rankhero-art::before{
+    content:""; position:absolute; inset:-40%; border-radius:50%;
+    pointer-events:none;
+    background:radial-gradient(circle at 50% 46%,
+      color-mix(in srgb, var(--rank-color, var(--accent)) 52%, transparent) 0%,
+      color-mix(in srgb, var(--rank-color, var(--accent)) 24%, transparent) 34%,
+      color-mix(in srgb, var(--rank-color, var(--accent)) 8%, transparent) 56%,
+      transparent 74%);
+    animation:rankglow-breathe 3.4s ease-in-out infinite alternate;
+  }
+  .rankhero-art svg{
+    width:100%; height:100%; display:block; overflow:visible; position:relative;
+    filter:drop-shadow(0 0 7px color-mix(in srgb, var(--rank-color, var(--accent)) 95%, transparent))
+           drop-shadow(0 0 30px color-mix(in srgb, var(--rank-color, var(--accent)) 62%, transparent));
+  }
+  /* Somebody below the first rank holds nothing, so there is no light to
+     give off - the emblem there is a preview of what is coming, not a
+     thing they have. */
   .rankhero.is-unranked .rankhero-art{ opacity:.55; }
+  .rankhero.is-unranked .rankhero-art::before{ display:none; }
+  .rankhero.is-unranked .rankhero-art svg{ filter:none; }
   .rankhero-info{ flex:1 1 auto; min-width:0; width:100%; }
   .rankhero-kicker{
     font-size:.68rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
@@ -6992,9 +7020,26 @@
         color-mix(in srgb, var(--rank-color, var(--accent)) 9%, transparent));
   }
   .rankcard-head{ grid-area:head; min-width:0; }
-  .rankcard-art{ grid-area:art; width:3.9rem; height:3.9rem; }
+  .rankcard-art{ grid-area:art; width:3.9rem; height:3.9rem; position:relative; }
+  /* THE POOL OF LIGHT THE EMBLEM SITS IN. A drop-shadow on its own is a
+     blur that hugs the silhouette - at this size it reads as a soft
+     outline rather than as something giving off light, which is what
+     "missing that glow to make them look cool" was pointing at. The
+     light needs to exist BESIDE the shape as well as on it, so this is a
+     radial pool behind the emblem, wider than the emblem itself, in the
+     rank's own colour. Sized off the art box rather than the card, so it
+     scales with the emblem at every breakpoint. */
+  .rankcard-art::before{
+    content:""; position:absolute; inset:-42%; border-radius:50%;
+    pointer-events:none; opacity:0; transition:opacity .25s ease;
+    background:radial-gradient(circle at 50% 46%,
+      color-mix(in srgb, var(--rank-color, var(--accent)) 50%, transparent) 0%,
+      color-mix(in srgb, var(--rank-color, var(--accent)) 22%, transparent) 36%,
+      color-mix(in srgb, var(--rank-color, var(--accent)) 7%, transparent) 58%,
+      transparent 74%);
+  }
   .rankcard-art svg{
-    width:100%; height:100%; display:block; overflow:visible;
+    width:100%; height:100%; display:block; overflow:visible; position:relative;
     filter:drop-shadow(0 0 7px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent));
   }
   .rankcard-body{ grid-area:body; min-width:0; }
@@ -7046,17 +7091,37 @@
         color-mix(in srgb, var(--rank-color, var(--accent)) 16%, transparent));
   }
   .rankcard.is-held .rankcard-bg svg{ opacity:.15; }
+  /* TWO shadows at different radii, not one. A single blur at a single
+     radius is an outline however wide it is set; a tight bright one
+     inside a wide soft one is what reads as light coming off a thing. */
   .rankcard.is-held .rankcard-art svg{
-    filter:drop-shadow(0 0 13px color-mix(in srgb, var(--rank-color, var(--accent)) 75%, transparent));
+    filter:drop-shadow(0 0 5px color-mix(in srgb, var(--rank-color, var(--accent)) 90%, transparent))
+           drop-shadow(0 0 20px color-mix(in srgb, var(--rank-color, var(--accent)) 55%, transparent));
   }
+  .rankcard.is-held .rankcard-art::before{ opacity:.85; }
   .rankcard.is-held .rankcard-name{ color:var(--rank-color, var(--accent)); }
   .rankcard.is-held .rankcard-state{
     color:#0B0D10; background:var(--rank-color, var(--accent));
   }
   .rankcard.is-held .rankcard-rewards{ color:var(--ink); }
+  /* The rank you are actually holding is the brightest thing on the
+     screen, and it breathes. The global
+     [data-reduce-motion="true"] *{animation:none} rule switches the
+     breathing off without this having to name it. */
   .rankcard.is-here{
     box-shadow:0 0 0 1.5px var(--rank-color, var(--accent)),
                0 0 26px -6px var(--rank-color, var(--accent));
+  }
+  .rankcard.is-here .rankcard-art svg{
+    filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color, var(--accent)) 100%, transparent))
+           drop-shadow(0 0 26px color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent));
+  }
+  .rankcard.is-here .rankcard-art::before{
+    opacity:1; animation:rankglow-breathe 3.4s ease-in-out infinite alternate;
+  }
+  @keyframes rankglow-breathe{
+    from{ opacity:.68; transform:scale(.94); }
+    to{   opacity:1;   transform:scale(1.06); }
   }
   .rankcard.is-next{
     border-color:color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
@@ -7089,6 +7154,7 @@
      ones beyond it, because it is the one you are actually working on. */
   .rankcard.is-locked .rankcard-art{ opacity:.34; filter:saturate(.35); }
   .rankcard.is-locked .rankcard-art svg{ filter:none; }
+  .rankcard.is-locked .rankcard-art::before{ opacity:0; }
   .rankcard.is-locked .rankcard-bg svg{ opacity:.05; }
   .rankcard.is-locked .rankcard-name{ opacity:.7; }
   .rankcard.is-next .rankcard-art{ filter:saturate(.7); }
@@ -7101,6 +7167,13 @@
   }
   .rankcard.is-locked .rankcard-rewardhead{ opacity:.55; }
   .rankcard.is-next .rankcard-art{ opacity:.9; }
+  /* The one you are climbing to keeps a little of its light - enough to
+     read as the next thing that will switch on, not as one of the dark
+     ones past it. */
+  .rankcard.is-next .rankcard-art::before{ opacity:.4; }
+  .rankcard.is-next .rankcard-art svg{
+    filter:drop-shadow(0 0 9px color-mix(in srgb, var(--rank-color, var(--accent)) 38%, transparent));
+  }
 
   /* ONE ROW PER RANK ON EVERY DEVICE, and the upright card is gone.
      Seven cards across a tablet wrapped four-then-three, which put the
@@ -23168,10 +23241,24 @@ function buildUnitBadgeSVG(unitName, earned){
     [[0, "#F6F9FC"], [0.28, "#CCD5DE"], [0.56, "#8D98A5"], [0.8, "#697683"], [1, "#D2DBE4"]],
     "0", "0", ".35", "1");
   /* The plate. The reference's colour fields are not flat - they carry a
-     soft fall across them - but they are not glass either, which is what
-     the version before this tried and what came back as too shiny. */
+     real fall across them - but they are not glass either, which is what
+     one version tried and what came back as too shiny.
+
+     This used to vary OPACITY across the plate (.82 -> 1 -> .78) rather
+     than tone, which on a dark tray is almost no change at all: the
+     colour just let a little more of the backing through at each end and
+     the plate still read as printed. It is a genuine tonal ramp now,
+     lit from the top-left like everything else on the badge. */
   const PL = ramp(uid + "-pl",
-    [[0, theme.p, 0.82], [0.45, theme.p], [1, theme.p, 0.78]], ".15", "0", ".8", "1");
+    [[0, badgeShade(theme.p, 0.30)], [0.32, badgeShade(theme.p, 0.10)],
+     [0.63, theme.p], [1, badgeShade(theme.p, -0.30)]], ".1", "0", ".85", "1");
+  /* The sheen over it: a broad WASH across the upper-left, never a
+     streak. A hard bright band laid across the colour is exactly what
+     came back as "too shiny", and a wash reads as a lacquered surface
+     without ever becoming an object sitting on the badge. */
+  const SH = ramp(uid + "-sh",
+    [[0, "#FFFFFF", 0.26], [0.40, "#FFFFFF", 0.08], [0.64, "#FFFFFF", 0]],
+    "0", "0", ".6", "1");
 
   const FIELD = "translate(" + cx + " " + cy + ") scale(.8) translate(" + (-cx) + " " + (-cy) + ")";
 
@@ -23188,6 +23275,30 @@ function buildUnitBadgeSVG(unitName, earned){
      colour off to one side of their own metal. */
   add(outline, { fill: PL, stroke: "#14171C", "stroke-width": "4.5",
                  "stroke-linejoin": "round", transform: FIELD }, token);
+
+  /* The plate's own depth, all of it clipped to the plate so nothing
+     strays onto the metal. A raised surface lit from the top-left has
+     its highlight on the TOP-LEFT inner edge and its shadow on the
+     bottom-right - the opposite of the recess the slot is drawn as, and
+     the reason the two read as a thing sitting IN a hole. Offsetting a
+     stroked copy of the outline and clipping it back puts each on the
+     right edge without a filter. */
+  const plateClip = clip(uid + "-plt", outline, FIELD);
+  const plate = group({ "clip-path": plateClip }, token);
+  add(outline, { fill: SH, transform: FIELD }, plate);
+  add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "2.4", opacity: ".26",
+                 "stroke-linejoin": "round",
+                 transform: FIELD + " translate(1.3 1.6)" }, plate);
+  add(outline, { fill: "none", stroke: "#000000", "stroke-width": "2.6", opacity: ".22",
+                 "stroke-linejoin": "round",
+                 transform: FIELD + " translate(-1.3 -1.6)" }, plate);
+  /* And the metal's own catch-light: a hairline just inside the outer
+     edge, top-left. The band already runs a ramp along its length; this
+     is the edge itself picking up the same light, which is most of what
+     separates a piece of metal from a grey outline. */
+  const bandLit = group({ "clip-path": clip(uid + "-band", outline) }, token);
+  add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.8", opacity: ".5",
+                 "stroke-linejoin": "round", transform: "translate(1 1.2)" }, bandLit);
 
   /* The channels: the band showing THROUGH the plate, not lines drawn on
      top of it. Clipped to the plate so a channel stops at the colour's
@@ -31260,7 +31371,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-78";
+const APP_BUILD = "2026-09-22-79";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
