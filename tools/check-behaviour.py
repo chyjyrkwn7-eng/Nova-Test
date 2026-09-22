@@ -200,7 +200,7 @@ def check_swipe(br):
     for label, w, h in DEVICES:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
         cdp = ctx.new_cdp_session(pg)
-        for screen, show in [("Rankings", "()=>showRankings('level')"),
+        for screen, show in [("Rankings", "()=>showRankings('week')"),
                              ("Profile", "()=>showProfile()")]:
             pg.evaluate(show)
             pg.wait_for_timeout(500)
@@ -218,9 +218,9 @@ def check_swipe(br):
                   moved != start and back == start,
                   "%s -> %s -> %s" % (start, moved, back))
         # The listeners live on .wrap, which outlives the screen inside it.
-        pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(250)
+        pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(250)
         pg.evaluate("()=>showHome()"); pg.wait_for_timeout(250)
-        pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(400)
+        pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
         _swipe(cdp, w * 0.75, h * 0.45, -w * 0.5, 18)
         pg.wait_for_timeout(400)
         once = pg.evaluate(ACTIVE_TAB)
@@ -375,11 +375,12 @@ def check_ranks(br):
     pg.wait_for_timeout(1500)
     tabs = pg.evaluate("""()=>[...document.querySelectorAll('.profiletabs .iconbtn')]
                               .map(b=>b.textContent)""")
-    # Stats before Badges, and the last one is "Ladder" - the bottom bar
-    # already says Rankings and two things called the same was reported
-    # as confusing. The key is still "ranks"; only the label moved.
-    check("four tabs, in the order asked for, and no second Rankings",
-          tabs == ["Profile", "Stats", "Badges", "Ladder"], tabs)
+    # Stats before Badges, and the last one is "Rank" - the bottom tab
+    # says Leaderboard and this one says Rank, which is the vocabulary
+    # asked for after "Ladder"/"Rankings" was reported as confusing. The
+    # key is still "ranks"; only the label moved.
+    check("four tabs, in the order asked for, and the last one is Rank",
+          tabs == ["Profile", "Stats", "Badges", "Rank"], tabs)
 
     cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
       name:c.querySelector('.rankcard-name').textContent,

@@ -180,13 +180,23 @@ def new_page(br, ins, installed, seeded):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    only = sys.argv[1] if len(sys.argv) > 1 else None
+    # Madison asked for the two reference devices only, so that is the
+    # default: an iPhone 17 Pro Max and an iPad Pro 11". The other five
+    # are still here and still correct - "--all" runs the lot, and a
+    # substring runs one.
+    args = [a for a in sys.argv[1:]]
+    every = "--all" in args
+    args = [a for a in args if not a.startswith("--")]
+    only = args[0] if args else None
+    if not only and not every:
+        only = ("iphone-17-pro-max", "ipad-pro-11")
     srv, url = serve()
     try:
         with sync_playwright() as pw:
             br = pw.chromium.launch(executable_path=CHROME)
             for label, w, h, ins, installed in DEVICES:
-                if only and only not in label: continue
+                if only and (label not in only if isinstance(only, tuple)
+                             else only not in label): continue
                 new_page.w, new_page.h = w, h
                 errs = []
 

@@ -1564,16 +1564,20 @@ re-evaluated on the next check.
   "Finished" and goes to the test Setup screen, which no tab reaches, and the
   end-of-test summary force-hides the tab bar (`window.forceHideBottomTabs`),
   so it has no other exit.
-- **Tabbed screens (Rankings, Profile)** share one pattern: a
+- **Tabbed screens (Leaderboard, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
-  Profile's four tabs are **Profile, Stats, Badges, Ladder**, driven off
+  Profile's four tabs are **Profile, Stats, Badges, Rank**, driven off
   one `profileTabDefs` list rather than four hand-written copies of the
   same four lines. `PROFILE_TABS` is the swipe order and has to carry
   the same order as the buttons — a thumb swipe that skips a tab is
   worse than no swipe. `"achievements"`, `"ladder"` and `"unlocks"` are all
   still accepted as tab names, so every name this tab has ever had lands
   on it rather than falling back to Profile.
+  **`check-behaviour` asserts those four labels**, and it went red on
+  the build that renamed them — a gate that encodes a decision has to be
+  re-read whenever the decision changes, or it fails the app for being
+  right.
   It was five for a while, and five labels only ever fitted a 375px phone
   by being tightened for five specifically (`:has(.iconbtn:nth-child(5))`)
   and allowed to step just outside the panel's side padding below 26rem;
@@ -1812,11 +1816,20 @@ iPad while looking perfectly normal on a phone). Madison's own two are an
 the reference devices, and a change that moves them needs saying out loud.
 
 **Use `tools/shoot-flow.py`, do not mount screens.** It clicks through from a
-fresh install on seven devices and fails loudly on a tab bar during
+fresh install and fails loudly on a tab bar during
 onboarding, a missing tab bar on Home, or a tooltip over a loading screen. It
 also draws the status bar, because a screenshot with an unexplained black band
 at the top has now been misread twice — once as a tab-bar bug, once as the
 update banner "not aligned to the top".
+
+**It shoots the two reference devices by default, and that was asked for**
+— *"Send me only screenshots for everything from the iPad Pro and
+iPhone"* — because seven devices' worth of a whole walk is more than
+anyone reads. The other five are still in `DEVICES` and still correct:
+`--all` runs the lot and a substring (`shoot-flow.py ipad-mini`) runs
+one. That is a change to what gets SENT, not to what gets CHECKED — the
+whole matrix is still the bar, and `sweep-layout.py`,
+`check-positions.py` and `check-fixes.py` still run every device.
 
 Fixed-position elements render oddly in Playwright `fullPage` screenshots, so
 screenshot the viewport and scroll, and measure with `getBoundingClientRect()`
