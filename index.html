@@ -21519,155 +21519,167 @@ function buildAvatarCharSVG(charId){
      exactly what read as too much shine. */
 
   if(def.kind === "ghost"){
-    /* Classic sheet-ghost silhouette: a rounded head/body with a
-       wavy, zigzag bottom edge \u2014 built from a circle for the rounded
-       top plus a separate wavy-bottom polygon, rather than one
-       hand-drawn curved outline, for the same reliability reason
-       every other character in this set has needed. Simple dark oval
-       eyes and mouth, no pupils needed \u2014 a ghost's whole identity is
-       the pale, soft, faintly glowing silhouette itself. */
-    const bodyFill = headGrad("#FFFFFF", "#F1F0F5", "#D8D6E0");
-    /* One single path now, not a circle plus a separate rectangle \u2014
-       even though both used the same gradient fill, an SVG gradient
-       by default calculates its color spread relative to each
-       shape's OWN individual bounding box, not a shared one. Two
-       different shapes "sharing" one gradient like that actually get
-       two independently-computed shadings, which is exactly what was
-       showing as a visible seam right where the circle and
-       rectangle met \u2014 not a stroke or outline, just mismatched
-       shading across the boundary. One path (an arc for the rounded
-       top, straight lines for the flat sides and bottom) has one
-       bounding box and one consistent gradient across the whole
-       shape, so there's nothing left to seam. */
-    svg.appendChild(mk("path", { d: "M7 33 L7 17 A13 13 0 0 1 33 17 L33 33 Z", fill: bodyFill }));
-    svg.appendChild(mk("ellipse", { cx: 15, cy: 18, rx: 2.1, ry: 2.8, fill: "#262A33" }));
-    svg.appendChild(mk("ellipse", { cx: 25, cy: 18, rx: 2.1, ry: 2.8, fill: "#262A33" }));
-    svg.appendChild(catchlight(15.5, 16.7, .45));
-    svg.appendChild(catchlight(25.5, 16.7, .45));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 24, rx: 1.7, ry: 2.1, fill: "#262A33" }));
+    /* The old one was a tombstone: an arc on top of a flat-bottomed box,
+       with three dark blobs on it. The comment above it claimed a "wavy,
+       zigzag bottom edge" that the path never actually drew - which is
+       its own lesson about believing a comment over a render.
+       One path, so the gradient stays continuous (that part was right),
+       but the hem is a real scallop now and the sheet has a fold down
+       each side, which is what turns a silhouette into cloth. */
+    const bodyFill = headGrad("#FFFFFF", "#EFEDF4", "#CFCCD9");
+    svg.appendChild(mk("path", {
+      d: "M7 31.4 L7 17 A13 13 0 0 1 33 17 L33 31.4 "
+       + "Q30.8 34.6 28.6 31.6 Q26.4 28.6 24.2 31.6 Q22 34.6 20 31.6 "
+       + "Q18 28.6 15.8 31.6 Q13.6 34.6 11.4 31.6 Q9.2 28.6 7 31.4 Z",
+      fill: bodyFill }));
+    /* The folds. Two soft darker bands rather than lines - a drawn line
+       on a white sheet reads as an outline, a band reads as shadow. */
+    svg.appendChild(mk("path", { d: "M11.4 14.6 Q9.4 22 10.3 30.6", fill: "none",
+                                 stroke: "rgba(90,86,110,.16)", "stroke-width": 2.6,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M28.6 14.6 Q30.6 22 29.7 30.6", fill: "none",
+                                 stroke: "rgba(90,86,110,.16)", "stroke-width": 2.6,
+                                 "stroke-linecap": "round" }));
+    /* Arms, as two small lifted nubs. Without them a ghost is a shape;
+       with them it is doing something. */
+    svg.appendChild(mk("path", { d: "M7.2 21.5 Q4.6 20.6 5.4 18.2 Q6.6 19.4 7.6 19.6 Z",
+                                 fill: bodyFill }));
+    svg.appendChild(mk("path", { d: "M32.8 21.5 Q35.4 20.6 34.6 18.2 Q33.4 19.4 32.4 19.6 Z",
+                                 fill: bodyFill }));
+    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 18.2, rx: 2.2, ry: 2.9, fill: "#2A2E38" }));
+    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 18.2, rx: 2.2, ry: 2.9, fill: "#2A2E38" }));
+    svg.appendChild(catchlight(14.5, 16.9, .6));
+    svg.appendChild(catchlight(24.1, 16.9, .6));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 24.4, rx: 1.9, ry: 2.4, fill: "#2A2E38" }));
+    /* A blush of the app's own magenta, low opacity. It is the one thing
+       stopping this being three greys. */
+    svg.appendChild(mk("ellipse", { cx: 12.9, cy: 22.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .16 }));
+    svg.appendChild(mk("ellipse", { cx: 27.1, cy: 22.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .16 }));
     return svg;
   }
 
   if(def.kind === "wizard"){
-    /* A tall, bent-tip conical hat with a wide brim is the single most
-       recognizable wizard silhouette \u2014 the bend at the tip specifically
-       is what separates "wizard hat" from "birthday party hat," so
-       it's built deliberately as an angled polygon rather than a
-       straight triangle. A long grey beard covering most of the lower
-       face, the same reliable ellipse-extension technique used for
-       the king's beard, is the other half of the identity. */
-    const hatFill = headGrad("#5B4B8A", "#453A6B", "#2C2448");
-    const skinFill = headGrad("#EFC7A3", "#E3B48C", "#C5946A");
-    const beardFill = headGrad("#E8E6E0", "#D4D1C8", "#B0ADA2");
-    /* A long beard tapering to a point, not a round blob \u2014 that
-       taper is the actual detail that separates "wizard beard" from
-       any other character's beard; a wizard's is traditionally much
-       longer and comes to a point rather than staying rounded. Built
-       as one polygon extending well below the chin. */
-    svg.appendChild(mk("polygon", { points: "10,25 30,25 28,31 24,35 20,37 16,35 12,31", fill: beardFill }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 20, r: 9, fill: skinFill }));
-    /* The brim and cone combined into one single path (kept from the
-       last fix, still correct \u2014 one shape, one gradient, no seam),
-       but the bend point smoothed to a gentler angle change: the
-       previous sharp kink at the tip, combined with the radial
-       gradient's own falloff across this oddly-shaped bounding box,
-       was creating a visible brightness break right at the bend that
-       read as a separate triangular flap rather than one continuous
-       folded hat. A dedicated gloss highlight on the hat itself
-       (matching the same technique every other shape on every other
-       character uses) is what actually unifies it into one lit
-       surface instead of leaving it as flat gradient fill alone. */
-    svg.appendChild(mk("path", { d: "M8,15 L13,14.5 L16.5,6 L22,3.3 L26,6.5 L27,14.5 L32,15 A12,2.6 0 0 1 8,15 Z", fill: hatFill }));
-    svg.appendChild(mk("circle", { cx: 22, cy: 2, r: 1.1, fill: "#E8B923" }));
-    /* Small stars scattered on the hat itself \u2014 a classic, instantly
-       recognizable wizard-hat decoration, and a second, independent
-       cue beyond the silhouette alone for what this actually is. */
-    svg.appendChild(mk("polygon", { points: "13,8.7 13.4,9.6 14.3,10 13.4,10.4 13,11.3 12.6,10.4 11.7,10 12.6,9.6", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "26.5,10.5 26.8,11.1 27.4,11.4 26.8,11.7 26.5,12.3 26.2,11.7 25.6,11.4 26.2,11.1", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "19,5.5 19.3,6.1 19.9,6.4 19.3,6.7 19,7.3 18.7,6.7 18.1,6.4 18.7,6.1", fill: "#E8B923" }));
-    svg.appendChild(mk("path", { d: "M14.5 18.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M21.7 18.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16.3, cy: 18.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 23.7, cy: 18.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(catchlight(16.6, 18.55, .32));
-    svg.appendChild(catchlight(24.0, 18.55, .32));
-    /* A subtle contact shadow where the brim's edge crosses over the
-       forehead \u2014 a thin, soft dark arc right at the boundary, the
-       same cue real illustration uses to sell "this object is resting
-       on top of that one" rather than two flat layers with no
-       relationship to each other. */
-    svg.appendChild(mk("path", { d: "M11.5 15.5a9 2 0 0017 0", fill: "none", stroke: "rgba(0,0,0,.22)", "stroke-width": 1.1, "stroke-linecap": "round" }));
-    /* A mustache/mouth line was missing entirely before \u2014 the face
-       went straight from eyes to beard with nothing between them. A
-       simple rounded rectangle, the same reliable technique used for
-       the samurai and king's mustaches. */
-    /* A defined mustache shape now, not a plain flat bar \u2014 a rounded
-       center rectangle plus two small drooping ends, which reads as
-       an actual mustache silhouette rather than a straight rule under
-       the nose. Polygons for the ends, the same reliable straight-line
-       technique used throughout this set. */
-    svg.appendChild(mk("rect", { x: 16, y: 21.4, width: 8, height: 1.5, rx: .75, fill: "#B0ADA2" }));
-    svg.appendChild(mk("polygon", { points: "15.3,21.3 16.3,21.3 15.6,23.3 14.7,22.9", fill: "#B0ADA2" }));
-    svg.appendChild(mk("polygon", { points: "23.7,21.3 24.7,21.3 25.3,22.9 24.4,23.3", fill: "#B0ADA2" }));
+    /* The hat was taking the top half of the frame and the face was a
+       9-unit circle underneath it. Same correction as the officer: the
+       head is the character, the hat sits on it. The beard is a real
+       shape with a moustache over it rather than a grey pentagon, and
+       there are robes at the bottom.  */
+    const hatFill = headGrad("#6B57A6", "#463A6E", "#281F46");
+    const skinFill = headGrad("#F3CEA8", "#E3B48C", "#C08C61");
+    const beardFill = headGrad("#F4F2EC", "#DAD7CE", "#ADAA9F");
+    const robeFill = headGrad("#5B4B8A", "#3C3160", "#241C3C");
+    svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32.6 14.4 30.6 L25.6 30.6 Q32.6 32.6 33.4 40 Z",
+                                 fill: robeFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.3, ry: 10, fill: skinFill }));
+    /* Beard: a wide shape from the cheeks down, cut back in at the chin
+       so it tapers rather than ending in a straight edge. */
+    svg.appendChild(mk("path", {
+      d: "M11.2 21.6 Q11.6 30.2 15.4 34 Q17.6 36.4 20 36.4 Q22.4 36.4 24.6 34 "
+       + "Q28.4 30.2 28.8 21.6 Q24.8 26.4 20 26.4 Q15.2 26.4 11.2 21.6 Z",
+      fill: beardFill }));
+    svg.appendChild(mk("ellipse", { cx: 11.4, cy: 21.8, rx: 1.9, ry: 3.2, fill: beardFill }));
+    svg.appendChild(mk("ellipse", { cx: 28.6, cy: 21.8, rx: 1.9, ry: 3.2, fill: beardFill }));
+    /* The hat, on the head rather than over it: a brim that follows the
+       skull and a crown with a real kink in it. */
+    svg.appendChild(mk("path", { d: "M9.6 14.2 Q13.4 13.2 15.4 8.4 L20.6 3 L25 7.2 L25.8 13.2 Q28.8 13.6 30.4 14.2 Z",
+                                 fill: hatFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 14.4, rx: 11.4, ry: 2.5, fill: hatFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 13.9, rx: 11.4, ry: 2.2, fill: "#54458A" }));
+    svg.appendChild(mk("circle", { cx: 20.8, cy: 2.4, r: 1.15, fill: "#E8B923" }));
+    svg.appendChild(mk("polygon", { points: "14.6,9.4 15,10.3 15.9,10.7 15,11.1 14.6,12 14.2,11.1 13.3,10.7 14.2,10.3",
+                                    fill: "#E8B923" }));
+    svg.appendChild(mk("polygon", { points: "24.4,10.4 24.7,11.1 25.4,11.4 24.7,11.7 24.4,12.4 24.1,11.7 23.4,11.4 24.1,11.1",
+                                    fill: "#FFD37A" }));
+    svg.appendChild(mk("path", { d: "M14.2 18.4c1.2-1.4 2.9-1.4 4.1 0", fill: "none",
+                                 stroke: "#D8D5CC", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.7 18.4c1.2-1.4 2.9-1.4 4.1 0", fill: "none",
+                                 stroke: "#D8D5CC", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16.3, cy: 20.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 23.7, cy: 20.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(catchlight(15.8, 20.1, .48));
+    svg.appendChild(catchlight(23.2, 20.1, .48));
+    /* The moustache, over the beard rather than beside it. */
+    svg.appendChild(mk("path", { d: "M14.6 25.4 Q17.4 23.4 20 25 Q22.6 23.4 25.4 25.4 Q22.6 27.4 20 26.2 Q17.4 27.4 14.6 25.4 Z",
+                                 fill: "#C9C6BC" }));
     return svg;
   }
 
   if(def.kind === "grizzly"){
-    const headFill = headGrad("#BC935F", "#9C6B41", "#7A5230");
-    const snoutFill = (() => { const id = uid + "-snout"; const g = mk("radialGradient", { id, cx: "40%", cy: "30%", r: "75%" }); g.appendChild(mk("stop", { offset: "0%", "stop-color": "#F0DAB8" })); g.appendChild(mk("stop", { offset: "100%", "stop-color": "#C7A87C" })); defs.appendChild(g); return "url(#" + id + ")"; })();
-    svg.appendChild(mk("circle", { cx: 10, cy: 11, r: 4.2, fill: "#8A5F3A" }));
-    svg.appendChild(mk("circle", { cx: 30, cy: 11, r: 4.2, fill: "#8A5F3A" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 22, r: 14, fill: headFill }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.5, rx: 6.5, ry: 5, fill: snoutFill }));
-    svg.appendChild(mk("circle", { cx: 15, cy: 20, r: 1.5, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 25, cy: 20, r: 1.5, fill: "#20242B" }));
-    svg.appendChild(catchlight(15.4, 19.6, .45));
-    svg.appendChild(catchlight(25.4, 19.6, .45));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 24.5, rx: 1.8, ry: 1.3, fill: "#20242B" }));
+    /* The shape was already right - this is the one of the eight that
+       needed depth rather than redrawing. Inner ears, a brow ridge, a
+       muzzle that is lit rather than flat, and a body under it. */
+    const headFill = headGrad("#C49A64", "#9C6B41", "#714A2B");
+    const bodyFill = headGrad("#9C6B41", "#7A5230", "#573A22");
+    const snoutFill = (() => {
+      const id = uid + "-snout";
+      const g = mk("radialGradient", { id, cx: "38%", cy: "26%", r: "78%" });
+      g.appendChild(mk("stop", { offset: "0%", "stop-color": "#F6E3C4" }));
+      g.appendChild(mk("stop", { offset: "100%", "stop-color": "#C09C6E" }));
+      defs.appendChild(g); return "url(#" + id + ")";
+    })();
+    svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32 14.6 30 L25.4 30 Q32.6 32 33.4 40 Z",
+                                 fill: bodyFill }));
+    svg.appendChild(mk("circle", { cx: 10, cy: 10.6, r: 4.4, fill: "#8A5F3A" }));
+    svg.appendChild(mk("circle", { cx: 30, cy: 10.6, r: 4.4, fill: "#8A5F3A" }));
+    svg.appendChild(mk("circle", { cx: 10, cy: 10.9, r: 2.3, fill: "#5E3C22" }));
+    svg.appendChild(mk("circle", { cx: 30, cy: 10.9, r: 2.3, fill: "#5E3C22" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 13.4, fill: headFill }));
+    /* The brow. Two low, wide bands - a bear's whole expression is the
+       heavy ridge above the eyes. */
+    svg.appendChild(mk("path", { d: "M12.4 17.4 Q15.6 15.8 18.4 17.2", fill: "none",
+                                 stroke: "rgba(60,38,20,.28)", "stroke-width": 1.8,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.6 17.2 Q24.4 15.8 27.6 17.4", fill: "none",
+                                 stroke: "rgba(60,38,20,.28)", "stroke-width": 1.8,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.4, rx: 6.9, ry: 5.2, fill: snoutFill }));
+    svg.appendChild(mk("circle", { cx: 15, cy: 19.8, r: 1.6, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 25, cy: 19.8, r: 1.6, fill: "#20242B" }));
+    svg.appendChild(catchlight(14.5, 19.3, .52));
+    svg.appendChild(catchlight(24.5, 19.3, .52));
+    svg.appendChild(mk("path", { d: "M17.6 23.2 Q20 21.9 22.4 23.2 Q20 25.2 17.6 23.2 Z",
+                                 fill: "#20242B" }));
+    svg.appendChild(mk("path", { d: "M20 24.6 L20 26.2 M20 26.2 Q17.9 27.8 16.6 26.2 M20 26.2 Q22.1 27.8 23.4 26.2",
+                                 fill: "none", stroke: "#3A2415", "stroke-width": .85,
+                                 "stroke-linecap": "round" }));
     return svg;
   }
 
   if(def.kind === "ninja"){
-    /* Starting over with a genuinely different silhouette this time,
-       not another refinement of the same shape \u2014 a hood that comes
-       to one clean point at the top (the actual classic ninja-cowl
-       silhouette) instead of the previous shape's double-peak/side-
-       drape construction, which kept reading as ambiguous. Added a
-       tied-knot detail at the side (two loose fabric ends hanging
-       from a knot) \u2014 a specific, recognizable real feature of how a
-       ninja hood is actually tied, not a generic hood decoration. */
-    const hoodFill = headGrad("#3A4048", "#22262C", "#121417");
-    const eyeAreaFill = headGrad("#E8C4A0", "#D9AE83", "#B58A62");
-    svg.appendChild(mk("polygon", { points: "20,2 29,9 33,20 30,31 10,31 7,20 11,9", fill: hoodFill }));
-    svg.appendChild(mk("polygon", { points: "12,18 28,18 28.5,21 26,24.5 14,24.5 11.5,21", fill: eyeAreaFill, stroke: "#1A1D21", "stroke-width": .4 }));
-    /* Eyes reworked \u2014 the previous shape had each eye's OUTER corner
-       sitting lower than its inner corner, which is literally the
-       geometry of a sad or downturned eye. Swapping which corner sits
-       higher (outer corner raised instead) is the same small change
-       that turns a droopy expression into a focused, narrowed one. */
-    svg.appendChild(mk("polygon", { points: "12.6,19.6 17.4,20.7 17.7,22.1 12.9,21", fill: "#1A1D21" }));
-    svg.appendChild(mk("polygon", { points: "22.6,20.7 27.4,19.6 27.1,21 22.3,22.1", fill: "#1A1D21" }));
-    svg.appendChild(catchlight(15.6, 20.4, .35));
-    svg.appendChild(catchlight(25.3, 20.4, .35));
-    svg.appendChild(mk("rect", { x: 15.5, y: 13.1, width: 9, height: 3, rx: .7, fill: "#B8C0C8" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 14.6, r: .65, fill: "#6B7278" }));
-    svg.appendChild(mk("circle", { cx: 30.5, cy: 17, r: 1.6, fill: "#22262C" }));
-    svg.appendChild(mk("polygon", { points: "31.5,18 35,22 33.3,22.6 30.3,19", fill: "#3A4048" }));
-    svg.appendChild(mk("polygon", { points: "30,18.5 32,23.3 30.3,23.6 28.3,19.3", fill: "#3A4048" }));
-    /* A gripping fist behind the shuriken, drawn first so the star
-       reads as held rather than floating loose beside the body \u2014
-       the actual fix for "attach it with a hand or something." */
-    /* An arm bridging from the body down to the fist \u2014 without this,
-       the hand and shuriken sat in obvious empty space with nothing
-       connecting them back to the body at all, which reads as
-       "unattached" regardless of how convincing the fist itself is. */
-    /* Moved the whole hand-and-shuriken cluster directly against the
-       body's own edge instead of leaving a gap for a separate arm
-       shape to bridge — simpler and more reliable than a thin
-       connecting polygon that could render too faintly to read. */
-    svg.appendChild(mk("ellipse", { cx: 8, cy: 30, rx: 3.1, ry: 2.6, fill: hoodFill }));
-    svg.appendChild(mk("polygon", { points: "12,29.5 8.4,28.1 7,24.5 5.6,28.1 2,29.5 5.6,30.9 7,34.5 8.4,30.9", fill: "#AEB6BE" }));
-    svg.appendChild(mk("circle", { cx: 7, cy: 29.5, r: .9, fill: "#5A6168" }));
+    /* Shoulders, and the loose shuriken is gone. It sat off the bottom-
+       left corner attached to nothing, which read as an artifact rather
+       than a prop - the one the ninja is actually holding is up beside
+       the head where it can be seen. The hood also has a real fold and a
+       wrap seam now, so it is cloth rather than a dark heptagon. */
+    const hoodFill = headGrad("#3D444D", "#242931", "#12151A");
+    const eyeAreaFill = headGrad("#EDCAA6", "#D9AE83", "#AE8159");
+    svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.4 14.4 29.2 L25.6 29.2 Q33.2 31.4 34 40 Z",
+                                 fill: hoodFill }));
+    svg.appendChild(mk("polygon", { points: "20,2.4 29.2,9 33,20 30,31 10,31 7,20 10.8,9",
+                                    fill: hoodFill }));
+    /* The wrap: a lighter band running round the crown, which is the
+       thing that says this is fabric wound on rather than a mask. */
+    svg.appendChild(mk("path", { d: "M8.6 14.6 Q20 10.4 31.4 14.6", fill: "none",
+                                 stroke: "rgba(255,255,255,.09)", "stroke-width": 2.4,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("polygon", { points: "12,18 28,18 28.5,21 26,24.8 14,24.8 11.5,21",
+                                    fill: eyeAreaFill, stroke: "#14171B", "stroke-width": .45 }));
+    svg.appendChild(mk("polygon", { points: "12.6,19.5 17.6,20.7 17.9,22.3 12.9,21.1",
+                                    fill: "#14171B" }));
+    svg.appendChild(mk("polygon", { points: "22.4,20.7 27.4,19.5 27.1,21.1 22.1,22.3",
+                                    fill: "#14171B" }));
+    svg.appendChild(catchlight(15.4, 20.5, .42));
+    svg.appendChild(catchlight(25.1, 20.5, .42));
+    /* The headband knot, trailing to one side. */
+    svg.appendChild(mk("rect", { x: 15.2, y: 12.8, width: 9.6, height: 3.1, rx: .7,
+                                 fill: "#B23A3A" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 14.35, r: .72, fill: "#7A2323" }));
+    svg.appendChild(mk("polygon", { points: "29.6,13.4 34.4,15.6 33.6,17.4 29.4,16",
+                                    fill: "#B23A3A" }));
+    svg.appendChild(mk("polygon", { points: "29.6,15.6 33.4,19 32.2,20.4 29.2,17.8",
+                                    fill: "#8E2C2C" }));
     return svg;
   }
 
@@ -21846,319 +21858,222 @@ function buildAvatarCharSVG(charId){
   }
 
   if(def.kind === "queen"){
-    /* A pointed, jeweled crown and visible hair are what separate this
-       from every animal in the set at a glance \u2014 built as bold, simple
-       shapes rather than fussy detail that would disappear at this
-       size. Hair framing the sides rather than a full dome over the
-       top: the earlier version covered most of the head before the
-       crown was even added, which is exactly why it read as a dark
-       helmet instead of hair \u2014 the crown needs to be the dominant
-       shape on top, with hair visible around and below it, not
-       competing with it for the same space. */
-    const skinFill = headGrad("#F6D9BE", "#EFC7A3", "#D8A87D");
-    const hairFill = headGrad("#5A3E2E", "#4A3226", "#2E1F16");
-    /* An ellipse, not a perfect circle \u2014 narrower than it is tall,
-       which is what actually reads as a normal face rather than
-       "round/chubby." A perfect circle is a legitimately harder shape
-       to read as a face at this size, since real faces (and every
-       stylized version of one) taper slightly rather than staying
-       equally wide at every point. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 23, rx: 9.6, ry: 10.5, fill: skinFill }));
-    /* Hair narrowed slightly from the previous version, which was
-       reading as bulkier than intended and adding to an overall
-       "chubby" impression the face circle alone wasn't causing. */
-    svg.appendChild(mk("path", { d: "M10 18c-1.2 3-1.2 8.5.4 12.5 .8-1 1.2-2.8 1.2-6 0-2.8-.8-5-1.6-6.5z", fill: hairFill }));
-    svg.appendChild(mk("path", { d: "M30 18c1.2 3 1.2 8.5-.4 12.5-.8-1-1.2-2.8-1.2-6 0-2.8.8-5 1.6-6.5z", fill: hairFill }));
-    /* Rebuilt as a base band plus three independent triangles (SVG
-       polygons \u2014 simple straight-line points, nothing curved to
-       misrender) rather than one hand-written zigzag path. The
-       previous version's crown base sat too low once the peaks were
-       made taller, so the bottom of the crown actually overlapped the
-       eyes \u2014 exactly the "crown isn't even in the right place" bug.
-       Each shape here has an independently checked position, with a
-       clear gap held above the eye line. */
-    /* Enlarged further \u2014 wider band, taller peaks \u2014 plus a purple
-       collar hinting at royal robes across the shoulders. Correct
-       positioning alone (the previous fix) apparently wasn't enough
-       for this to read clearly as "royalty" rather than just "person
-       wearing something on their head"; a second, independent regal
-       signifier (the collar) plus a genuinely dominant crown size is
-       the more decisive fix. */
-    svg.appendChild(mk("path", { d: "M8 30c3 3 21 3 24 0v4c-3 3-21 3-24 0z", fill: "#7B4B9E" }));
-    /* The actual bug, found by checking the math: the face is an
-       ELLIPSE, narrower at the top than in the middle, but the crown
-       band was a flat rectangle spanning the same full width as the
-       face's widest point. At the height the band actually sat, the
-       face itself was only about 12 units wide, not the 24 the band
-       spanned \u2014 so both ends of the band were floating well past the
-       actual edge of the head with nothing beneath them, which is
-       exactly the visible gap that kept not lining up no matter how
-       many times the vertical position alone got adjusted. A curved
-       band that actually follows the head's own curve (arcing up and
-       over, the same way a real crown wraps a round head) replaces
-       the flat one entirely. */
-    /* Rebuilt as a stroke traced along the EXACT SAME ellipse the face
-       itself is built from (cx 20, cy 23, rx 9.6, ry 10.5) \\u2014 not a
-       separately-approximated curve with its own, slightly different
-       radii. The previous version used a filled shape with two
-       different arcs joined by straight side segments, and those
-       joints were visible seams/corners exactly where hair met crown,
-       which is what still read as "not connected" no matter how
-       closely the curve was eyeballed to match. Tracing the identical
-       ellipse guarantees the band's own center line sits precisely on
-       the head's real curve, mathematically, with zero gap possible
-       \\u2014 stroke-width gives it real thickness extending evenly to
-       both sides of that perfect line, and round caps keep the ends
-       soft rather than square-cut. */
-    svg.appendChild(mk("path", {
-      d: "M10.98,19.41 A9.6,10.5 0 0 1 29.02,19.41",
-      fill: "none", stroke: "#E8B923", "stroke-width": 5, "stroke-linecap": "round"
-    }));
-    /* A soft contact shadow where the crown's band meets the
-       forehead \u2014 the same "resting on top of" cue used on the
-       wizard's hat, so the crown reads as sitting on the head rather
-       than a flat gold shape overlapping a flat skin shape with
-       nothing connecting them. */
-    svg.appendChild(mk("path", { d: "M11 17c1.2-1 2.7-1.3 4-1", fill: "none", stroke: "rgba(0,0,0,.18)", "stroke-width": .9, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M25 16c1.3-.3 2.8 0 4 1", fill: "none", stroke: "rgba(0,0,0,.18)", "stroke-width": .9, "stroke-linecap": "round" }));
-    svg.appendChild(mk("polygon", { points: "10,13.5 16,13.5 12.5,4.5", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "14,11.5 26,11.5 20,3.3", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "24,13.5 30,13.5 27.5,4.5", fill: "#E8B923" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 5.5, r: 1.5, fill: "#C23B7A" }));
-    svg.appendChild(mk("circle", { cx: 13, cy: 13.8, r: .9, fill: "#5B8FD8" }));
-    svg.appendChild(mk("circle", { cx: 27, cy: 13.8, r: .9, fill: "#5B8FD8" }));
-    svg.appendChild(mk("path", { d: "M14.5 23.3c1-1 2.6-1 3.6 0", fill: "none", stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M21.9 23.3c1-1 2.6-1 3.6 0", fill: "none", stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16.3, cy: 23.7, r: 1, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 23.7, cy: 23.7, r: 1, fill: "#20242B" }));
-    svg.appendChild(catchlight(16.6, 23.35, .32));
-    svg.appendChild(catchlight(24.0, 23.35, .32));
-    svg.appendChild(mk("path", { d: "M17.8 28c1.4 1 3 1 4.4 0", fill: "none", stroke: "#B9556F", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    /* Small dangling earrings, a quick polish detail \u2014 visible just
-       below the hair at ear height. */
-    svg.appendChild(mk("circle", { cx: 10, cy: 25.5, r: .8, fill: "#5B8FD8" }));
-    /* Right-side earring removed \u2014 it was landing at nearly the exact
-       same spot as the scepter's orb (added afterward), which has a
-       radius wide enough to completely swallow it. One accessory per
-       side reading clearly beats two competing for the same few
-       pixels and neither being visible. */
-    /* A small scepter in the corner \u2014 same strategy as the ninja's
-       shuriken and the samurai's katana: one unambiguous accessory
-       that settles the identity on its own, rather than relying on
-       the crown and collar alone to carry the whole read. */
-    svg.appendChild(mk("rect", { x: 28.3, y: 27, width: 1.6, height: 9, rx: .6, fill: "#E8B923" }));
-    svg.appendChild(mk("circle", { cx: 29.1, cy: 26, r: 2, fill: "#7B4B9E" }));
-    svg.appendChild(catchlight(28.4, 25.3, .5));
-    /* A real, measured misalignment, not a perceptual illusion \u2014
-       checked directly against every other character's own actual
-       eye coordinates in source: this face sits at eye-level 23.7,
-       while the other seven cluster tightly around 18-20.6. That's
-       what was actually reading as "everyone else is higher than
-       this one," including the neighboring alien specifically called
-       out, even though the alien's own eyes (20) are perfectly
-       normal on their own. The crown's topmost point already sits at
-       y=3.3, just 0.3 units from this shared viewBox's own y=3 edge,
-       so shifting this character's content up by the ~3.7 units
-       needed to match the others would clip the crown outright.
-       Widening this character's own viewBox specifically (not the
-       one every other character still shares, which stays exactly as
-       it was) is what creates real headroom for that shift without
-       cutting anything off or changing this character's own scale
-       within its picker cell. */
-    svg.setAttribute("viewBox", "3 -1 34 38");
-    const queenGroup = mk("g", { transform: "translate(0,-3.7)" });
-    [...svg.children].forEach(child => { if(child.tagName !== "defs") queenGroup.appendChild(child); });
-    svg.appendChild(queenGroup);
+    /* Bigger face, smaller crown. The crown was nearly as tall as the
+       head, which is what made this read as headwear with a face under
+       it rather than as somebody wearing a crown - the same fault the
+       officer had. Shoulders and a collar underneath, so the gown is
+       attached to a person. */
+    const skinFill = headGrad("#F8DCC2", "#EFC7A3", "#D3A276");
+    const hairFill = headGrad("#5F4131", "#452F23", "#291B13");
+    const gownFill = headGrad("#8E58B4", "#6E3F92", "#4A2764");
+    svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.6 14.4 29.4 L25.6 29.4 Q33.2 31.6 34 40 Z",
+                                 fill: gownFill }));
+    svg.appendChild(mk("path", { d: "M14.4 29.4 Q20 34.4 25.6 29.4 L25.6 31.2 Q20 36.2 14.4 31.2 Z",
+                                 fill: "#B489D6" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 33.6, r: 1.5, fill: "#E8B923" }));
+    /* Hair behind the face, then the face, then the hair that falls in
+       front of it - three layers, which is what stops hair reading as
+       two shapes parked either side of a circle. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 11.6, ry: 11.4, fill: hairFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: skinFill }));
+    svg.appendChild(mk("path", { d: "M10.8 17.4 Q9.4 24.6 11.4 30.8 Q13.2 26 12.8 20.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M29.2 17.4 Q30.6 24.6 28.6 30.8 Q26.8 26 27.2 20.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M11.6 15.6 Q20 10.6 28.4 15.6 Q20 13.8 11.6 15.6 Z",
+                                 fill: hairFill }));
+    /* The crown: a band and three points, about half the height it was. */
+    svg.appendChild(mk("path", { d: "M11.4 12.4 L13.6 6.6 L16.8 10.6 L20 5.2 L23.2 10.6 L26.4 6.6 L28.6 12.4 Z",
+                                 fill: "#E8B923" }));
+    svg.appendChild(mk("rect", { x: 11.2, y: 12.1, width: 17.6, height: 2.5, rx: .8,
+                                 fill: "#D2A417" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 6.6, r: 1.35, fill: "#C23B7A" }));
+    svg.appendChild(mk("circle", { cx: 13.6, cy: 8.2, r: .85, fill: "#5B8FD8" }));
+    svg.appendChild(mk("circle", { cx: 26.4, cy: 8.2, r: .85, fill: "#5B8FD8" }));
+    svg.appendChild(mk("path", { d: "M14.4 19.4c1.1-1.2 2.8-1.2 3.9 0", fill: "none",
+                                 stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.7 19.4c1.1-1.2 2.8-1.2 3.9 0", fill: "none",
+                                 stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16.3, cy: 21.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 23.7, cy: 21.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(catchlight(15.8, 21.1, .48));
+    svg.appendChild(catchlight(23.2, 21.1, .48));
+    svg.appendChild(mk("ellipse", { cx: 13.4, cy: 24.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .22 }));
+    svg.appendChild(mk("ellipse", { cx: 26.6, cy: 24.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .22 }));
+    svg.appendChild(mk("path", { d: "M17.6 26.4c1.5 1.3 3.3 1.3 4.8 0", fill: "none",
+                                 stroke: "#B9556F", "stroke-width": 1.35, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 10.4, cy: 24.6, r: .95, fill: "#5B8FD8" }));
+    svg.appendChild(mk("circle", { cx: 29.6, cy: 24.6, r: .95, fill: "#5B8FD8" }));
     return svg;
   }
 
   if(def.kind === "alien"){
-    /* Everything about this face is the eyes \u2014 huge, black, almond,
-       taking up most of the head \u2014 with a smooth, slightly elongated
-       cranium and no ears at all. That absence (no ears, no hair, no
-       visible nose) is as important to the silhouette as anything
-       actually drawn. */
-    const headFill = headGrad("#9FD9A8", "#7BC98A", "#4E9B60");
-    svg.appendChild(mk("path", { d: "M20 5c-7 0-12 5.5-12 13 0 6.5 4 11 8 13.5 1.3.8 2.7 1.2 4 1.2s2.7-.4 4-1.2c4-2.5 8-7 8-13.5 0-7.5-5-13-12-13z", fill: headFill }));
-    svg.appendChild(mk("ellipse", { cx: 14.5, cy: 20, rx: 4.6, ry: 6.2, fill: "#12151A" }));
-    svg.appendChild(mk("ellipse", { cx: 25.5, cy: 20, rx: 4.6, ry: 6.2, fill: "#12151A" }));
-    svg.appendChild(catchlight(13, 17.2, .9));
-    svg.appendChild(catchlight(24, 17.2, .9));
-    svg.appendChild(mk("path", { d: "M17.5 29.5c1.5 1 3.5 1 5 0", fill: "none", stroke: "#2C4A34", "stroke-width": 1.1, "stroke-linecap": "round" }));
+    /* Everything about this face is the eyes - huge, black, almond,
+       taking up most of the head - with a smooth tapering cranium and no
+       ears, no hair, no nose. That absence is as much of the silhouette
+       as anything drawn.
+       What it was missing was a BODY: a head floating with no neck reads
+       as a sticker, which is exactly what separated these from the new
+       four. It also has a brow and a jaw shadow now, so the cranium is a
+       dome rather than a flat green shape. */
+    const headFill = headGrad("#A6E0AF", "#77C486", "#428B55");
+    const suitFill = headGrad("#4E7F86", "#37606B", "#20404A");
+    svg.appendChild(mk("path", { d: "M7.4 40 Q8 31.2 15.4 29 L24.6 29 Q32 31.2 32.6 40 Z",
+                                 fill: suitFill }));
+    svg.appendChild(mk("path", { d: "M15.4 29 Q20 33.4 24.6 29 L24.6 30.6 Q20 35 15.4 30.6 Z",
+                                 fill: "#6FA3AB" }));
+    svg.appendChild(mk("path", {
+      d: "M20 4.6c-7.4 0-12.6 5.8-12.6 13.6 0 7 4.4 11.8 8.6 14.3 1.3.8 2.7 1.2 4 1.2"
+       + "s2.7-.4 4-1.2c4.2-2.5 8.6-7.3 8.6-14.3C32.6 10.4 27.4 4.6 20 4.6z",
+      fill: headFill }));
+    /* The dome's own shading: a bright pool up on the forehead and a
+       shadow under the cheekbones, which is what a head has and a green
+       oval does not. */
+    svg.appendChild(mk("ellipse", { cx: 17.4, cy: 11.4, rx: 5.6, ry: 3.6,
+                                    fill: "#FFFFFF", opacity: .17 }));
+    svg.appendChild(mk("path", { d: "M11.6 25.6 Q20 31.6 28.4 25.6", fill: "none",
+                                 stroke: "rgba(24,58,32,.22)", "stroke-width": 2.4,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("ellipse", { cx: 14.3, cy: 20, rx: 4.8, ry: 6.4, fill: "#0E1116",
+                                    transform: "rotate(-12 14.3 20)" }));
+    svg.appendChild(mk("ellipse", { cx: 25.7, cy: 20, rx: 4.8, ry: 6.4, fill: "#0E1116",
+                                    transform: "rotate(12 25.7 20)" }));
+    /* Two lights in each eye, not one. A single dot on a black almond
+       reads as a printing error; a large soft one with a small hard one
+       below it reads as wet. */
+    svg.appendChild(catchlight(12.7, 17, 1.25));
+    svg.appendChild(catchlight(24.1, 17, 1.25));
+    svg.appendChild(catchlight(16, 22.6, .5));
+    svg.appendChild(catchlight(27.4, 22.6, .5));
+    svg.appendChild(mk("path", { d: "M17.6 28.6c1.6 1.1 3.2 1.1 4.8 0", fill: "none",
+                                 stroke: "#2A5436", "stroke-width": 1.1,
+                                 "stroke-linecap": "round" }));
     return svg;
   }
 
   if(def.kind === "samurai"){
-    /* Completely different approach this time, not another variation
-       on a helmet \u2014 four separate attempts at a kabuto silhouette
-       never landed. A topknot (chonmage) with a simple forehead
-       headband (hachimaki) is a far more universally recognized
-       samurai/warrior shorthand in illustration, and far simpler to
-       render clearly at this size than an elaborate helmet ever was.
-       The katana stays \u2014 that accessory strategy has worked
-       everywhere else it's been tried. */
-    const skinFill = headGrad("#EFC7A3", "#E3B48C", "#C5946A");
-    const hairFill = headGrad("#3A322A", "#241E18", "#120E0A");
-    const armorFill = headGrad("#6B2A2A", "#4A1C1C", "#2E1010");
-    svg.appendChild(mk("circle", { cx: 20, cy: 21, r: 10, fill: skinFill }));
-    /* Armor shoulders now drawn AFTER (on top of) the face circle,
-       not before it \u2014 this is the actual "can't see the body" bug:
-       with the face painted second, its own lower edge was covering
-       the exact part of the armor that should overlap the neck to
-       read as connected, leaving the shoulders looking like two
-       separate floating triangles below a disembodied head instead
-       of an actual body. Drawing order alone fixes this: the armor's
-       upper edge now visibly tucks under the jaw the way a real
-       collar would. */
-    /* The actual "hands" bug, found by tracing the shape: this polygon
-       reached up to y=22, well into the cheek/jaw area (the face
-       spans roughly y=11 to y=31), which is exactly why a shoulder-
-       armor shape was being read as a dark hand pressed against the
-       face. Redrawn to stay clear of the face entirely \u2014 nothing
-       above y=27, a clean line below the jaw \u2014 so these read
-       unambiguously as shoulder plates, not hands. */
-    svg.appendChild(mk("polygon", { points: "5,27 12,27.5 15,31 9,37 3,35", fill: armorFill }));
-    svg.appendChild(mk("polygon", { points: "35,27 28,27.5 25,31 31,37 37,35", fill: armorFill }));
-    /* Hair pulled back to the topknot, visible at the sides and back. */
-    svg.appendChild(mk("path", { d: "M9.5 15c-1.5 2.5-2 6.5-.8 10.5.8-1.2 1.5-2.2 1.8-4.5.3-2.3 0-4-1-6z", fill: hairFill }));
-    svg.appendChild(mk("path", { d: "M30.5 15c1.5 2.5 2 6.5.8 10.5-.8-1.2-1.5-2.2-1.8-4.5-.3-2.3 0-4 1-6z", fill: hairFill }));
-    /* The topknot itself \u2014 a small bun on top with a thin base. */
-    svg.appendChild(mk("path", { d: "M16.5 9c0 3 1.5 6 3.5 6s3.5-3 3.5-6c0-1.6-1.5-3-3.5-3s-3.5 1.4-3.5 3z", fill: hairFill }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 7, r: 3, fill: hairFill }));
-    /* The hachimaki headband, with a small knot and trailing tails on
-       one side \u2014 one of the most recognizable warrior-specific visual
-       cues in Japanese illustration, distinct from a plain fabric
-       band. */
-    svg.appendChild(mk("rect", { x: 10.5, y: 14, width: 19, height: 3, rx: .4, fill: "#E8E3D8" }));
-    /* A contact shadow where the headband crosses the forehead, same
-       "resting on top of" cue as the wizard's hat and the queen's
-       crown. */
-    svg.appendChild(mk("path", { d: "M11 17a9 1.6 0 0018 0", fill: "none", stroke: "rgba(0,0,0,.18)", "stroke-width": .9, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 27.5, cy: 15.5, r: 1.6, fill: "#C0392B" }));
-    svg.appendChild(mk("polygon", { points: "28.5,16.5 32,20 30.5,20.8 27.5,17.3", fill: "#E8E3D8" }));
-    svg.appendChild(mk("polygon", { points: "27,17 30,21.5 28.5,22.2 26,18", fill: "#E8E3D8" }));
-    svg.appendChild(mk("path", { d: "M14 23.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.4, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M22.2 23.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.4, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16, cy: 23.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 24, cy: 23.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(catchlight(16.3, 23.55, .32));
-    svg.appendChild(catchlight(24.3, 23.55, .32));
-    /* Same defined mustache treatment as the wizard \u2014 a rounded
-       center bar plus two small drooping ends, for the same "actual
-       mustache" silhouette rather than a plain flat rule. */
-    svg.appendChild(mk("rect", { x: 15.5, y: 26.8, width: 9, height: 1.6, rx: .8, fill: "#2C2118" }));
-    svg.appendChild(mk("polygon", { points: "14.7,26.7 15.7,26.7 15,28.7 14.1,28.3", fill: "#2C2118" }));
-    svg.appendChild(mk("polygon", { points: "24.3,26.7 25.3,26.7 25.9,28.3 25,28.7", fill: "#2C2118" }));
-    /* An actual mouth beneath the mustache — previously the mustache
-       bar was the only mark in the whole lower-face area, which read
-       as an incomplete, cut-off face rather than an expression. */
-    svg.appendChild(mk("path", { d: "M17 30c1.8 1.3 4.2 1.3 6 0", fill: "none", stroke: "#8A5A42", "stroke-width": 1.1, "stroke-linecap": "round" }));
-    /* A katana: a thin diagonal blade (polygon), a small crossguard,
-       and a handle \u2014 unmistakably a sword, unmistakably samurai. */
-    svg.appendChild(mk("polygon", { points: "23,35 25,33 32,24 33.5,25.5 26.5,34.5 24.5,36.5", fill: "#D8DDE3" }));
-    svg.appendChild(mk("polygon", { points: "25.3,32.2 27.8,34.3 26.7,35.6 24.2,33.5", fill: "#E8B923" }));
-    svg.appendChild(mk("rect", { x: 22.3, y: 34.3, width: 3.6, height: 1.6, rx: .5, fill: "#2C2118", transform: "rotate(-42 24.1 35.1)" }));
-    /* The actual "not in his hand" bug: there was no hand at all \u2014
-       just the sword's own shape floating on its own near the edge
-       of the canvas, nothing gripping it. A small hand, same skin
-       tone as the face, wrapped over the handle at the exact same
-       angle as the grip itself, is what actually sells "holding"
-       rather than "sword happens to be nearby." */
-    svg.appendChild(mk("ellipse", { cx: 23.4, cy: 34.7, rx: 2.1, ry: 1.5, fill: skinFill, transform: "rotate(-42 23.4 34.7)" }));
-    svg.appendChild(mk("path", { d: "M22.4 33.8c.5-.4 1.1-.4 1.6 0M22.1 34.7c.5-.4 1.3-.4 1.9 0M22.4 35.6c.5-.4 1.1-.4 1.6 0", fill: "none", stroke: "rgba(0,0,0,.25)", "stroke-width": .35, "stroke-linecap": "round" }));
-    /* The same real, measured misalignment as the queen, and the same
-       fix \u2014 this face's own eye-level (23.9) sits well below the
-       18-20.6 cluster every other character's eyes actually fall in,
-       and the topknot already leaves only about 1 unit of headroom
-       against this shared viewBox's y=3 top edge, nowhere near enough
-       for the ~3.9-unit shift needed to match the rest. Same widened,
-       character-specific viewBox for real headroom, same technique:
-       move everything up as one group, without touching this
-       character's own scale or the viewBox every other character
-       still shares. */
-    svg.setAttribute("viewBox", "3 -1 34 38");
-    const samuraiGroup = mk("g", { transform: "translate(0,-3.9)" });
-    [...svg.children].forEach(child => { if(child.tagName !== "defs") samuraiGroup.appendChild(child); });
-    svg.appendChild(samuraiGroup);
+    /* The sword and the HAND holding it were the problem: a blade, a
+       guard, a grip and four knuckle lines all crossing the bottom-right
+       corner turned into mud at 42px, and the face lost the frame to
+       them. The blade stays because it is what names the character, one
+       shape at one angle, behind the shoulder where a sheathed sword
+       actually sits. Everything else is the face, the topknot and the
+       armour. */
+    const skinFill = headGrad("#F3CEA8", "#E3B48C", "#C08C61");
+    const hairFill = headGrad("#3E362C", "#26201A", "#12100C");
+    const armorFill = headGrad("#8A3636", "#571F1F", "#331111");
+    /* The blade first, so the shoulder overlaps it. Narrow, with a dark
+       spine down one side and a wrapped hilt at the bottom: the wide pale
+       wedge this replaces rendered as a sheet of paper stood behind the
+       head, which is what a blade with no edge and no handle looks like. */
+    svg.appendChild(mk("polygon", { points: "31.4,5.8 33,7.2 18.8,26.8 17.2,25.4",
+                                    fill: "#E4E9EE" }));
+    svg.appendChild(mk("polygon", { points: "31.4,5.8 32.2,6.5 18,26.1 17.2,25.4",
+                                    fill: "#9AA6B2" }));
+    svg.appendChild(mk("polygon", { points: "18.8,26.8 17.2,25.4 16.2,26.8 17.8,28.2",
+                                    fill: "#E8B923" }));
+    svg.appendChild(mk("polygon", { points: "17.8,28.2 16.2,26.8 13.6,30.4 15.2,31.8",
+                                    fill: "#2C2118" }));
+    svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.2 14.2 29 L25.8 29 Q33.2 31.2 34 40 Z",
+                                 fill: armorFill }));
+    /* Lamellar: three bands across the chest, which is the cheapest
+       thing that says armour rather than a red top. */
+    [32.4, 35.2, 38].forEach(y => {
+      svg.appendChild(mk("path", { d: "M7.4 " + y + " Q20 " + (y + 1.6) + " 32.6 " + y,
+                                   fill: "none", stroke: "rgba(0,0,0,.28)",
+                                   "stroke-width": .9, "stroke-linecap": "round" }));
+    });
+    svg.appendChild(mk("circle", { cx: 20, cy: 33.4, r: 1.8, fill: "#E8B923" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 9.4, ry: 10.2, fill: skinFill }));
+    /* Hair: a low hairline across the brow, the sides, and the topknot. */
+    svg.appendChild(mk("path", { d: "M10.8 16.6 Q20 9.6 29.2 16.6 Q20 13.4 10.8 16.6 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M10.9 15.4 Q8.8 22.2 10.6 28.6 Q12.6 23.4 12.4 18.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M29.1 15.4 Q31.2 22.2 29.4 28.6 Q27.4 23.4 27.6 18.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M16.8 11.4 Q16.8 7.4 20 7.4 Q23.2 7.4 23.2 11.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 6.4, rx: 2.5, ry: 2.9, fill: hairFill }));
+    svg.appendChild(mk("rect", { x: 18.6, y: 8.4, width: 2.8, height: 1.5, rx: .5,
+                                 fill: "#B23A3A" }));
+    svg.appendChild(mk("path", { d: "M13.9 18.4c1.2-1.4 3-1.4 4.2 0", fill: "none",
+                                 stroke: "#2C2118", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.9 18.4c1.2-1.4 3-1.4 4.2 0", fill: "none",
+                                 stroke: "#2C2118", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16, cy: 20.8, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 24, cy: 20.8, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(catchlight(15.5, 20.3, .48));
+    svg.appendChild(catchlight(23.5, 20.3, .48));
+    svg.appendChild(mk("rect", { x: 15.8, y: 24.2, width: 8.4, height: 1.7, rx: .85,
+                                 fill: "#2C2118" }));
+    svg.appendChild(mk("path", { d: "M17.4 27.6c1.7 1.1 3.5 1.1 5.2 0", fill: "none",
+                                 stroke: "#8A5A42", "stroke-width": 1.1, "stroke-linecap": "round" }));
     return svg;
   }
 
   if(def.kind === "dragon"){
-    /* A more substantial redo: bigger, sweeping curved horns (multi-
-       point polygons rather than small simple triangles) since the
-       previous horns were too modest to read as dramatic dragon
-       horns, plus a gloss highlight for real dimensionality, plus
-       more visible, higher-contrast scales. Still red, still a
-       narrower snout with visible teeth and slit nostrils \u2014 those
-       fixes worked and are kept. */
-    const headFill = headGrad("#F26B5B", "#D8402E", "#A32A1C");
-    const snoutFill = headGrad("#FF9B84", "#F26B5B", "#C24A38");
-    /* Bigger, sweeping curved horns \u2014 each a 5-point polygon that
-       widens at the base and curves back to a point, rather than a
-       small flat triangle. */
-    /* Both horn tips were reaching y=0, well past the shared y=3
-       viewBox boundary \u2014 exactly the same clipping bug fixed on the
-       queen's crown and wizard's hat. A pointed horn flat-cut at its
-       tip reads as a crude block shape rather than a horn at all,
-       which is the real reason these looked like awkward "ears"
-       rather than dragon horns \u2014 not the shape itself, but that the
-       shape was never fully visible to begin with. */
-    /* Redrawn as a genuinely tapering shape \u2014 a wide base narrowing to
-       one true point at the tip, with a single mid-point on the outer
-       edge for a slight outward curve. The previous 6-point version's
-       "tip" was actually two separate nearby points, which is why it
-       kept reading as a flat, blocky end even once clipping was
-       fixed: the shape itself never truly came to a point. */
-    svg.appendChild(mk("polygon", { points: "17,15 12,16 6,9 9,3.3 15,11", fill: "#D8402E" }));
-    svg.appendChild(mk("polygon", { points: "23,15 28,16 34,9 31,3.3 25,11", fill: "#D8402E" }));
-    /* A circle read as exactly what the name says \u2014 perfectly round,
-       which is precisely why this looked more like a friendly red
-       ball than a dragon's head. An ellipse, narrower across than
-       tall (the opposite ratio from a chubby face), gives the head
-       a longer, more angular silhouette that actually suits a
-       dragon rather than a round mascot. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 20, rx: 12, ry: 13.5, fill: headFill }));
-    /* Small contact shadows at each horn's base, where it meets the
-       head \u2014 the same "actually resting against" cue used elsewhere,
-       so the horns read as growing out of the head rather than
-       floating shapes positioned near it. */
-    svg.appendChild(mk("path", { d: "M12 13.5c1.5 1 3.5 1.3 5.3.8", fill: "none", stroke: "rgba(0,0,0,.25)", "stroke-width": 1, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M28 13.5c-1.5 1-3.5 1.3-5.3.8", fill: "none", stroke: "rgba(0,0,0,.25)", "stroke-width": 1, "stroke-linecap": "round" }));
-    /* Back-spikes along the top of the head. */
-    svg.appendChild(mk("polygon", { points: "16,8.5 18.5,8.5 17.25,4.5", fill: "#D8402E" }));
-    svg.appendChild(mk("polygon", { points: "19.5,7.5 22,7.5 20.75,3.5", fill: "#D8402E" }));
-    svg.appendChild(mk("polygon", { points: "23,8.5 25.5,8.5 24.25,4.5", fill: "#D8402E" }));
-    /* Scale texture, higher contrast than before: small diamond
-       shapes (polygons) instead of plain circles, on each cheek. */
-    svg.appendChild(mk("polygon", { points: "10.5,22.5 12,24 10.5,25.5 9,24", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "13.8,25 15.3,26.5 13.8,28 12.3,26.5", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "29.5,22.5 31,24 29.5,25.5 28,24", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "26.2,25 27.7,26.5 26.2,28 24.7,26.5", fill: "#A32A1C" }));
-    /* Narrower, more elongated snout than a wide flat disc, plus small
-       visible teeth. */
-    /* A more angular, wedge-shaped muzzle now, not a round ellipse —
-       a round snout is exactly what was reading as "pig-like" rather
-       than dragon-like. A polygon that narrows toward the front, with
-       angled slit nostrils instead of round dots, is a much more
-       reptilian silhouette. */
-    svg.appendChild(mk("polygon", { points: "13.5,24.5 26.5,24.5 25,30.5 20,33 15,30.5", fill: snoutFill }));
-    svg.appendChild(mk("ellipse", { cx: 15.5, cy: 20.5, rx: 2, ry: 2.6, fill: "#FFFFFF" }));
-    svg.appendChild(mk("ellipse", { cx: 24.5, cy: 20.5, rx: 2, ry: 2.6, fill: "#FFFFFF" }));
-    svg.appendChild(mk("ellipse", { cx: 15.5, cy: 20.8, rx: .6, ry: 2, fill: "#2C1210" }));
-    svg.appendChild(mk("ellipse", { cx: 24.5, cy: 20.8, rx: .6, ry: 2, fill: "#2C1210" }));
-    /* Angled brow ridges, pinched down toward the center \u2014 the round
-       wide eyes alone were reading as surprised rather than fierce;
-       a stern, lowered brow is what actually signals "intense"
-       rather than "startled." */
-    svg.appendChild(mk("polygon", { points: "12.5,17 18,18.5 17.5,19.8 12,18.3", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "27.5,17 22,18.5 22.5,19.8 28,18.3", fill: "#A32A1C" }));
-    svg.appendChild(catchlight(15.75, 19.6, .3));
-    svg.appendChild(catchlight(24.75, 19.6, .3));
-    svg.appendChild(mk("polygon", { points: "16.8,26 17.9,26.3 17.6,27.6 16.5,27.3", fill: "#7A2418" }));
-    svg.appendChild(mk("polygon", { points: "23.2,26 22.1,26.3 22.4,27.6 23.5,27.3", fill: "#7A2418" }));
-    svg.appendChild(mk("path", { d: "M16.5 30.5c2 1.3 5 1.3 7 0", fill: "none", stroke: "#7A2418", "stroke-width": 1.1, "stroke-linecap": "round" }));
-    svg.appendChild(mk("polygon", { points: "17,30.8 17.8,30.8 17.4,32.3", fill: "#FFF6F0" }));
-    svg.appendChild(mk("polygon", { points: "22.2,30.8 23,30.8 22.6,32.3", fill: "#FFF6F0" }));
+    /* The head was already the right shape - narrower than tall, which
+       is what keeps it a dragon rather than a round red mascot - so this
+       is depth and a body rather than a redraw. A lit brow ridge, a
+       proper muzzle with nostrils, a jaw shadow, and scales that follow
+       the head instead of sitting on the cheeks as loose diamonds. */
+    const headFill = headGrad("#F47D6B", "#D8402E", "#96251A");
+    const snoutFill = headGrad("#FFAE99", "#F26B5B", "#B8412F");
+    const bodyFill = headGrad("#B8402E", "#8A2B1E", "#5C1B12");
+    svg.appendChild(mk("path", { d: "M6.4 40 Q7.2 32 14.4 30 L25.6 30 Q32.8 32 33.6 40 Z",
+                                 fill: bodyFill }));
+    /* Horns, behind the head so they grow out of it. */
+    svg.appendChild(mk("polygon", { points: "17,15 12,16 6,8.6 9,3 15,11", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "23,15 28,16 34,8.6 31,3 25,11", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "15.4,14.2 12.6,14.8 8.4,9.4 10.2,6.2 14.2,11.6",
+                                    fill: "#E85B48" }));
+    svg.appendChild(mk("polygon", { points: "24.6,14.2 27.4,14.8 31.6,9.4 29.8,6.2 25.8,11.6",
+                                    fill: "#E85B48" }));
+    /* Back spikes. */
+    svg.appendChild(mk("polygon", { points: "16,8.2 18.4,8.2 17.2,4", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "19.5,7.2 21.9,7.2 20.7,3", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "23,8.2 25.4,8.2 24.2,4", fill: "#C2352A" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 19.6, rx: 11.6, ry: 13.2, fill: headFill }));
+    /* Contact shadows where the horns meet the skull. */
+    svg.appendChild(mk("path", { d: "M12.4 13.4c1.6 1 3.6 1.3 5.4.8", fill: "none",
+                                 stroke: "rgba(0,0,0,.26)", "stroke-width": 1,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M27.6 13.4c-1.6 1-3.6 1.3-5.4.8", fill: "none",
+                                 stroke: "rgba(0,0,0,.26)", "stroke-width": 1,
+                                 "stroke-linecap": "round" }));
+    /* The brow ridge - the whole expression. */
+    svg.appendChild(mk("path", { d: "M11.8 16.8 Q15.4 14.4 18.6 16.6", fill: "none",
+                                 stroke: "rgba(88,20,12,.42)", "stroke-width": 2,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.4 16.6 Q24.6 14.4 28.2 16.8", fill: "none",
+                                 stroke: "rgba(88,20,12,.42)", "stroke-width": 2,
+                                 "stroke-linecap": "round" }));
+    /* The muzzle. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.6, rx: 7.2, ry: 5.4, fill: snoutFill }));
+    svg.appendChild(mk("ellipse", { cx: 17.7, cy: 24.2, rx: .82, ry: 1.05, fill: "#7A1C12" }));
+    svg.appendChild(mk("ellipse", { cx: 22.3, cy: 24.2, rx: .82, ry: 1.05, fill: "#7A1C12" }));
+    /* Eyes: slit pupils on a warm sclera, which is the one thing that
+       stops a dragon reading as a friendly animal. */
+    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 19.4, rx: 2.5, ry: 2.1, fill: "#FFE08A" }));
+    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 19.4, rx: 2.5, ry: 2.1, fill: "#FFE08A" }));
+    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 19.4, rx: .72, ry: 1.75, fill: "#20120C" }));
+    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 19.4, rx: .72, ry: 1.75, fill: "#20120C" }));
+    svg.appendChild(catchlight(14.3, 18.5, .48));
+    svg.appendChild(catchlight(23.9, 18.5, .48));
+    /* The mouth, with two small fangs at the corners. */
+    svg.appendChild(mk("path", { d: "M15.6 28.2 Q20 31 24.4 28.2", fill: "none",
+                                 stroke: "#7A1C12", "stroke-width": 1.1,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("polygon", { points: "16.6,28.9 18,28.9 17.3,30.9", fill: "#FFFFFF" }));
+    svg.appendChild(mk("polygon", { points: "22,28.9 23.4,28.9 22.7,30.9", fill: "#FFFFFF" }));
+    /* Scales, following the skull rather than parked on the cheeks. */
+    [[11.6, 21.4], [12.6, 24.4], [28.4, 21.4], [27.4, 24.4]].forEach(([x, y]) => {
+      svg.appendChild(mk("path", { d: "M" + x + " " + y + " q1.1 -1.2 2.2 0 q-1.1 1.4 -2.2 0 z",
+                                   fill: "rgba(255,255,255,.14)" }));
+    });
     return svg;
   }
 
