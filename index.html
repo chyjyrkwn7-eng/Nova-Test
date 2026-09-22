@@ -601,7 +601,11 @@
        remaining "unused space at the bottom" on Welcome and the intro. */
     --panel-reserve: 5.5rem;
   }
-  body.has-bottomtabs, body.has-floatbtn{ --panel-reserve: 9rem; }
+  body.has-floatbtn{ --panel-reserve: 9rem; }
+  /* The tab bar's reservation is its own now, because the bar grew and a
+     floating button did not. They shared one constant while they happened
+     to want the same number; they do not any more. */
+  body.has-bottomtabs{ --panel-reserve: 9.5rem; }
   /* Welcome has no tab bar, no floating button and nothing else along the
      bottom, so the 4rem of .wrap padding under it is reserved for
      furniture that is not there - and it is the entire reason the hint
@@ -612,15 +616,22 @@
      is whatever the inset adds OVER that new bottom baseline. Each one
      collapses back to the shared value at zero insets, which is the
      property that makes a change here safe to reason about (see the note
-     on --pad-inset-bottom itself). The +.9rem keeps the hint off an
-     iPhone's home indicator: the inset is 34px and this lands the text
-     28px above it. */
+     on --pad-inset-bottom itself). Reported a second time as still not
+     close enough - "pretty darn close to the bottom of the screen ...
+     noticeably closer than how it is" - so the baseline came down again,
+     from 2.25rem to 1.6rem. Measured: the hint sits 40px off the bottom
+     edge on an iPhone (was 62), 23 on an iPad (was 49) and 23 in a laptop
+     browser window (was 46). 1.15rem was tried first and put a laptop at
+     16px, which reads as falling off the screen rather than as close to
+     the bottom. The +.3rem over the inset is what keeps the
+     hint off an iPhone's home indicator, which is 34px of inset with a
+     ~5px bar sitting at the bottom of it. */
   body.on-welcome{
-    --panel-reserve: 3.5rem;
-    --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 1.35rem);
+    --panel-reserve: 2.85rem;
+    --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 1.3rem);
   }
   body.on-welcome .wrap{
-    padding-bottom: max(2.25rem, calc(env(safe-area-inset-bottom, 0px) + .9rem));
+    padding-bottom: max(1.6rem, calc(env(safe-area-inset-bottom, 0px) + .3rem));
   }
   :root{ --statusbar-mix2:0%; --statusbar-mix3:0%; }
   [data-layout="modern"]{ --statusbar-mix2:3.3%; --statusbar-mix3:3%; }
@@ -2833,9 +2844,17 @@
      what "awkward sized gaps" was pointing at. (A phone was already 15
      and 15, which is why it only showed on tablets.) Now 29 inside and
      38 between - and the cards come out slightly SHORTER than before, so
-     this costs no height on a short tablet. */
+     this costs no height on a short tablet.
+     Then reported the other way round: with the relationship fixed, the
+     gaps themselves were too big - "the boxes have large gaps between
+     them ... they need to be closer together, make it more centered".
+     Both numbers come down together, because dropping only the gap puts
+     the padding back on top: 38px between and 29px inside becomes 24 and
+     20, which keeps the gap ahead and hands ~110px of height back to the
+     panel's two auto margins, so the four cards sit as a centred group
+     rather than a column reaching for both ends of the screen. */
   @media (min-width:40rem){
-    .welcomeintro-row{ margin-bottom:2.4rem; padding:1.8rem 2rem; border-radius:20px; }
+    .welcomeintro-row{ margin-bottom:1.5rem; padding:1.25rem 2rem; border-radius:20px; }
     .welcomeintro-head{ font-size:1.55rem; margin-bottom:.55rem; }
     .welcomeintro-body{ font-size:1.3rem; line-height:1.5; }
     .welcomeintro-title{ font-size:clamp(1.8rem, 5vh, 2.4rem); margin-bottom:1.4rem; }
@@ -3446,8 +3465,17 @@
      visible on this screen. Sized and positioned to clear the dual-
      pill layout's own height with room to spare, verified directly
      against its measured height rather than guessed. */
+  /* The offset carries the safe-area inset, and that is the whole bug:
+     a flat 6.6rem is 106px off the bottom edge, and the bar's own
+     footprint on an iPhone is the 34px inset plus .6rem plus its 76px
+     height - 120px. The line was 14px BEHIND the bar it is supposed to
+     sit above, which is what "it's accidentally hiding underneath the
+     bottom tab" is. The bar carries the inset, so anything clearing it
+     has to carry it too; the tablet gets its own figure below because
+     its bar is 25px taller. */
   .unit-selection-summary{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:6.6rem;
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(6.6rem + env(safe-area-inset-bottom, 0px));
     z-index:14; padding:.5rem 1rem; border-radius:999px;
     font-size:.82rem; font-weight:700; color:var(--soft); text-align:center;
     background:var(--panel); border:1px solid var(--rule);
@@ -3461,6 +3489,9 @@
     background:rgba(28,33,40,.72); border:1px solid rgba(255,255,255,.09);
   }
   [data-theme="dark"] .unit-selection-summary{ box-shadow:0 2px 10px rgba(0,0,0,.4); }
+  @media (min-width:40rem){
+    .unit-selection-summary{ bottom:calc(8.2rem + env(safe-area-inset-bottom, 0px)); }
+  }
   .settings-done-bar{ margin-top:2.2rem; }
   .settings-done-btn{
     width:100%; padding:.9rem 1.5rem; font-size:1.05rem;
@@ -3913,9 +3944,16 @@
      them back is what actually doesn't fit), but the icons themselves
      now match their normal size exactly, with genuine breathing room
      between them instead of the old, much tighter .2rem gap. */
-  .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab{ padding:.5rem .65rem; }
+  .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab{ padding:.76rem .62rem; }
   .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab-label{ display:none; }
-  .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab-icon{ width:1.6rem; height:1.6rem; }
+  /* Same icon as the plain bar, not a smaller one. Reported directly:
+     "the unit selection bottom tab still isn't as tall, the icons and
+     buttons there are smaller". The labels genuinely do not fit beside a
+     Start pill on a 375px phone, so those stay hidden - but the height
+     and the icon size have no business differing, and the extra vertical
+     padding below buys back exactly what the missing label row costs, so
+     the two bars come out the same height on the same device. */
+  .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab-icon{ width:1.75rem; height:1.75rem; }
   .bottomtabs.has-start-tab .bottomtabs-navrow{ gap:.6rem; }
   /* Superseded: navrow no longer paints its own nested glass pill in
      the compact (has-start-tab) state -- see the base
@@ -4001,7 +4039,7 @@
   .bottomtab{
     display:flex; flex-direction:column; align-items:center; gap:.15rem;
     background:none; border:none; border-radius:999px; cursor:pointer;
-    padding:.45rem 1.1rem; color:var(--soft); font:inherit;
+    padding:.55rem 1.15rem; color:var(--soft); font:inherit;
     /* The explicit rgba form, not the "transparent" keyword \u2014 some iOS
        Safari versions honor this reliably and the keyword not always,
        which was exactly the cause of an old square-tap-highlight glitch
@@ -4030,7 +4068,7 @@
   /* Enlarged from 1.3rem so the character's own features actually
      read at this size, rather than shrinking a fairly detailed face
      down to something where its details are hard to make out. */
-  .bottomtab-icon{ width:1.6rem; height:1.6rem; display:flex; align-items:center; justify-content:center; position:relative; }
+  .bottomtab-icon{ width:1.75rem; height:1.75rem; display:flex; align-items:center; justify-content:center; position:relative; }
   /* The avatar character specifically gets noticeably larger than
      every other (simple, single-glyph) tab icon \u2014 confirmed the
      underlying SVG is pixel-for-pixel identical to the selection
@@ -4047,7 +4085,7 @@
      above is fixed, the character reads clearly at the same size as
      every other icon anyway, so a special larger size isn't needed
      to compensate for it looking washed out. */
-  .bottomtab-icon-avatar{ width:1.6rem; height:1.6rem; }
+  .bottomtab-icon-avatar{ width:1.75rem; height:1.75rem; }
   /* No circular frame or background \u2014 a character is always present
      now (no initials fallback needing a background to sit on), so
      this can just show the character directly, matching how every
@@ -4093,10 +4131,10 @@
      phone, not grow back out alongside the plain bar. */
   @media (min-width:40rem){
     .bottomtabs:not(.has-start-tab){ padding:.55rem; gap:.3rem; }
-    .bottomtabs:not(.has-start-tab) .bottomtab{ padding:.6rem 1.5rem; gap:.2rem; }
-    .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:2rem; height:2rem; }
-    .bottomtabs:not(.has-start-tab) .bottomtab-icon-avatar{ width:2rem; height:2rem; }
-    .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.8rem; }
+    .bottomtabs:not(.has-start-tab) .bottomtab{ padding:.72rem 1.55rem; gap:.2rem; }
+    .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:2.2rem; height:2.2rem; }
+    .bottomtabs:not(.has-start-tab) .bottomtab-icon-avatar{ width:2.2rem; height:2.2rem; }
+    .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.84rem; }
   }
   /* The compact, icon-only bar above is a PHONE compromise, and the
      :not(.has-start-tab) that used to run through every rule up there
@@ -4120,16 +4158,16 @@
     .bottomtabs.has-start-tab:not(.has-options-tab){ padding:.55rem; }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow{ gap:.3rem; }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{
-      padding:.6rem 1.5rem; gap:.2rem;
+      padding:.72rem 1.55rem; gap:.2rem;
     }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-label{
-      display:block; font-size:.8rem;
+      display:block; font-size:.84rem;
     }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon{
-      width:2rem; height:2rem;
+      width:2.2rem; height:2.2rem;
     }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon-avatar{
-      width:2rem; height:2rem;
+      width:2.2rem; height:2.2rem;
     }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{
       padding:.6rem 1.1rem; font-size:.8rem;
@@ -4142,7 +4180,7 @@
     display:none; flex-direction:column; align-items:center; gap:.15rem;
     background-image:linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,0) 60%), linear-gradient(var(--accent), var(--accent));
     color:var(--accent-ink); border:none; border-radius:999px; cursor:pointer;
-    padding:.45rem 1rem; font:inherit; font-size:.68rem; font-weight:700;
+    padding:.62rem 1rem; font:inherit; font-size:.72rem; font-weight:700;
     box-shadow:0 1px 2px rgba(255,255,255,.3) inset, 0 2px 8px rgba(18,26,32,.15);
     -webkit-tap-highlight-color:transparent;
   }
@@ -5362,7 +5400,7 @@
      graphic sitting directly on the app's own dark background. */
   .cosmic-welcome{
     position:relative; z-index:1; text-align:center;
-    padding:1.55rem .5rem .85rem; display:flex; flex-direction:column; align-items:center;
+    padding:1.55rem .5rem .45rem; display:flex; flex-direction:column; align-items:center;
     /* .wrap (this element's own parent chain) carries 20px top + 48px
        bottom padding of its own \u2014 100dvh alone doesn't know about
        that and overshoots the real viewport by exactly that much,
@@ -6189,7 +6227,77 @@
      at 760, and stops short of a 13 mini installed at 812, which has the
      room and must keep its full-size hero. */
   @media (max-width:32rem) and (min-height:36rem) and (max-height:48rem){
-    .panel.home.screen-home-actual .cosmic-hero-wrap{ max-width:min(23rem, 34vh); }
+    /* 33vh, not 34: growing the tab bar cost every panel 8px of height,
+       and an SE 2nd/3rd gen is the one device with none to give - its
+       Home went from 19px of scroll to 27. This hands the 8px back. */
+    .panel.home.screen-home-actual .cosmic-hero-wrap{ max-width:min(23rem, 33vh); }
+  }
+  /* Home's column, revisited after the first full screenshot pass.
+     Three things were reported as one: "the wording shouldn't be so
+     close to the planet system", "the start studying could also be moved
+     down because of this", and "the start studying button is too far
+     away from the button tab, it's awkward" - 88px on an iPad Pro 11"
+     and 123 on a 12.9".
+     The old arrangement split the leftover height into equal thirds:
+     above the hero, between the tagline and the button, and below the
+     button. So every extra pixel of screen went partly into the one gap
+     that should not grow, and the roomier the device the worse it got.
+     The two gaps around the button are fixed and small now, and what is
+     left is shared between the space ABOVE the hero and the space UNDER
+     it - so the planet keeps a margin off the top of the panel, the
+     wording drops away from the planet, and the button lands a constant
+     short hop above the furniture on every device.
+     The greeting's auto margin is the new one; it is what opens the gap
+     under the hero, and it has to be re-declared here because the
+     tablet type block sets margin-top explicitly further up. */
+  /* A phone is left on the arrangement it already had - two auto margins
+     centring the button between the tagline and the furniture - and gets
+     the change as spending rather than redistribution: a slightly bigger
+     fixed gap under the hero, and nothing else.
+     Both alternatives were measured and both were worse. An auto margin
+     under the hero CLOSED that gap rather than opening it (72px down to
+     41 on a 13 mini), because the share it collected was smaller than
+     the fixed 2.1rem it replaced. Pinning the button to a fixed hop
+     above the panel floor instead put every phone into overflow - 51px
+     on an SE, and the button landed 1px THROUGH the daily-question
+     circle on a 13 mini. There is no spare height on a phone to move
+     around; there is only height to spend, and 8px is what this screen
+     can afford.
+     The min-height floor is the same one the 2.1rem it replaces already
+     carried: an SE at 667px is under it, that screen has no 8px to
+     spend, and without the floor it went 53px into overflow with the
+     button landing 5px through the daily-question circle. */
+  @media (max-width:32rem) and (min-height:46rem){
+    .panel.home.screen-home-actual .homegreeting{ margin-top:2.6rem; }
+  }
+  /* Short AND wide is excluded by the 60rem height floor, and that is
+     not optional either: a laptop browser window has none of the slack
+     this rearrangement divides, and the fixed 3.2rem gap under the
+     tagline alone (where the old rule had zero) put a MacBook Pro 14"
+     17px into overflow. Those windows keep the equal-thirds split, which
+     is already tight there - 45px above the bar rather than 123. */
+  @media (min-width:40rem) and (min-height:60rem){
+    /* The auto margin that opens the gap under the hero. It has to be
+       re-declared here because the tablet type block sets the greeting's
+       margin-top explicitly further up. */
+    .panel.home.screen-home-actual .homegreeting{ margin-top:auto; }
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:min(3.2rem, 3.6vh); }
+    .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:min(2.8rem, 3vh); }
+  }
+  /* The button and the line above it were still phone-sized against a
+     hero that is not - "the start studying button also even appears a
+     smidge small on the iPad screens ... and the wording on the main
+     screen above the start studying button seems a little smaller too".
+     Gated on HEIGHT as well as width, and that is not optional: a laptop
+     in a browser window is wide and short, and the same enlargement that
+     fits an iPad with room over pushed a MacBook Pro 14" 31px into
+     overflow. Same 60rem floor the hero and the tablet type block
+     already use, for the same reason. */
+  @media (min-width:40rem) and (min-height:60rem){
+    .panel.home.screen-home-actual .playbtn{
+      font-size:1.22rem; padding-top:1rem; padding-bottom:1rem; min-width:17rem;
+    }
+    .panel.home.screen-home-actual .hometagline{ font-size:1.45rem; }
   }
   /* Phone. This was justify-content:space-between, to spread the leftover
      height into the gaps rather than leave it in one lump under the last
@@ -6278,8 +6386,17 @@
      center (bottom:1.1rem + its own ~3.5rem height), landing it in
      that open corner margin instead of well above it — genuinely in
      the bottom-left corner rather than just closer to it. */
+  /* Reported after the screenshot pass: "the version number button, it's
+     not perfectly in the bottom left corner". It was sitting ~13px below
+     the tab pill's own centre line, which is what reads as not quite
+     landing. Both corner controls are pinned to that centre line now and
+     to nothing else, so they stay on it when the bar's height changes:
+     the bar's bottom edge is .6rem + the inset, its height is 101px and
+     this label is about 14px, so measured it lands on that line at
+     3.7rem up from the same inset. The daily-question circle gets the same treatment on
+     its own side - they are a pair and they have to read as one. */
   @media (min-width:40rem){
-    .homeversion{ bottom:calc(2.6rem + env(safe-area-inset-bottom, 0px)); }
+    .homeversion{ bottom:calc(3.7rem + env(safe-area-inset-bottom, 0px)); }
   }
   /* Underlined at full strength on a .55-opacity label, it read as a
      stray anchor dropped in the corner rather than as part of the
@@ -6395,7 +6512,15 @@
          sitting a bit low relative to it). The small max() floor is
          just a safety net at the narrow end of this breakpoint (a
          640px Split View iPad), not the primary positioning logic. */
-      bottom:2rem; right:max(calc(50% - 19rem), 1rem);
+      /* Was a flat 2rem, which ignored the safe-area inset the bar itself
+         carries and left the circle 17px below the bar's centre line -
+         "it needs to be centered to that bottom tab, its slightly lower
+         than it right now". The bar sits .6rem + the inset off the
+         bottom edge and is 101px tall; this circle is 4.6rem, and
+         measured across the matrix 1.83rem puts the two centre lines at
+         exactly 0px apart. */
+      bottom:calc(1.83rem + env(safe-area-inset-bottom, 0px));
+      right:max(calc(50% - 19rem), 1rem);
     }
   }
   @media (hover:hover){ .homeversion-btn:hover{ opacity:.85; } }
@@ -7710,7 +7835,13 @@
      is what the merged bottom-bar tab forwards to) but visually hidden
      once merged into the bar \u2014 see setupBottomTabs' syncStartAction(). */
   .floatbtn.merged-into-bar{ display:none; }
-  body.has-bottomtabs .wrap{ padding-bottom:7.5rem; }
+  /* 8rem, not 7.5: the bar itself was grown by ~9px per the report that
+     it "could also be a smidge larger", and this reservation is what
+     guarantees the bar's whole footprint still fits under the panel. The
+     two numbers move together or the bar starts eating the primary
+     button again - which is the bug the reservation exists to prevent.
+     --panel-reserve (.wrap's top padding plus this) moves with it. */
+  body.has-bottomtabs .wrap{ padding-bottom:8rem; }
   [data-theme="dark"][data-layout="modern"] .next{
     box-shadow:0 1px 1px rgba(255,255,255,.18) inset, 0 -1px 2px rgba(0,0,0,.35) inset,
       0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
@@ -8147,6 +8278,21 @@
      a rem of each other now, and the circle stays well clear of the
      44px tap minimum at both sizes. */
   .avatarchar-option{ max-width:3.7rem; }
+  /* Those two lines belong to the Profile appearance grid, where a
+     character sits beside a colour circle and the pair have to match.
+     They are written as bare classes, so they also reach the ONBOARDING
+     picker six thousand lines above and beat the rules written for it on
+     source order - which is why "Choose a character" rendered at 3.7rem
+     on a phone and 4.5rem on an iPad however generous those rules were.
+     Reported as the characters being too small on every large screen.
+     Scoped here rather than by moving the appearance rule, because the
+     appearance grid genuinely wants the smaller size; a selector with a
+     screen-level ancestor beats a bare class whatever the source order.
+     This is the .sect/.slab/.iconbtn trap in a different shirt.
+     The phone value is deliberately the same 3.7rem it was already
+     rendering at, because the phone version of this screen was signed
+     off as it stands; only the large screens were reported as small. */
+  .panel.home.charselect-panel .avatarchar-option{ max-width:3.7rem; }
   .swatch{ width:3.4rem; height:3.4rem; }
   .swatch .dot{ width:2.25rem; height:2.25rem; }
   @media (min-width:27rem){
@@ -8154,6 +8300,10 @@
   }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
+    /* 6rem, not the 7rem an earlier pass tried: that one came back as
+       "absolutely massive". This is a third bigger than what a large
+       screen was actually getting and still short of that. */
+    .panel.home.charselect-panel .avatarchar-option{ max-width:6rem; }
     .swatch{ width:4.2rem; height:4.2rem; }
     .swatch .dot{ width:2.8rem; height:2.8rem; }
     .badge-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1rem; }
@@ -8195,7 +8345,12 @@
 
   /* The unit card's mastery line: its own badge, a label, and a
      hairline bar that only exists while there is progress left. */
-  .pick-badge{ display:inline-flex; width:1.35rem; height:1.35rem; flex-shrink:0; }
+  /* Up from 1.35rem: with the "Mastered" label and its count gone, the
+     badge is the only thing left in that row on a mastered unit, and it
+     was drawn at the size of a bullet beside text that is not there any
+     more. Earned or not - the empty slot has to read as the shape of
+     what goes in it at the same size the badge will. */
+  .pick-badge{ display:inline-flex; width:1.7rem; height:1.7rem; flex-shrink:0; }
   .pick-badge svg{ width:100%; height:100%; display:block; }
   .pick-badge.earned svg{ filter:drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
   /* .pick is a GRID with explicit placement, not a column - appended
@@ -8213,7 +8368,7 @@
     background:linear-gradient(90deg, #5FA3EA, #9CCEFF);
   }
   @media (min-width:40rem){
-    .pick-badge{ width:1.7rem; height:1.7rem; }
+    .pick-badge{ width:2.1rem; height:2.1rem; }
   }
 
   /* ---------- the badge cutscene ------------------------------------
@@ -23082,14 +23237,14 @@ const RANKING_BOARDS = [
     blurb: "Ranked by level. Level comes from total XP, so it climbs with everything you do \u2014 every question answered, every test finished." },
   { key: "badges", tab: "Badges", field: "badges",
     unit: (n) => n + (n === 1 ? " badge" : " badges"),
-    blurb: "Ranked by badges. Every unit has one, and you earn it by mastering that unit \u2014 35 hundos in it. Badges replace stars, so this board is how much of the material you have taken all the way." },
+    blurb: "Ranked by badges. There is one for every unit in the course, and it is the mark that you have that unit cold. Sixteen of them is the whole syllabus \u2014 so this board is how much of the material each person has taken all the way." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, so a test covering three units can earn three: ace two of them and that is two hundos." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units is three hundos on the table." }
 ];
 
 
@@ -29112,8 +29267,14 @@ function showSetup(){
          badge itself out past .pick's overflow:hidden, so the one
          thing the row is about disappeared on exactly the devices
          most people use. The glyph beside it carries the meaning. */
+      /* A mastered unit says so with its badge and nothing else. It
+         used to read "Mastered - 1,204" beside the badge, which is the
+         same fact three times: the badge is the award, the word repeats
+         it, and the running count is a number nobody is working towards
+         any more. Per explicit request both come off once the badge is
+         earned. Still counting up to it, the count is the whole point. */
       progLabel.textContent = drillStarEarned
-        ? "Mastered \u00b7 " + perfectCount.toLocaleString()
+        ? ""
         : perfectCount + " / " + BADGE_THRESHOLD;
       progCurrent = Math.min(perfectCount, BADGE_THRESHOLD); progMax = BADGE_THRESHOLD;
     }
@@ -35860,7 +36021,7 @@ function buildBadgesTab(){
   const blurb = document.createElement("p");
   blurb.className = "badges-blurb";
   blurb.textContent = "Every unit has a badge, and no two look alike. Earn one by mastering its unit — " +
-    BADGE_THRESHOLD + " hundos in that unit. Badges replace stars. Tap one you have not earned to see what it takes.";
+    BADGE_THRESHOLD + " hundos in that unit. Tap one you have not earned to see what it takes.";
   head.appendChild(blurb);
   tab.appendChild(head);
 
