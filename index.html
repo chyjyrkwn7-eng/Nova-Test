@@ -23014,37 +23014,37 @@ function badgeShade(hex, t){
    No gloss streak, no sparkle, no glass. Those were all tried here and
    each one came back as "too shiny". */
 const BADGE_SHAPE = {
-  gate:       { c: [50.0, 49.0], cuts: ["M-6 50H106"],
+  gate:       { c: [50.0, 49.6], cuts: ["M-6 50H106"],
     d: "M44.4 10.2Q50.0 8.0 55.6 10.2L70.4 15.8Q76.0 18.0 78.5 23.4L85.5 38.6Q88.0 44.0 88.0 50.0L88.0 56.0Q88.0 62.0 85.0 67.2L75.0 84.8Q72.0 90.0 66.0 90.0L34.0 90.0Q28.0 90.0 25.0 84.8L15.0 67.2Q12.0 62.0 12.0 56.0L12.0 50.0Q12.0 44.0 14.5 38.6L21.5 23.4Q24.0 18.0 29.6 15.8Z" },
   diamond:    { c: [50.0, 50.0], cuts: ["M50 -10V110", "M-10 50H110"],
     d: "M45.1 10.9Q50.0 6.0 54.9 10.9L89.1 45.1Q94.0 50.0 89.1 54.9L54.9 89.1Q50.0 94.0 45.1 89.1L10.9 54.9Q6.0 50.0 10.9 45.1Z" },
-  disc:       { c: [44.0, 47.0], cuts: ["M-10 52H110"],
+  disc:       { c: [50.0, 45.0], cuts: ["M-10 52H110"],
     d: "M6 50A44 44 0 0 1 94 50L94 78A6 6 0 0 1 88 84L12 84A6 6 0 0 1 6 78Z" },
-  trefoil:    { c: [25.0, 38.8], cuts: [],
+  trefoil:    { c: [50.0, 44.0], cuts: ["M-10 46H110"],
     d: "M26.1 36.2A26.0 26.0 0 1 1 73.9 36.2A26.0 26.0 0 1 1 50.0 77.6A26.0 26.0 0 1 1 26.1 36.2Z" },
-  peaks:      { c: [50.0, 51.0], cuts: ["M-10 62H110"],
+  peaks:      { c: [50.0, 52.1], cuts: ["M-10 62H110"],
     d: "M13.0 88.0Q8.0 88.0 8.0 83.0L8.0 55.0Q8.0 50.0 10.6 45.7L24.4 22.3Q27.0 18.0 29.8 22.1L47.2 47.9Q50.0 52.0 52.6 47.7L70.4 18.3Q73.0 14.0 75.3 18.4L89.7 45.6Q92.0 50.0 92.0 55.0L92.0 83.0Q92.0 88.0 87.0 88.0Z" },
-  wedge:      { c: [50.0, 55.0], cuts: ["M50 4V104"],
+  wedge:      { c: [50.0, 53.7], cuts: ["M50 4V104"],
     d: "M10.8 21.3Q8.0 16.0 14.0 16.0L32.0 16.0Q38.0 16.0 41.9 20.6L46.1 25.4Q50.0 30.0 53.9 25.4L58.1 20.6Q62.0 16.0 68.0 16.0L86.0 16.0Q92.0 16.0 89.2 21.3L52.8 88.7Q50.0 94.0 47.2 88.7Z" },
   hex:        { c: [50.0, 50.0], cuts: ["M-6 34H106", "M-6 66H106"],
     d: "M43.9 8.4Q50.0 5.0 56.1 8.4L84.9 24.6Q91.0 28.0 91.0 35.0L91.0 65.0Q91.0 72.0 84.9 75.4L56.1 91.6Q50.0 95.0 43.9 91.6L15.1 75.4Q9.0 72.0 9.0 65.0L9.0 35.0Q9.0 28.0 15.1 24.6Z" },
   cross:      { c: [50.0, 50.0], cuts: ["M50 -10V110"],
     d: "M36.0 13.0Q36.0 8.0 41.0 8.0L59.0 8.0Q64.0 8.0 64.0 13.0L64.0 31.0Q64.0 36.0 69.0 36.0L87.0 36.0Q92.0 36.0 92.0 41.0L92.0 59.0Q92.0 64.0 87.0 64.0L69.0 64.0Q64.0 64.0 64.0 69.0L64.0 87.0Q64.0 92.0 59.0 92.0L41.0 92.0Q36.0 92.0 36.0 87.0L36.0 69.0Q36.0 64.0 31.0 64.0L13.0 64.0Q8.0 64.0 8.0 59.0L8.0 41.0Q8.0 36.0 13.0 36.0L31.0 36.0Q36.0 36.0 36.0 31.0Z" },
-  spire:      { c: [50.0, 49.5], cuts: ["M-10 46H110"],
+  spire:      { c: [50.0, 50.6], cuts: ["M-10 46H110"],
     d: "M44.7 9.6Q50.0 5.0 55.3 9.6L82.7 33.4Q88.0 38.0 86.5 44.8L77.5 87.2Q76.0 94.0 69.0 94.0L31.0 94.0Q24.0 94.0 22.5 87.2L13.5 44.8Q12.0 38.0 17.3 33.4Z" },
-  fan:        { c: [50.0, 45.0], cuts: ["M-10 56H110"],
+  fan:        { c: [50.0, 47.2], cuts: ["M-10 56H110"],
     d: "M45.1 16.7Q50.0 8.0 54.9 16.7L87.1 73.3Q92.0 82.0 82.0 82.0L18.0 82.0Q8.0 82.0 12.9 73.3Z" },
   burstplate: { c: [50.0, 50.0], cuts: ["M50 -10V110", "M-10 50H110"],
     d: "M48.3 8.6Q50.0 5.0 51.7 8.6L58.2 22.4Q59.9 26.0 63.7 24.6L78.1 19.5Q81.8 18.2 80.5 21.9L75.4 36.3Q74.0 40.1 77.6 41.8L91.4 48.3Q95.0 50.0 91.4 51.7L77.6 58.2Q74.0 59.9 75.4 63.7L80.5 78.1Q81.8 81.8 78.1 80.5L63.7 75.4Q59.9 74.0 58.2 77.6L51.7 91.4Q50.0 95.0 48.3 91.4L41.8 77.6Q40.1 74.0 36.3 75.4L21.9 80.5Q18.2 81.8 19.5 78.1L24.6 63.7Q26.0 59.9 22.4 58.2L8.6 51.7Q5.0 50.0 8.6 48.3L22.4 41.8Q26.0 40.1 24.6 36.3L19.5 21.9Q18.2 18.2 21.9 19.5L36.3 24.6Q40.1 26.0 41.8 22.4Z" },
-  cring:      { c: [43.0, 22.0], cuts: ["M-6 50H106"],
+  cring:      { c: [60.6, 50.0], cuts: ["M-6 50H106"],
     d: "M50 6A44 44 0 1 1 26 86L34 68A25 25 0 1 0 50 24Z" },
-  bolt:       { c: [50.0, 51.0], cuts: [],
+  bolt:       { c: [49.3, 50.2], cuts: ["M-10 50H110"],
     d: "M17.8 14.0Q18.0 10.0 22.0 10.0L66.0 10.0Q70.0 10.0 68.1 13.5L53.9 40.5Q52.0 44.0 56.0 44.0L80.0 44.0Q84.0 44.0 81.1 46.8L36.9 89.2Q34.0 92.0 35.3 88.2L44.7 59.8Q46.0 56.0 42.0 56.0L20.0 56.0Q16.0 56.0 16.2 52.0Z" },
-  star5:      { c: [50.0, 45.6], cuts: ["M-10 46H110"],
+  star5:      { c: [50.0, 46.0], cuts: ["M-10 46H110"],
     d: "M47.2 9.3Q50.0 4.0 52.8 9.3L61.3 25.3Q64.1 30.6 70.0 31.6L87.8 34.7Q93.7 35.8 89.6 40.1L77.0 53.1Q72.8 57.4 73.7 63.4L76.2 81.3Q77.0 87.2 71.6 84.6L55.4 76.6Q50.0 74.0 44.6 76.6L28.4 84.6Q23.0 87.2 23.8 81.3L26.3 63.4Q27.2 57.4 23.0 53.1L10.4 40.1Q6.3 35.8 12.2 34.7L30.0 31.6Q35.9 30.6 38.7 25.3Z" },
   keystone:   { c: [50.0, 50.0], cuts: ["M-10 54H110"],
     d: "M28.1 13.7Q30.0 8.0 36.0 8.0L64.0 8.0Q70.0 8.0 71.9 13.7L76.1 26.3Q78.0 32.0 83.0 35.3L85.0 36.7Q90.0 40.0 90.0 46.0L90.0 86.0Q90.0 92.0 84.0 92.0L16.0 92.0Q10.0 92.0 10.0 86.0L10.0 46.0Q10.0 40.0 15.0 36.7L17.0 35.3Q22.0 32.0 23.9 26.3Z" },
-  quatre:     { c: [36.5, 36.5], cuts: [],
+  quatre:     { c: [50.0, 50.0], cuts: ["M-10 50H110", "M50 -10V110"],
     d: "M27.1 27.1A23.0 23.0 0 1 1 72.9 27.1A23.0 23.0 0 1 1 72.9 72.9A23.0 23.0 0 1 1 27.1 72.9A23.0 23.0 0 1 1 27.1 27.1Z" },
 };
 /* One shape per unit, by hand, because sixteen units and sixteen shapes
@@ -23358,11 +23358,18 @@ const RANK_DISPLAY_NAME = {
      app's own name going off, which is the right place for it. */
   adept: "Sapphire", elite: "Amethyst", titan: "Supernova"
 };
-/* A rank's own colour, and deliberately NOT ACCENT_SWATCH. Those are
-   the flare colours - the thing a rank hands over - and a rank that is
-   the same colour as its own reward has nothing left to be. Keeping
-   them apart is also what lets the rank colours run a straight metal
-   ramp while the flares stay on the app's own palette. */
+/* A rank's own colour, and the SAME colour its theme hands over. This
+   comment used to say the opposite - that a rank the same colour as its
+   own reward has nothing left to be - and that reasoning was overruled
+   directly: "ensure the theme colors match the colors of the rank you
+   are getting (you start off as iron so that's already the default
+   color)".
+
+   So ACCENT_SWATCH is this table lifted a few levels, not a separate
+   palette: lifted because a rank colour has to read on a card, and an
+   accent has to read as text and as a glow on a dark screen. Iron's
+   #8B939E is the app's own default grey for the same reason - you start
+   the ladder already wearing the theme you have. */
 const RANK_COLOR = {
   rookie: "#8B939E", ranger: "#C07A3E", veteran: "#CAD3DC", vanguard: "#E5B63F",
   adept: "#3D74E8", elite: "#A855F7", titan: "#E23B3B"
