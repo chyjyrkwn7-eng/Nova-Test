@@ -51,6 +51,16 @@ disagreed, the repo won and the difference is called out.
   check in it was written against a build where it failed; `--against
   old-index.html` re-runs it there, which is the only thing that makes a
   green run mean anything. See **Accounts and the sync code**.
+- `tools/check-tours.py` — **do the tooltips still point at things that
+  exist?** `renderStep()` does `if(!el){ advance(); return; }`, so a tour
+  step whose selector no longer matches anything is skipped IN SILENCE:
+  the tour still runs, still looks fine, and is simply shorter than it
+  was written to be. That is how the Profile tour lost its calendar step
+  for months. This walks every tour on both reference devices and
+  asserts the number of steps that render equals the number the source
+  declares, and that no tooltip leaves the viewport. It also fails if a
+  `startSimpleTour` call site has no scenario in it, on the same
+  principle as `SCREENS`. Takes `--only`.
 - `tools/check-behaviour.py` — **does the app still DO the right
   thing**, as opposed to still look right: the splash centred from its
   first visible frame, a thumb swipe changing the top tab, a back link
@@ -354,6 +364,14 @@ a Dell Latitude up through a MacBook Pro 16" and a 1440p display — each
 portrait and landscape, each installed and in a browser. Desktops are
 browser-only. 21 devices, 70 combinations.
 
+**A GATE'S FIXTURE IS AN EXISTING, UP-TO-DATE ACCOUNT, so it has to
+carry `tourRev`.** Without it the one-time tour re-arm fires inside the
+gate, puts a tooltip over the screen being measured, and fails a check
+that has nothing to do with tours — which is how `check-behaviour`'s
+tab-swipe test went red on a build whose swiping was fine. A false
+failure caused by a real mechanism, and the argument for every fixture
+setting the flag explicitly rather than relying on a default.
+
 **The seed is a USED account, and that is deliberate.** With empty stats
 Profile, Rewards, the Leaderboard, the calendar, the review list and test
 history all render their *empty* states, so half the app was being checked
@@ -390,7 +408,8 @@ no screen of their own (`showToast`, `showNoticeBar`, `showUpdateBanner`,
 `showPointsFlyEffect`, `showSafariFallback`, `showContextualInfo`,
 `showDailyQuestionLockedPopup`, `showPracticeTestConfirm`,
 `showCountdown`, `showVroomReadyFlourish`,
-`showVirtualRoomFinaleReveal`); **screens needing run state**
+`showVirtualRoomFinaleReveal`, `showTierUpStyleBadgeNote`); **screens
+needing run state**
 (`showBankProblems`, `showAnswerReview`, `showTestHistoryDetail`,
 `showVirtualRoomLobby`, `showVirtualRoomResults`); and one that renders
 nothing on its own (`showGeneratingProfile`). **Anything else new belongs
@@ -443,6 +462,19 @@ Every bug below was invisible at 390×844 in a desktop browser, which is where
 - The tab bar was a fixed 344px wide, off both edges of a 320px phone; the
   Rewards tab switcher overflowed sideways below 384px.
 
+**NO TEXT FIELD MAY COMPUTE TO UNDER 16px.** iOS Safari zooms the whole
+page in when it focuses one that does, and does not reliably zoom back
+out — the page is left magnified with no way to pinch out of it.
+Reported from a device against the username screen. Measured, EVERY
+text field in the app was `.95rem` (15.2px) and the chat input `.85rem`
+(13.6px); a rule setting onboarding fields to `1.1rem` exists but does
+not reach that screen. They are `max(16px, 1rem)` now, with a
+low-specificity net over every typed `input`/`textarea`/`select` so a
+field added later inherits the floor without anyone having to know the
+rule. **Chromium never does this**, so the number is the only thing that
+can catch a regression — `check-fixes.py` measures it on every device in
+the matrix.
+
 **Short-viewport tiers must be short AND wide** — `(max-height:Nrem) and
 (min-width:34rem)`. Height-only was the first instinct, on the reasoning that
 the problem is purely vertical, and it was wrong: it also fires on a phone
@@ -490,6 +522,18 @@ and pushed Start Studying behind the tab bar on a 768×1024 one and on every
 iPad in landscape. `min(36rem, 48vh)` serves both. The same applies to the
 margins around it: fixed `rem` gaps that look right at 1194 are what tip a
 1024-tall iPad over, so they are `min(2.4rem, 3vh)` and so on.
+
+**A GRID'S COLUMN COUNT IS A HEIGHT DECISION.** The character picker was
+four across, which is two even rows of eight. Adding the four rank
+characters made it twelve — three rows — and that added ~75px to a
+screen that already scrolls on a small phone. Measured, it pushed the
+level card's own top ABOVE the viewport on an SE 2nd/3rd gen and an
+Android phone: content that cannot be scrolled up to. Six across is two
+even rows again and the panel came back to 833px, shorter than the 864
+it was before the characters existed. Six on a tablet too — eight
+columns with twelve items is a row of eight and a ragged row of four,
+which reads as a mistake. The grid still spans the swatches' full width,
+which is what "as wide as the colors below it" actually asked for.
 
 **`.panel.home` is `align-items:center`, so a flex child sizes to its own
 content.** The fourth "What This Actually Is" card has the shortest text and
@@ -856,6 +900,20 @@ Everything below follows from that.
   still belong to a device happily syncing under that code — which also
   makes it safe to fire speculatively: unowned, the row goes for good;
   owned, the next push puts it straight back.
+- **`exists:false` MEANS TWO DIFFERENT THINGS AND ONLY ONE OF THEM IS A
+  RESET.** From the server the document is genuinely gone — a real reset
+  on another device. From the CACHE it usually just means this client has
+  not been told about it yet, which is what happens while a listener
+  re-attaches after a dropped connection and around a fresh sign-up while
+  the first push is in flight. Firestore delivers the cached answer first
+  and the server's a beat later. Acting on the cached one wipes a live
+  account and puts a "reset from another device" notice on top of it —
+  reported exactly that way from a device. `handleRemoteReset()` fires
+  only when `metadata.fromCache === false`, and only a server-confirmed
+  existence arms it. The older `hasSeenExist` guard stays: it covers the
+  window before the first write, this covers every reconnect after it,
+  and **both are needed**. `check-sync.py` section 6 drives the real
+  listener with the five snapshots Firestore actually delivers.
 - **Two synced devices are one row by construction**, because the row's
   document id is the shared code. Duplicates on the board are not two
   devices — they are separate sign-ups, each of which minted a code of its
@@ -867,6 +925,28 @@ Everything below follows from that.
   **not** one of them — `liveEntries()` synthesises your row at zero — so
   nothing there may ever say "not in the rankings yet" to somebody who
   simply has not answered a question.
+- **THE FIRESTORE RULES ALLOW READING ONE DOCUMENT, NOT LISTING THE
+  COLLECTION.** `progress` returns **403 PERMISSION_DENIED** on a list;
+  only `leaderboard` and `vrooms` can be enumerated. So nothing can
+  delete every progress document — not `firestore-admin.py purge`, not
+  anything, without changing the rules first. Worth knowing before
+  planning anything that depends on clearing them.
+- **A class-wide reset therefore takes two halves, and neither works
+  alone.** `FRESH_START` in `index.html` clears each device once on
+  launch and lands it on Welcome; `FRESH_START_CUTOFF` makes
+  `pullFromCloud()` treat any progress document written before that
+  moment as `not-found`, which is what actually kills the old codes,
+  since the documents themselves cannot be removed. Purging the cloud on
+  its own achieves nothing — `pullFromCloud()` leaves local progress
+  untouched on a miss and the next save pushes it all back, so ~40 phones
+  would rebuild the board within a day. Clearing devices on its own
+  leaves every written-down code working.
+- **The fresh-start marker lives in `localStorage`, never on `store`.**
+  The wipe clears `store`, so a flag there would be erased by the very
+  thing it exists to stop and the account would be wiped again on every
+  launch, forever. It is also written BEFORE the wipe, so a crash
+  half-way through costs one reset rather than a loop. Same shape as
+  `tourRev`, and the opposite storage choice for the same reason.
 - **Safari and the installed app are separate storage jars on iOS.** The
   re-add notice's `x-safari-https:` hand-off lands in a jar with no
   progress in it, showing Welcome. Signing in with the code is the way
@@ -1087,10 +1167,27 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   line is now just its level and badge counts. Don't reintroduce either
   half.
 
-- **Only list rewards that exist.** Each card names three: the flare on
-  Home, the theme colour, and the rank's emblem beside your name. The
-  reference lists four per tier and it would have been easy to pad;
-  a reward that does not exist is worse than a short list.
+- **Only list rewards that exist.** Each card names three — the flare on
+  Home, the theme colour, and the rank's emblem beside your name — and
+  the TOP FOUR name a fourth, because those each hand over a character
+  as well. The list is what you actually get, not a fixed shape with a
+  gap in it; `check-behaviour` asserts `[3,3,3,4,4,4,4]` rather than one
+  number for all seven. Padding a short list is worse than a short list.
+- **Four characters sit behind the top four ranks**: Officer on Gold,
+  Clown on Sapphire, Robot on Amethyst, Astronaut on Supernova. Where
+  each one sits is not arbitrary — the Officer is on the first genuinely
+  aspirational rank because this is a police academy class and it is the
+  one character that is the thing the course is FOR, and the Astronaut is
+  last because the app is Nova, the top rank is Supernova and the emblems
+  are the life of a star. `isLockedCharacter()` and
+  `characterLockMessage()` deliberately MIRROR `isLockedAccent()` and
+  `accentLockMessage()`: a locked colour and a locked character are the
+  same idea, and two answers to "is this unlocked yet" is how one of them
+  ends up wrong. A character with no `unlock` is free, so the original
+  eight are untouched and an id from another build never locks somebody
+  out of their own avatar. Locked ones are SHOWN with a padlock — a
+  brand-new account has all four locked on the onboarding picker, which
+  is the first thing in the app that says there is more further up.
 - **A person's rank hangs off their character, not beside it.**
   `decorateAvatar()` is the one builder — the three rankings boards, the
   Virtual Room lobby and the Virtual Room results all call it, so a
@@ -1481,6 +1578,16 @@ re-evaluated on the next check.
   cooler c3 either side of it. See **Three things move together when
   the ambient glow changes** — a new accent has to set the triad or it
   will look like one flat colour, however right its swatch is.
+- **A SET THEME RECOLOURS THE APP AND DOES NOTHING ELSE.** From Gold
+  upward, choosing a theme used to turn the Start button into an animated
+  shimmering gradient — the one place where picking a colour changed how
+  the app BEHAVED rather than what colour it was. It came off by explicit
+  request: *"we dont need the themes to animate or anything any different
+  when they are set. They just need to match the default color scheme
+  look but with its own main new color."* The swatch CIRCLES in the
+  picker still move, and that is not a contradiction: the picker is
+  previewing what there is to unlock, which was asked for in the same
+  breath. Keep the two apart.
 - **A rank's theme is that rank's colour, and it is declared in three
   places that must agree**: `ACCENT_SWATCH` (the dot in Settings),
   `--accent` inside the `[data-accent="X"]` block (the app's accent) and
@@ -1742,6 +1849,19 @@ missed real bugs that a thirty-second check caught.
 6. `python3 tools/check-positions.py` — did what you positioned land where
    you meant it to, on all 21 devices. A green sweep does not answer this;
    see **Every device, every way in**.
+7. `python3 tools/check-tours.py` — every tooltip still points at
+   something. Required on anything that renames a class, moves a control
+   between screens, or changes a tour's copy.
+8. **Load the page and read the console before believing `check-js`.**
+   These are different questions and only one of them is about syntax. A
+   reference to a function that does not exist parses perfectly and then
+   throws at the top level, which leaves every `const` after it in its
+   temporal dead zone and takes out the rest of the script. That happened
+   here: `buildTierIcon` was used in `RELEASE_NOTES` on the strength of a
+   `grep -o "^function build[A-Za-z]*Icon"` that had silently truncated
+   `buildTierIconSVG` into a name that was never real. `check-js` passed.
+   The app did not boot. **Never take an identifier from a truncating
+   grep** — `grep -n "^function name("` or nothing.
 7. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
    Madison, per **Showing the work**.
 
