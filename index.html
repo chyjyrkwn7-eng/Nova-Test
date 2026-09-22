@@ -2847,12 +2847,70 @@
      elaborate \u2014 the actual ask was for the capability to exist, not
      for a particular chat-bubble aesthetic. */
   .vroom-chat{ margin-top:1.5rem; border-top:1px solid var(--rule); padding-top:1rem; }
+  .vroom-chat-titlerow{
+    display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  }
   .vroom-chat-title{ font-family:var(--serif); font-size:1rem; font-weight:700; margin:0 0 .6rem; }
+  /* Both of these are phone-only furniture. Above 40rem the panel is
+     already on screen, so a button to open it and a button to close it
+     are two controls that do nothing. */
+  .vroom-chat-close{
+    display:none; background:none; border:none; color:var(--soft);
+    font-size:1.6rem; line-height:1; padding:0 .35rem; margin:-.5rem -.35rem .6rem 0;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .vroom-chat-slot{ display:flex; justify-content:center; }
+  .vroom-chat-toggle{
+    display:none; align-items:center; gap:.45rem; position:relative;
+    margin:0 0 .9rem; padding:.62rem 1.1rem; border-radius:999px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+    color:var(--ink); font:inherit; font-size:.85rem; font-weight:700;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+    min-height:44px;
+  }
+  /* The dot. Its own colour rather than the accent, because the accent is
+     whatever theme somebody picked and an unread marker has to read as an
+     unread marker on all seven. */
+  .vroom-chat-dot{
+    width:.55rem; height:.55rem; border-radius:999px; background:#FF5F56;
+    box-shadow:0 0 0 2px rgba(255,95,86,.28);
+  }
+  @media (max-width:40rem){
+    .vroom-chat-toggle{ display:inline-flex; }
+    .vroom-chat-close{ display:block; }
+    /* The sheet. Fixed to the bottom edge, above the tab bar's z-index so
+       nothing paints through it, and it carries the safe-area inset so the
+       input is not under the home indicator. */
+    .vroom-chat{
+      position:fixed; left:0; right:0; bottom:0; z-index:320;
+      margin:0; padding:1rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+      max-height:min(78vh, 32rem);
+      display:flex; flex-direction:column;
+      border-top:1px solid rgba(255,255,255,.12);
+      border-radius:20px 20px 0 0;
+      background:rgba(20,25,32,.92);
+      will-change:backdrop-filter;
+      backdrop-filter:blur(18px) saturate(1.5);
+      -webkit-backdrop-filter:blur(18px) saturate(1.5);
+      box-shadow:0 -12px 40px rgba(0,0,0,.5);
+      transform:translateY(102%);
+      transition:transform .28s cubic-bezier(.2,.8,.25,1);
+    }
+    .vroom-chat.is-open{ transform:translateY(0); }
+    .vroom-chat .vroom-chat-list{ flex:1 1 auto; max-height:none; }
+    /* The tab bar would otherwise sit on top of an open sheet. */
+    body.vroom-chat-open .bottomtabs{ opacity:0; pointer-events:none; }
+  }
   .vroom-chat-list{
     max-height:11rem; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;
     margin-bottom:.7rem; padding-right:.2rem;
   }
-  .vroom-chat-msg{ font-size:.85rem; line-height:1.4; }
+  /* text-align:left explicitly. The chat is embedded in whatever screen
+     is hosting it, and two of those centre their text - so the messages
+     inherited it and came out ragged down the middle, which reads as a
+     bug rather than as a style. */
+  .vroom-chat, .vroom-chat-list{ text-align:left; }
+  .vroom-chat-msg{ font-size:.85rem; line-height:1.4; text-align:left; }
   .vroom-chat-msg-name{ font-weight:700; }
   .vroom-chat-msg-name.is-me{ color:var(--accent); }
   .vroom-chat-msg-time{ font-size:.68rem; color:var(--soft); margin-left:.3rem; }
@@ -32260,7 +32318,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-86";
+const APP_BUILD = "2026-09-22-87";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -34918,6 +34976,12 @@ function showVirtualRoomLobby(){
   const title = document.createElement("h1");
   title.className = "welcomeintro-title"; title.textContent = "Lobby";
   panel.appendChild(title);
+  /* Where the phone's Chat button lands - see buildVroomChatPanel. Empty
+     and invisible above 40rem, where the panel itself is already on
+     screen and a button to open it would do nothing. */
+  const chatSlot = document.createElement("div");
+  chatSlot.className = "vroom-chat-slot";
+  panel.appendChild(chatSlot);
 
   if(vroomIsHost){
     const codeBox = document.createElement("div");
@@ -35259,10 +35323,43 @@ let vroomRaceUnsubscribe = null;
    than a subcollection \u2014 simpler to reason about and to mock, and
    perfectly adequate for a short-lived, small-group study lobby. */
 function buildVroomChatPanel(container){
+  /* On a phone the chat is a sheet that slides up from the bottom, opened
+     by a button at the top of the lobby with a dot on it when there is
+     something unread - "on the phone there would probably need to be a
+     chat button at the top or something, and there could be a dot on it
+     when a message is there for the lobby you haven't seen". On a tablet
+     it stays exactly where it was, inline under the roster, because there
+     is room for it and hiding it behind a tap would be worse.
+     Both are the same panel; which one you get is CSS, so there is one
+     chat to keep working rather than two. */
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "vroom-chat-toggle";
+  const toggleLabel = document.createElement("span");
+  toggleLabel.textContent = "Chat";
+  const dot = document.createElement("span");
+  dot.className = "vroom-chat-dot";
+  dot.hidden = true;
+  toggle.append(toggleLabel, dot);
+  /* The button goes at the TOP of the screen, which is where it was asked
+     for - so a screen that wants it there puts an empty .vroom-chat-slot
+     where it should land, and anything that does not simply gets it
+     appended as before. One panel, two placements, no second builder. */
+  const slot = container.querySelector(".vroom-chat-slot");
+  (slot || container).appendChild(toggle);
+
   const wrap = document.createElement("div");
   wrap.className = "vroom-chat";
+  const titleRow = document.createElement("div");
+  titleRow.className = "vroom-chat-titlerow";
   const title = document.createElement("p");
   title.className = "vroom-chat-title"; title.textContent = "Chat";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "vroom-chat-close";
+  closeBtn.setAttribute("aria-label", "Close chat");
+  closeBtn.textContent = "\u00d7";
+  titleRow.append(title, closeBtn);
   const list = document.createElement("div");
   list.className = "vroom-chat-list";
   const row = document.createElement("div");
@@ -35274,8 +35371,31 @@ function buildVroomChatPanel(container){
   sendBtn.type = "button"; sendBtn.className = "next vroom-chat-send";
   sendBtn.textContent = "Send";
   row.append(input, sendBtn);
-  wrap.append(title, list, row);
+  wrap.append(titleRow, list, row);
   container.appendChild(wrap);
+
+  /* Unread is measured against the newest message this device has
+     actually had on screen, not against a count - a count cannot tell
+     "three new" from "three deleted", and the array is trimmed. */
+  let lastSeenTs = 0;
+  let sheetOpen = false;
+  function openSheet(){
+    sheetOpen = true;
+    wrap.classList.add("is-open");
+    document.body.classList.add("vroom-chat-open");
+    dot.hidden = true;
+    list.scrollTop = list.scrollHeight;
+    /* Everything on screen counts as seen the moment it is on screen. */
+    lastSeenTs = Math.max(lastSeenTs, newestTs);
+  }
+  function closeSheet(){
+    sheetOpen = false;
+    wrap.classList.remove("is-open");
+    document.body.classList.remove("vroom-chat-open");
+  }
+  toggle.addEventListener("click", () => { sheetOpen ? closeSheet() : openSheet(); });
+  closeBtn.addEventListener("click", closeSheet);
+  let newestTs = 0;
 
   function renderMessages(messages){
     const wasAtBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 20;
@@ -35299,22 +35419,65 @@ function buildVroomChatPanel(container){
       });
     }
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
+
+    /* The dot. Only somebody else's message counts - your own showing up
+       as unread is the kind of thing that makes people stop trusting a
+       badge. On a tablet the panel is always on screen, so anything that
+       renders is seen; the dot is only ever meaningful on the phone
+       sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
+    const others = (messages || []).filter(m => m.key !== vroomMyKey);
+    newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
+    const panelVisible = sheetOpen || getComputedStyle(toggle).display === "none";
+    if(panelVisible){
+      lastSeenTs = Math.max(lastSeenTs, newestTs);
+      dot.hidden = true;
+    } else {
+      dot.hidden = !(newestTs > lastSeenTs);
+    }
   }
 
   function send(){
     const text = input.value.trim();
     if(!text || !vroomCode || !fbDb || !vroomMyKey) return;
     input.value = "";
-    fbDb.collection("vrooms").doc(vroomCode).get().then(docSnap => {
-      if(!docSnap.exists) return;
-      const data = docSnap.data();
-      const messages = (data.chatMessages || []).slice();
-      messages.push({ key: vroomMyKey, name: store.firstName || "Anonymous", text: text.slice(0, 200), ts: Date.now() });
-      /* Capped rather than growing forever \u2014 the last 100 messages is
-         comfortably more than a study session needs, without letting
-         the shared doc's chat history grow without bound. */
-      fbDb.collection("vrooms").doc(vroomCode).update({ chatMessages: messages.slice(-100) });
-    });
+    /* ATOMIC APPEND, not read-modify-write. This used to .get() the whole
+       document, push onto the array it found and .update() the result -
+       so two people typing at the same time each read the array BEFORE
+       the other's message existed, and whoever wrote second silently
+       erased the first. In a four-person lobby where the whole point is
+       agreeing on units before a race, that is the one bug that matters.
+       arrayUnion appends on the server, so concurrent sends cannot lose
+       each other. The `id` is there because arrayUnion de-duplicates by
+       deep equality: two people sending "ok" in the same millisecond
+       would otherwise collapse into one message. */
+    const msg = {
+      id: (vroomMyKey + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
+      key: vroomMyKey,
+      name: store.firstName || "Anonymous",
+      text: text.slice(0, 200),
+      ts: Date.now()
+    };
+    try{
+      fbDb.collection("vrooms").doc(vroomCode).update({
+        chatMessages: firebase.firestore.FieldValue.arrayUnion(msg)
+      }).catch(() => {});
+    } catch(e){
+      /* No FieldValue (an SDK that never loaded) - the message is lost
+         either way, so say so rather than failing silently. */
+      showToast("Message not sent \u2014 no connection.");
+    }
+  }
+  /* The cap, moved off the write path. Trimming used to be bundled into
+     every send, which is exactly what forced the read-modify-write above.
+     The host alone trims, and only once the history is well past the cap,
+     so an ordinary send never has to read the document at all. */
+  function trimIfHost(messages){
+    if(!vroomIsHost || !fbDb || !vroomCode) return;
+    if(!messages || messages.length <= 160) return;
+    try{
+      fbDb.collection("vrooms").doc(vroomCode)
+        .update({ chatMessages: messages.slice(-100) }).catch(() => {});
+    } catch(e){}
   }
   sendBtn.addEventListener("click", send);
   input.addEventListener("keydown", (e) => { if(e.key === "Enter") send(); });
@@ -35330,9 +35493,15 @@ function buildVroomChatPanel(container){
      one place in this same file that pattern was missing. */
   if(!fbDb || !vroomCode) return () => {};
   const unsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
-    if(docSnap.exists) renderMessages(docSnap.data().chatMessages);
+    if(!docSnap.exists) return;
+    const messages = docSnap.data().chatMessages;
+    renderMessages(messages);
+    trimIfHost(messages);
   });
-  return unsubscribe;
+  /* The sheet is appended to the screen, not to body, so a screen change
+     takes it with it - but body carries a class while it is open and
+     that has to come off either way. */
+  return () => { document.body.classList.remove("vroom-chat-open"); unsubscribe(); };
 }
 
 function startVroomRaceListener(){
