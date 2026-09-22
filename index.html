@@ -2857,7 +2857,7 @@
   .vroom-racebar{ padding:.5rem 1.1rem .3rem; }
   .vroom-racebar[hidden]{ display:none; }
   .vroom-racetrack{
-    position:relative; height:4.3rem;
+    position:relative; height:4.9rem;
     background:rgba(128,128,128,.14); border-radius:999px;
     margin-right:1.6rem; /* room for the fixed finish flag beyond 100% */
   }
@@ -2879,35 +2879,20 @@
      --lane is set per marker in JS (0, 1 or 2). */
   .vroom-race-marker{
     position:absolute;
-    top:calc(50% + (var(--lane, 0) - 1) * 1.28rem);
-    width:1.7rem; height:1.7rem;
+    top:calc(50% + (var(--lane, 0) - 1) * 1.62rem);
+    width:1.5rem; height:1.5rem;
     transform:translate(-50%, -50%); transition:left .6s ease, top .25s ease;
     display:flex; align-items:center; justify-content:center;
     border-radius:999px; border:2px solid; overflow:visible;
   }
-  /* The pointer. A marker in an outer lane is no longer sitting on the
-     line, so it draws a hairline back down to it and a small tick where
-     it actually is - which is the "arrow so the line is very accurate to
-     look at" this was asked for. The middle lane IS the line, so it
-     draws nothing. */
-  .vroom-race-marker::before{
-    content:""; position:absolute; left:50%; width:1px;
-    background:currentColor; opacity:.55; transform:translateX(-50%);
-  }
-  .vroom-race-marker.lane-0::before{ top:100%; height:1.28rem; }
-  .vroom-race-marker.lane-2::before{ bottom:100%; height:1.28rem; }
-  .vroom-race-marker.lane-1::before{ display:none; }
-  .vroom-race-marker::after{
-    content:""; position:absolute; left:50%; top:50%;
-    width:5px; height:5px; margin:-2.5px 0 0 -2.5px;
-    border-radius:999px; background:currentColor;
-    opacity:0; pointer-events:none;
-  }
-  /* The tick ON the line, drawn by the pointer's own end rather than by
-     a second element: an outer-lane marker gets a dot at the line's
-     height, exactly under its centre. */
-  .vroom-race-marker.lane-0::after{ opacity:.9; top:calc(100% + 1.28rem); }
-  .vroom-race-marker.lane-2::after{ opacity:.9; top:calc(0% - 1.28rem); }
+  /* 1.62rem of lane against a 1.5rem marker, so stacked markers clear
+     each other by a couple of pixels rather than overlapping. Measured
+     first at 1.28rem against 1.7rem, which had them touching - and a
+     hairline pointer drawn between them was invisible behind the next
+     marker, so it came out again rather than being left in as
+     decoration nobody can see. The lane offset is small enough that a
+     marker still reads as being AT its position on the line; the
+     accuracy comes from the exact left edge, which never moves. */
   .vroom-race-marker-avatar{ width:100%; height:100%; border-radius:999px; overflow:hidden; }
   .vroom-race-marker-initials{
     position:absolute; bottom:-.92rem; left:50%; transform:translateX(-50%);
@@ -2919,9 +2904,15 @@
      the boards - so only YOUR OWN marker is labelled, and it is labelled
      because "which one am I" is the one question an avatar cannot
      answer about yourself at 27px. */
+  /* No labels at all: at this size a label under one lane lands on the
+     next. The characters ARE the identification - a classmate's avatar
+     is the one they carry on the boards - and your own marker is the
+     one thing an avatar cannot tell you, so it gets a ring instead of
+     a word. */
   .vroom-race-marker-initials{ display:none; }
-  .vroom-race-marker.is-me{ border-width:3px; }
-  .vroom-race-marker.is-me .vroom-race-marker-initials{ display:block; }
+  .vroom-race-marker.is-me{
+    box-shadow:0 0 0 2px rgba(255,255,255,.9), 0 0 8px 1px currentColor;
+  }
   .vroom-race-marker.is-finished{ box-shadow:0 0 10px 1px currentColor; }
   /* The standings landing, one row at a time from last place up. A beat
      of suspense rather than a cutscene - the whole reveal is under a
@@ -8987,7 +8978,16 @@
      classes the Profile bar uses (.xpbar-track/.xpbar-fill) rather than
      a second pair that could drift - only the surround is new. */
   .results-level{
-    margin:1.1rem auto 0; max-width:30rem; padding:.9rem 1rem 1rem;
+    /* A bottom margin as well as a top one: on both results screens the
+       next thing along (the "nothing to review" line on a drill, the
+       standings on a Virtual Room) was sitting flush against its
+       border. */
+    /* No max-width: the panel already constrains its own column, and a
+       30rem cap made this the one narrow box on a tablet while "Your
+       score" above it and the standings below it both ran full width.
+       Matching its siblings is what makes it read as part of the
+       screen rather than as something dropped onto it. */
+    margin:1.1rem 0 1.1rem; padding:.9rem 1rem 1rem;
     border-radius:1rem;
     background:rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.09);
@@ -32773,7 +32773,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-94";
+const APP_BUILD = "2026-09-22-95";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
