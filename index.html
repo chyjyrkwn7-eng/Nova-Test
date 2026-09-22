@@ -32237,7 +32237,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-85";
+const APP_BUILD = "2026-09-22-86";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36922,8 +36922,15 @@ function showProfile(defaultTab){
     store.seenProfileTour = true;
     saveStore();
     startSimpleTour([
-      { target: ".avatarchar-grid", align: "left", vplacement: "below",
-        text: "Pick a character and a color to make the app feel like yours \u2014 more colors unlock as you climb the ranks." },
+      /* .profile-edit-btn, not .avatarchar-grid. The character grid and
+         the colour swatches moved to their own Customize screen, so this
+         selector matched nothing here any more - and renderStep() skips
+         a step whose target is missing IN SILENCE, which is exactly how
+         this tour lost its calendar step for months. The step now points
+         at the button that opens the screen those controls live on,
+         which is the thing somebody on THIS screen needs to know. */
+      { target: ".profile-edit-btn", align: "right", vplacement: "below",
+        text: "Customize opens your name, your character and the app\u2019s colour \u2014 more colours and characters unlock as you climb the ranks." },
       /* .profile-classline, NOT .cal-profile-row. This step pointed at
          .cal-profile-row, which on THIS screen does not exist - it is
          the Settings class for the Share / Add to Home Screen pair. The

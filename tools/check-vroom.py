@@ -174,7 +174,7 @@ def main():
         ctx.add_init_script("window.__fakeLatency = %d;" % args.latency)
         ctx.add_init_script(FAKE_FIRESTORE)
 
-        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');"
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
 
         def open_tab(name, avatar, points, code, badges=0):
