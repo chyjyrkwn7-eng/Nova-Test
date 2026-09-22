@@ -255,23 +255,23 @@
      The DARK --accent is the one that shows - the app is dark-only - and
      it is the rank colour lifted just far enough to sit on a dark panel
      and carry dark ink. */
-  [data-accent="rookie"]{ --accent:#6F7884; --accent-ink:#F7F8F9; --theme-c1:#E2E8EF; --theme-c2:#8B939E; --theme-c3:#3A4757; }
+  [data-accent="rookie"]{ --accent:#6F7884; --accent-ink:#F7F8F9; --theme-c1:#DCE6F2; --theme-c2:#8B939E; --theme-c3:#3C4A6B; }
   [data-theme="dark"][data-accent="rookie"]{ --accent:#AEB7C2; --accent-ink:#14181D; }
-  [data-accent="ranger"]{ --accent:#A4602A; --accent-ink:#FFF6EE; --theme-c1:#FFD9A8; --theme-c2:#C07A3E; --theme-c3:#6E3A2A; }
+  [data-accent="ranger"]{ --accent:#A4602A; --accent-ink:#FFF6EE; --theme-c1:#FFD79A; --theme-c2:#C07A3E; --theme-c3:#6B2F4A; }
   [data-theme="dark"][data-accent="ranger"]{ --accent:#D99458; --accent-ink:#221208; }
-  [data-accent="veteran"]{ --accent:#7A8C9E; --accent-ink:#F7FAFD; --theme-c1:#F2F7FC; --theme-c2:#CAD3DC; --theme-c3:#5C7189; }
+  [data-accent="veteran"]{ --accent:#7A8C9E; --accent-ink:#F7FAFD; --theme-c1:#F4F8FC; --theme-c2:#CAD3DC; --theme-c3:#44588A; }
   [data-theme="dark"][data-accent="veteran"]{ --accent:#D8E1EA; --accent-ink:#141A21; }
-  [data-accent="vanguard"]{ --accent:#B08A1E; --accent-ink:#FFFAEC; --theme-c1:#FFE9AE; --theme-c2:#E5B63F; --theme-c3:#8A5A22; }
+  [data-accent="vanguard"]{ --accent:#B08A1E; --accent-ink:#FFFAEC; --theme-c1:#FFE9AE; --theme-c2:#E5B63F; --theme-c3:#8A3B5E; }
   [data-theme="dark"][data-accent="vanguard"]{ --accent:#F0C75A; --accent-ink:#241A03; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
      colour visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --accent:#2A55BE; --accent-ink:#F1F5FF; --theme-c1:#BCD4FF; --theme-c2:#3D74E8; --theme-c3:#22317E; }
+  [data-accent="adept"]{ --accent:#2A55BE; --accent-ink:#F1F5FF; --theme-c1:#8FE3FF; --theme-c2:#3D74E8; --theme-c3:#5A2E9E; }
   [data-theme="dark"][data-accent="adept"]{ --accent:#6E9CFF; --accent-ink:#081231; }
-  [data-accent="elite"]{ --accent:#7E30C9; --accent-ink:#F9F2FF; --theme-c1:#E4CCFF; --theme-c2:#A855F7; --theme-c3:#4A2483; }
+  [data-accent="elite"]{ --accent:#7E30C9; --accent-ink:#F9F2FF; --theme-c1:#FFC2E8; --theme-c2:#A855F7; --theme-c3:#2E2C8C; }
   [data-theme="dark"][data-accent="elite"]{ --accent:#C084FC; --accent-ink:#1C0A32; }
-  [data-accent="titan"]{ --accent:#B82525; --accent-ink:#FFF2F2; --theme-c1:#FFD08A; --theme-c2:#E23B3B; --theme-c3:#7A1338; }
+  [data-accent="titan"]{ --accent:#B82525; --accent-ink:#FFF2F2; --theme-c1:#FFD08A; --theme-c2:#E23B3B; --theme-c3:#6B1B6B; }
   [data-theme="dark"][data-accent="titan"]{ --accent:#FF6B5E; --accent-ink:#2A0707; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
@@ -335,19 +335,19 @@
      whole ladder reads as one set of live colours rather than four
      that shimmer and three that sit still. */
   .dot.tier-rookie{
-    background-image:linear-gradient(135deg, #DCE2E9, #8B939E, #DCE2E9); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #DCE6F2, #8B939E 26%, #3C4A6B 50%, #8B939E 74%, #DCE6F2); background-size:220% 220%;
     box-shadow:0 0 7px rgba(139,147,158,.45);
   }
   .dot.tier-ranger{
-    background-image:linear-gradient(135deg, #E8B07C, #C07A3E, #E8B07C); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #FFD79A, #C07A3E 26%, #6B2F4A 50%, #C07A3E 74%, #FFD79A); background-size:220% 220%;
     box-shadow:0 0 7px rgba(192,122,62,.5);
   }
   .dot.tier-veteran{
-    background-image:linear-gradient(135deg, #FFFFFF, #CAD3DC, #FFFFFF); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #F4F8FC, #CAD3DC 26%, #44588A 50%, #CAD3DC 74%, #F4F8FC); background-size:220% 220%;
     box-shadow:0 0 7px rgba(202,211,220,.5);
   }
   .dot.tier-vanguard{
-    background-image:linear-gradient(135deg, #F6D579, #E5B63F, #F6D579); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #FFE9AE, #E5B63F 26%, #8A3B5E 50%, #E5B63F 74%, #FFE9AE); background-size:220% 220%;
     box-shadow:0 0 7px rgba(229,182,63,.5);
   }
   /* Was simply absent, while every other tier from rookie to titan had
@@ -355,11 +355,11 @@
      and has no inline fallback, so a missing rule rendered a genuinely
      colourless circle rather than a subtly wrong one. */
   .dot.tier-adept{
-    background-image:linear-gradient(135deg, #7FA8FF, #3D74E8, #7FA8FF); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #8FE3FF, #3D74E8 26%, #5A2E9E 50%, #3D74E8 74%, #8FE3FF); background-size:220% 220%;
     box-shadow:0 0 7px rgba(61,116,232,.5);
   }
   .dot.tier-elite{
-    background-image:linear-gradient(135deg, #C88BFF, #A855F7, #C88BFF); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #FFC2E8, #A855F7 26%, #2E2C8C 50%, #A855F7 74%, #FFC2E8); background-size:220% 220%;
     box-shadow:0 0 7px rgba(168,85,247,.5);
   }
   .dot.tier-titan{
@@ -1370,7 +1370,11 @@
   .contextual-info-text{ font-size:.85rem; line-height:1.4; margin:0; color:#F3F5F7; }
 
   #welcomebonus-banner{
-    position:fixed; top:5rem; left:50%; transform:translateX(-50%) translateY(-10px);
+    /* Same inset as every other fixed top element. It also sits a banner's
+       height lower than they do, so an XP award and a rank-up arriving
+       together read as two things rather than one on top of another. */
+    position:fixed; top:calc(env(safe-area-inset-top, 0px) + 4.6rem);
+    left:50%; transform:translateX(-50%) translateY(-10px);
     background:rgba(255,255,255,.55); color:#B8860B; font-weight:800; font-size:.9rem;
     border:1px solid rgba(255,255,255,.5);
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
@@ -1379,9 +1383,17 @@
     opacity:0; transition:opacity .3s ease, transform .3s ease;
     white-space:nowrap; font-family:var(--sans);
   }
+  /* --theme-c1 rather than a fixed gold: "ensure the xp earned animation
+     thing matches the theme that is set". c1 is the WARM end of every
+     accent's triad, so it stays legible on this glass at every theme and
+     the default (#FFD37A) lands within a couple of levels of the gold
+     that was hardcoded here, which is why the default looks unchanged. */
   [data-theme="dark"] #welcomebonus-banner{
-    background:rgba(28,33,40,.55); color:#F5D06B; border-color:rgba(255,255,255,.09);
-    box-shadow:0 8px 24px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+    background:rgba(28,33,40,.55); color:var(--theme-c1);
+    border-color:color-mix(in srgb, var(--theme-c1) 22%, rgba(255,255,255,.09));
+    box-shadow:0 8px 24px rgba(0,0,0,.3),
+               0 0 18px color-mix(in srgb, var(--theme-c1) 22%, transparent),
+               inset 0 1px 0 rgba(255,255,255,.06);
   }
   #welcomebonus-banner.welcomebonus-show{
     opacity:1; transform:translateX(-50%) translateY(0);
@@ -2257,7 +2269,7 @@
      unmarked cut ("Profession" / "ism"). */
   .picks .pname{ font-size:.87rem; line-height:1.25; overflow-wrap:break-word; hyphens:auto; -webkit-hyphens:auto; min-height:4.4rem; }
   .pick-progress{ grid-column:2; grid-row:3; display:flex; align-items:center; gap:.6rem; margin-top:.6rem; }
-  .pick-stars{ grid-column:2; grid-row:3; display:flex; align-items:center; gap:.35rem; margin-top:.6rem; }
+  .pick-stars{ grid-column:2; grid-row:3; display:flex; align-items:center; gap:.6rem; margin-top:.6rem; }
   /* Invisible until actually earned, rather than a dim placeholder
      star always sitting there \u2014 opacity (not display:none) so the
      layout doesn't shift the moment it's actually earned. */
@@ -5748,7 +5760,13 @@
      Liquid Glass recipe as everywhere else, slides down from the
      top and taps to dismiss (or auto-dismisses after 5s). */
   .tierup-banner{
-    position:fixed; top:1rem; left:50%; transform:translateX(-50%) translateY(-6rem);
+    /* Carries the safe-area inset, like .update-banner and .daily-alert
+       already do. A flat 1rem puts this under the clock on every notched
+       phone, which is what "it looks like the banners aren't all showing
+       up at the top" was pointing at - they were at the top of the
+       document and behind the status bar. */
+    position:fixed; top:calc(env(safe-area-inset-top, 0px) + .35rem);
+    left:50%; transform:translateX(-50%) translateY(-8rem);
     z-index:300; display:flex; align-items:center; gap:.85rem;
     padding:.85rem 1.2rem .85rem .85rem; border-radius:999px; cursor:pointer;
     background:rgba(28,33,40,.7); border:1px solid rgba(255,255,255,.12);
@@ -5764,6 +5782,17 @@
     background:var(--tier-color); box-shadow:0 0 14px 2px var(--tier-color);
   }
   .tierup-banner-icon svg{ width:1.5rem; height:1.5rem; }
+  /* A badge brings its own setting, so it gets no coin behind it and no
+     glow of somebody else's colour - it fills the disc instead. The
+     unit name runs long, so this banner's own line is allowed to wrap
+     to two rather than being clipped at a rank's one. */
+  .badgeup-banner .badgeup-banner-icon{
+    background:none; box-shadow:none; width:3rem; height:3rem;
+  }
+  .badgeup-banner .badgeup-banner-icon svg{ width:100%; height:100%; }
+  .badgeup-banner .tierup-banner-name{
+    font-size:1.02rem; line-height:1.18;
+  }
   .tierup-banner-kicker{
     font-size:.66rem; font-weight:800; letter-spacing:.09em; color:rgba(255,255,255,.6);
     margin:0 0 .1rem;
@@ -6401,8 +6430,40 @@
      carried: an SE at 667px is under it, that screen has no 8px to
      spend, and without the floor it went 53px into overflow with the
      button landing 5px through the daily-question circle. */
+  /* A phone gets the TABLET's arrangement now, not a tuned version of the
+     centred one. Reported for the fourth time - "the start studying button,
+     and the words above that all need to be lowered to be closer to the
+     bottom tab, this is especially true for the phone devices where the
+     study button is too far above the bottom tab and the wording is too far
+     above the start studying button".
+     The centred arrangement it replaces split the leftover height evenly
+     above and below the button, which is what put BOTH gaps at their
+     largest on exactly the roomiest phones: 60px above and 54px below on a
+     17 Pro Max. Two fixed small gaps around the text-and-button group, with
+     the greeting's auto margin collecting everything that is left, spends
+     that height under the hero instead - where it reads as the planet
+     having room rather than as two holes.
+     This is the arrangement the tablet has had since it was asked for
+     there, and it is the same fix for the same complaint; the note further
+     up saying a phone had to keep the centred split was written before the
+     panel reserved the daily-question row, which is where the space to do
+     this came from.
+     The 46rem floor is the one the 2.6rem it replaces already carried: an
+     SE at 667px has no leftover height to move, so an auto margin there
+     distributes nothing and the fixed gaps would be the only change - and
+     that screen cannot afford even those. */
   @media (max-width:32rem) and (min-height:46rem){
-    .panel.home.screen-home-actual .homegreeting{ margin-top:2.6rem; }
+    .panel.home.screen-home-actual .homegreeting{ margin-top:auto; }
+    /* Both numbers measured rather than chosen. At 1.15rem/.9rem every
+       phone landed on 42/32, which is a big improvement on a 17 Pro Max
+       (60/54) and a step BACKWARDS on a 13 mini, which was already at
+       25/19. The base cost of the row - the tagline's own leading and
+       the button's padding - is about 24px above and 18px below, so
+       these two are what is left to spend and they are nearly spent:
+       every phone from 46rem up now sits within a pixel or two of the
+       tightest one in the matrix. */
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.2rem; }
+    .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:0; }
   }
   /* Short AND wide is excluded by the 60rem height floor, and that is
      not optional either: a laptop browser window has none of the slack
@@ -8359,6 +8420,49 @@
   .profile-hero-meta{ margin-top:.45rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
   .profile-hero-meta:empty{ display:none; }
   .profile-edit-btn{ padding:.4rem .85rem; font-size:.78rem; flex-shrink:0; }
+  /* The card is the whole top of this tab now that the character grid
+     and the colour swatches have moved to their own screen - "by
+     removing the theme and character stuff underneath that profile box,
+     the profile box could be bigger and better now I think too". */
+  .profile-hero{ padding:1.9rem 1.45rem 1.6rem; }
+  .profile-hero .profile-hero-top{ gap:1.1rem; }
+  .profile-hero .profile-hero-avatar{ width:6.2rem; height:6.2rem; }
+  .profile-hero .profile-name-display{ font-size:1.62rem; }
+  .profile-hero .profile-level{ padding-top:1.15rem; margin-top:1.15rem; }
+  .profile-hero .profile-classline{ margin-top:1.25rem; padding:.95rem 1.05rem; }
+  @media (min-width:40rem){
+    .profile-hero{ padding:2.5rem 2rem 2rem; }
+    .profile-hero .profile-hero-avatar{ width:7.8rem; height:7.8rem; }
+    .profile-hero .profile-name-display{ font-size:2.05rem; }
+  }
+  /* Customize: the name and its Change button on one line. */
+  .customize-namerow{
+    display:flex; align-items:center; justify-content:flex-start; gap:.7rem;
+    flex-wrap:wrap;
+  }
+  /* The rank chip on the profile card. A coin and a word, in the rank's
+     own colour, tappable through to the Ladder. */
+  .profile-rankchip{
+    display:inline-flex; align-items:center; gap:.45rem; margin-top:.45rem;
+    padding:.3rem .8rem .3rem .35rem; border-radius:999px; cursor:pointer;
+    background:color-mix(in srgb, var(--rank-color, #7A8694) 16%, rgba(255,255,255,.04));
+    border:1px solid color-mix(in srgb, var(--rank-color, #7A8694) 38%, transparent);
+    font:inherit; -webkit-tap-highlight-color:transparent;
+  }
+  .profile-rankchip.is-unranked{ padding:.3rem .8rem; }
+  .profile-rankchip-art{
+    width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center;
+    border-radius:999px; background:rgba(8,10,14,.6); flex-shrink:0;
+  }
+  .profile-rankchip-art svg{ width:100%; height:100%; display:block; }
+  .profile-rankchip-name{
+    font-size:.82rem; font-weight:800; letter-spacing:.03em;
+    color:var(--rank-color, var(--soft));
+  }
+  @media (min-width:40rem){
+    .profile-rankchip-art{ width:1.9rem; height:1.9rem; }
+    .profile-rankchip-name{ font-size:.95rem; }
+  }
   /* One line, not a section. It replaced a headed block with two
      buttons in it, which was reported as not belonging on this screen. */
   .profile-classline{
@@ -8412,9 +8516,21 @@
     height:100%; border-radius:999px; position:relative; overflow:hidden;
     transition:width 1.15s cubic-bezier(.2,.8,.25,1);
   }
+  /* A better blue. The old one ran #9CCEFF -> #3E8AE0 -> #2663B4, which
+     is one hue at three lightnesses and came out flat and a bit dusty -
+     "the blue level up bar looks cool but the blue could be better".
+     This one travels the way the app's own gradients do: a near-cyan
+     highlight at the top, a saturated azure through the middle, and a
+     deep indigo at the base, so the bar reads as a lit tube rather than
+     as a blue rectangle. The glow underneath is the same colour as the
+     body rather than a greyer version of it. */
   .xpbar-fill{
-    background:linear-gradient(180deg, #9CCEFF 0%, #3E8AE0 52%, #2663B4 100%);
-    box-shadow:0 0 14px rgba(70,140,230,.5), inset 0 1px 0 rgba(255,255,255,.55);
+    background:linear-gradient(180deg,
+      #C8ECFF 0%, #6FC2FF 26%, #2E87F0 60%, #1A4FC4 88%, #163C9E 100%);
+    box-shadow:0 0 16px rgba(58,140,255,.62),
+               0 0 34px rgba(58,140,255,.22),
+               inset 0 1px 0 rgba(255,255,255,.7),
+               inset 0 -2px 4px rgba(6,20,60,.45);
   }
   .badges-progress-fill{
     background:linear-gradient(180deg, #F2F6FA 0%, #B9C5D2 52%, #7E8B99 100%);
@@ -8474,12 +8590,20 @@
     display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:1.1rem .5rem;
     padding:1.3rem .7rem 1.5rem; border-radius:22px;
+    /* The lining. "As if this is a briefcase and they all need to be
+       cared for, showing how valuable they are" - so a soft, slightly
+       warm baize rather than flat black, lit from the top and falling
+       away at every edge. The vignette is what stops it reading as a
+       rectangle of colour and starts it reading as the inside of
+       something. */
     background:
-      radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.045), rgba(255,255,255,0) 60%),
-      linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.3));
-    border:1px solid rgba(255,255,255,.06);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),
-               inset 0 -30px 50px -30px rgba(0,0,0,.6);
+      radial-gradient(130% 90% at 50% -6%, rgba(255,255,255,.055), rgba(255,255,255,0) 58%),
+      radial-gradient(120% 110% at 50% 118%, rgba(0,0,0,.45), rgba(0,0,0,0) 62%),
+      linear-gradient(180deg, #1B2028 0%, #141920 58%, #10151B 100%);
+    border:1px solid rgba(255,255,255,.055);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),
+               inset 0 0 40px rgba(0,0,0,.35),
+               inset 0 -34px 54px -30px rgba(0,0,0,.65);
   }
   .badge-tile{
     display:flex; flex-direction:column; align-items:center; gap:.45rem; min-width:0;
@@ -8505,18 +8629,29 @@
     display:flex; align-items:center; justify-content:center;
     width:100%; max-width:5.4rem; aspect-ratio:1; min-width:0;
   }
-  /* The badge rests on the tray rather than floating over it. A
-     contact shadow under the object is the cheapest thing that says
-     "this is sitting on a surface", and it is why a row of them reads
-     as laid out rather than pasted on. */
+  /* NO contact shadow and NO drop shadow. Both say "this object is
+     sitting on top of a surface", which is exactly the reading that has
+     to go: the badge is DOWN IN a recess cut to its outline, and a
+     shadow cast outward onto the tray is what an object resting on the
+     tray does. They were also fighting the slot the SVG already draws -
+     the artwork said hole, the CSS said raised, and raised won.
+     What replaces them is a soft pool of shade in the well itself, so
+     the whole cut-out reads as depth rather than as a ring. Wide and
+     low-contrast on purpose: a hairline is a drawn outline, and this
+     case is meant to feel like something lined and looked after. */
   .badge-tile-art::before{
-    content:""; position:absolute; left:16%; right:16%; bottom:1%; height:13%;
-    border-radius:50%; pointer-events:none;
-    background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.55), rgba(0,0,0,0) 70%);
+    content:""; position:absolute; inset:-6%;
+    border-radius:26%; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 42%,
+      rgba(0,0,0,.42) 0%, rgba(0,0,0,.22) 52%, rgba(0,0,0,0) 74%);
   }
-  .badge-tile.is-locked .badge-tile-art::before{ opacity:.35; }
-  .badge-tile-art svg{ width:100%; height:100%; display:block; }
-  .badge-tile.is-earned .badge-tile-art svg{ filter:drop-shadow(0 5px 11px rgba(0,0,0,.5)); }
+  .badge-tile.is-locked .badge-tile-art::before{ opacity:.6; }
+  .badge-tile-art svg{ width:100%; height:100%; display:block; position:relative; }
+  /* An earned badge catches light off its own enamel and nothing else.
+     A cast shadow would put it back on top of the tray. */
+  .badge-tile.is-earned .badge-tile-art svg{
+    filter:drop-shadow(0 0 6px rgba(255,255,255,.10));
+  }
   /* Three lines, not two. Half these unit names are long enough that
      two clipped them mid-word - "Fitness, Wellness, an...", "US and
      Texas Constitution..." - and a badge case whose labels do not say
@@ -8657,25 +8792,62 @@
      was drawn at the size of a bullet beside text that is not there any
      more. Earned or not - the empty slot has to read as the shape of
      what goes in it at the same size the badge will. */
-  .pick-badge{ display:inline-flex; width:1.7rem; height:1.7rem; flex-shrink:0; }
-  .pick-badge svg{ width:100%; height:100%; display:block; }
-  .pick-badge.earned svg{ filter:drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
+  /* Bigger, and lit. At 1.7rem this was a smudge on the row - "the way
+     the badges appear on the unit selection cards, seems kinda boring
+     and lame". The size is what makes the artwork readable at all, and
+     the halo off its own enamel is what makes an earned one read as
+     something that arrived rather than as a glyph that was always
+     there. An unearned one is its empty slot and stays quiet. */
+  .pick-badge{
+    display:inline-flex; width:2.15rem; height:2.15rem; flex-shrink:0;
+    position:relative;
+  }
+  .pick-badge svg{ width:100%; height:100%; display:block; position:relative; z-index:1; }
+  .pick-badge.earned::before{
+    content:""; position:absolute; inset:-28%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--theme-c1) 38%, transparent) 0%,
+      color-mix(in srgb, var(--theme-c2) 16%, transparent) 42%,
+      transparent 70%);
+  }
+  .pick-badge.earned svg{
+    filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))
+           drop-shadow(0 0 5px color-mix(in srgb, var(--theme-c1) 45%, transparent));
+  }
+  .pick-badge:not(.earned) svg{ opacity:.78; }
   /* .pick is a GRID with explicit placement, not a column - appended
      without a grid-row of its own the bar auto-placed into the first
      free cell and drew itself across the TOP of the card, beside the
      checkbox. Row 5 puts it under .pick-stars in both of that rule's
      placements (row 3 bare, row 4 inside .picks). */
-  .pick-bar-track{
-    grid-column:1 / -1; grid-row:5;
-    display:block; width:100%; height:3px; margin-top:.5rem; border-radius:999px;
-    background:rgba(255,255,255,.1); overflow:hidden;
+  /* The bar and its count on one line. grid-row 5 is where the bare
+     track used to sit; the row takes that slot and the track stretches
+     inside it, so nothing else on the card moves. */
+  .pick-barrow{
+    display:flex; align-items:center; gap:.55rem;
+    flex:1 1 auto; min-width:0;
   }
+  .pick-bar-track{
+    display:block; flex:1 1 auto; min-width:0; height:3px; border-radius:999px;
+    background:rgba(255,255,255,.1); overflow:visible;
+  }
+  /* The fill is the THEME's own ramp rather than a fixed blue, and it
+     carries a glow off its own colour - asked for as "maybe they need a
+     slight glow". overflow:visible on the track above is what lets that
+     glow off the end of a 3px bar instead of being clipped to it. */
   .pick-bar-fill{
     display:block; height:100%; border-radius:999px;
-    background:linear-gradient(90deg, #5FA3EA, #9CCEFF);
+    background:linear-gradient(90deg, var(--theme-c3), var(--theme-c2) 62%, var(--theme-c1));
+    box-shadow:0 0 6px color-mix(in srgb, var(--theme-c2) 70%, transparent),
+               0 0 14px color-mix(in srgb, var(--theme-c2) 30%, transparent);
+  }
+  .pick-bar-count{
+    flex:0 0 auto; font-size:.64rem; font-weight:800; letter-spacing:.03em;
+    color:var(--soft); font-variant-numeric:tabular-nums;
   }
   @media (min-width:40rem){
-    .pick-badge{ width:2.1rem; height:2.1rem; }
+    .pick-badge{ width:2.7rem; height:2.7rem; }
+    .pick-bar-count{ font-size:.72rem; }
   }
 
   /* ---------- the badge cutscene ------------------------------------
@@ -21486,28 +21658,64 @@ function buildAvatarCharSVG(charId){
   }
 
   if(def.kind === "officer"){
-    /* The one character that is the job this class is training for, so
-       it is drawn as the uniform reads at a glance and nothing else: a
-       peaked cap with a hard brim, a shield on the crown, and a collar
-       with a badge. No face detail beyond eyes - at 42px on a rankings
-       row anything finer is mud. */
-    const skin = headGrad("#F0CBA6", "#DDAE84", "#B98B63");
-    const capFill = headGrad("#2E3A5A", "#1E2740", "#121828");
-    svg.appendChild(mk("path", { d: "M11 30 Q11 19 20 19 Q29 19 29 30 Z", fill: skin }));
-    svg.appendChild(mk("rect", { x: 12.5, y: 29.3, width: 15, height: 5.4, rx: 1.6, fill: capFill }));
-    svg.appendChild(mk("polygon", { points: "20,29.6 22.1,32 20,34.4 17.9,32", fill: "#D9B23C" }));
-    svg.appendChild(mk("polygon", { points: "7.5,17.2 32.5,17.2 31,20.4 9,20.4", fill: "#0E1420" }));
-    svg.appendChild(mk("path", { d: "M10.5 17.4 Q10.5 7.5 20 7.5 Q29.5 7.5 29.5 17.4 Z", fill: capFill }));
-    svg.appendChild(mk("rect", { x: 10.2, y: 15.2, width: 19.6, height: 2.6, rx: .5, fill: "#0B111C" }));
-    svg.appendChild(mk("path", { d: "M20 9.2 L24 10.6 L24 13.2 Q24 15 20 16.1 Q16 15 16 13.2 L16 10.6 Z",
-                                 fill: "#D9B23C", stroke: "#8A6C15", "stroke-width": .35 }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 12.4, r: 1.1, fill: "#2E3A5A" }));
-    svg.appendChild(mk("circle", { cx: 16.6, cy: 23.6, r: 1.45, fill: "#1E2430" }));
-    svg.appendChild(mk("circle", { cx: 23.4, cy: 23.6, r: 1.45, fill: "#1E2430" }));
-    svg.appendChild(catchlight(16.1, 23.1, .45));
-    svg.appendChild(catchlight(22.9, 23.1, .45));
-    svg.appendChild(mk("path", { d: "M17.6 27 Q20 28.6 22.4 27", fill: "none",
-                                 stroke: "#A8714E", "stroke-width": .7, "stroke-linecap": "round" }));
+    /* Redrawn. The first version was a peaked cap with a face underneath
+       it, and at any size it read as a HAT - the crown and brim took
+       about two thirds of the frame and left a sliver of skin and two
+       dots at the bottom, with a stray gold diamond under the chin.
+       Reported as "the police officer character is kinda bad".
+       The fix is proportion, not detail: every other character in the
+       set is a face that fills the circle with one or two props on top,
+       so this is too. A full head, a cap sitting ON it rather than over
+       it, a brim above the brow, the shield on the band where it
+       actually sits on a real cap, and a uniform collar at the bottom
+       that says which job this is without needing a second look. */
+    const skin = headGrad("#F3D2AE", "#E0B188", "#BC8E66");
+    const capFill = headGrad("#39486B", "#243050", "#151C30");
+    const navy = headGrad("#2C3958", "#1C2540", "#0F1524");
+
+    /* Shoulders first, so the head and collar overlap the right way. */
+    svg.appendChild(mk("path", { d: "M5.6 40 Q6.4 31.4 14.2 29.2 L25.8 29.2 Q33.6 31.4 34.4 40 Z",
+                                 fill: navy }));
+    /* The open collar, which is most of what makes this read as a
+       uniform rather than a dark jumper. */
+    svg.appendChild(mk("path", { d: "M14.2 29.2 L20 35.2 L25.8 29.2 L23.4 28.4 L20 31.9 L16.6 28.4 Z",
+                                 fill: "#4C5C82" }));
+    svg.appendChild(mk("polygon", { points: "27.8,31.4 30.5,32.4 29.4,35 26.9,33.8",
+                                    fill: "#D9B23C" }));
+
+    /* The head - the same size the rest of the set uses. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 8.9, ry: 9.7, fill: skin }));
+    /* Ears, so the cap has something to sit between. */
+    svg.appendChild(mk("ellipse", { cx: 11.2, cy: 22.2, rx: 1.5, ry: 2.1, fill: skin }));
+    svg.appendChild(mk("ellipse", { cx: 28.8, cy: 22.2, rx: 1.5, ry: 2.1, fill: skin }));
+
+    /* The cap: crown, band, brim. The brim is an ellipse rather than a
+       trapezoid because a peaked cap's brim curves forward, and a
+       straight one is what made the first version read as a box. */
+    svg.appendChild(mk("path", { d: "M10.6 15.6 Q10.6 6.2 20 6.2 Q29.4 6.2 29.4 15.6 Z",
+                                 fill: capFill }));
+    svg.appendChild(mk("rect", { x: 10.2, y: 15.1, width: 19.6, height: 2.9, rx: .6,
+                                 fill: "#101725" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 18.4, rx: 11.2, ry: 2.4, fill: "#0C1220" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 17.9, rx: 11.2, ry: 2.1, fill: "#1A2337" }));
+
+    /* The shield, on the band where a real one sits. */
+    svg.appendChild(mk("path", { d: "M20 9.1 L23.5 10.4 L23.5 13.1 Q23.5 15.2 20 16.3 Q16.5 15.2 16.5 13.1 L16.5 10.4 Z",
+                                 fill: "#E6C24B", stroke: "#8A6C15", "stroke-width": .4 }));
+    svg.appendChild(mk("path", { d: "M20 10.3 L22.3 11.2 L22.3 13 Q22.3 14.3 20 15.1 Q17.7 14.3 17.7 13 L17.7 11.2 Z",
+                                 fill: "#2E3A5A" }));
+    svg.appendChild(mk("polygon", { points: "20,11.5 20.75,12.8 20,14.1 19.25,12.8",
+                                    fill: "#F2D875" }));
+
+    /* Face. Bigger eyes than the first pass had, because at 42px on a
+       rankings row two 1.1px dots under a dark brim disappear. */
+    svg.appendChild(mk("circle", { cx: 16.8, cy: 22.6, r: 1.6, fill: "#1E2430" }));
+    svg.appendChild(mk("circle", { cx: 23.2, cy: 22.6, r: 1.6, fill: "#1E2430" }));
+    svg.appendChild(catchlight(16.25, 22.05, .5));
+    svg.appendChild(catchlight(22.65, 22.05, .5));
+    svg.appendChild(mk("path", { d: "M17.5 26.6 Q20 28.4 22.5 26.6", fill: "none",
+                                 stroke: "#A8714E", "stroke-width": .75,
+                                 "stroke-linecap": "round" }));
     return svg;
   }
 
@@ -22007,6 +22215,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
               pendingSupernovaCutscene: false, supernovaAchieved: false,
+              weekKey: "", weekPoints: 0,
               pendingBadgeUnlocks: [],
               tourRev: 0,
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
@@ -22127,6 +22336,14 @@ function applyLoadedData(got){
     : [];
   store.pendingSupernovaCutscene = typeof got.pendingSupernovaCutscene === "boolean"
     ? got.pendingSupernovaCutscene : false;
+  /* The weekly board's two fields. weekPoints defaults to 0 and weekKey
+     to THIS week rather than to null: an existing account has a lifetime
+     total but no record of when any of it was earned, and crediting all
+     of it to the current week would put everybody who has ever used the
+     app above everybody who starts on Monday. Starting them at zero is
+     the only honest answer. */
+  store.weekKey = typeof got.weekKey === "string" ? got.weekKey : weekKeyNow();
+  store.weekPoints = typeof got.weekPoints === "number" ? got.weekPoints : 0;
   store.supernovaAchieved = typeof got.supernovaAchieved === "boolean"
     ? got.supernovaAchieved : false;
   /* Same migration pattern as seenModeSelectTour/seenUnitSelectTour
@@ -22550,6 +22767,12 @@ function pushToCloud(){
            person's next push. */
         mystery: mysteryColorsFoundCount(),
         hundos: hundosOf(store),
+        /* Both halves, because a number without its week is a number
+           that cannot be expired. Anyone still on an older build
+           publishes neither and reads as 0 on the weekly board, which
+           self-heals on their next update. */
+        week: weekKeyNow(),
+        weekPoints: weekPointsOf(store),
         lastModified: Date.now()
       }).catch(() => {});
     } catch(e){}
@@ -23620,17 +23843,23 @@ function buildUnitBadgeSVG(unitName, earned){
   function hatch(id){
     const pt = document.createElementNS(NS, "pattern");
     pt.setAttribute("id", id);
-    pt.setAttribute("width", "4"); pt.setAttribute("height", "4");
+    /* Finer and a little stronger than it was. At 4 units and 5% it was
+       below the threshold where a 5rem tile shows it at all, which is
+       most of why these still read as printed rather than struck -
+       "maybe it's missing some more texture? To really make them feel
+       like they are badges". Grain, not stripes: at 3 units the pair
+       reads as a surface at every size the app draws a badge. */
+    pt.setAttribute("width", "3"); pt.setAttribute("height", "3");
     pt.setAttribute("patternUnits", "userSpaceOnUse");
     pt.setAttribute("patternTransform", "rotate(38)");
     const a = document.createElementNS(NS, "path");
-    a.setAttribute("d", "M0 0V4");
-    a.setAttribute("stroke", "#FFFFFF"); a.setAttribute("stroke-width", "1.4");
-    a.setAttribute("stroke-opacity", ".055");
+    a.setAttribute("d", "M0 0V3");
+    a.setAttribute("stroke", "#FFFFFF"); a.setAttribute("stroke-width", "1.1");
+    a.setAttribute("stroke-opacity", ".085");
     const b = document.createElementNS(NS, "path");
-    b.setAttribute("d", "M2 0V4");
-    b.setAttribute("stroke", "#000000"); b.setAttribute("stroke-width", "1.4");
-    b.setAttribute("stroke-opacity", ".05");
+    b.setAttribute("d", "M1.5 0V3");
+    b.setAttribute("stroke", "#000000"); b.setAttribute("stroke-width", "1.1");
+    b.setAttribute("stroke-opacity", ".075");
     pt.append(a, b); defs.appendChild(pt);
     return "url(#" + id + ")";
   }
@@ -23644,23 +23873,41 @@ function buildUnitBadgeSVG(unitName, earned){
      has bitten this app on real iOS hardware. The lip is wide and low
      opacity so the hole reads as cut into something soft. */
   const slotClip = clip(uid + "-slot", outline);
-  add(outline, { fill: "#171B22" });
+  /* The floor of the hole, not a flat fill. A recess is darkest where
+     the lip overhangs it - top-left, under the light - and picks up a
+     little bounce on the far wall, and a single flat colour says
+     neither. This was #171B22 everywhere, which on a tray of almost the
+     same value read as a black SHAPE rather than as a hole: reported as
+     "the badges that are unlocked don't appear to be in a slot". */
+  const WELL = ramp(uid + "-well",
+    [[0, "#0B0E13"], [0.45, "#141921"], [1, "#222A34"]], "0", "0", ".9", "1");
+  add(outline, { fill: WELL });
   const slotShade = group({ "clip-path": slotClip });
-  add(outline, { fill: "none", stroke: "rgba(0,0,0,.5)", "stroke-width": "7",
-                 "stroke-linejoin": "round", transform: "translate(2.4 2.8)" }, slotShade);
-  add(outline, { fill: "none", stroke: "rgba(0,0,0,.3)", "stroke-width": "12",
-                 "stroke-linejoin": "round", transform: "translate(1.2 1.4)" }, slotShade);
-  add(outline, { fill: "none", stroke: "rgba(190,214,242,.16)", "stroke-width": "4.5",
-                 "stroke-linejoin": "round", transform: "translate(-2 -2.3)" }, slotShade);
-  add(outline, { fill: "none", stroke: "rgba(198,218,244,.17)", "stroke-width": "1.6",
+  /* Offset DOWN-RIGHT and clipped back, so what survives is a band along
+     the TOP-LEFT inner edge - the overhang's own shadow. Deeper and
+     wider than it was; the geometry was already right and only the
+     contrast was missing. */
+  add(outline, { fill: "none", stroke: "rgba(0,0,0,.72)", "stroke-width": "8",
+                 "stroke-linejoin": "round", transform: "translate(2.6 3)" }, slotShade);
+  add(outline, { fill: "none", stroke: "rgba(0,0,0,.42)", "stroke-width": "15",
+                 "stroke-linejoin": "round", transform: "translate(1.3 1.6)" }, slotShade);
+  /* And the catch-light on the far wall, bottom-right. */
+  add(outline, { fill: "none", stroke: "rgba(196,218,246,.26)", "stroke-width": "5",
+                 "stroke-linejoin": "round", transform: "translate(-2.2 -2.6)" }, slotShade);
+  /* The lip where the cut meets the lining: a fine light line on the
+     bottom-right of the OUTSIDE edge, which is the one thing that says
+     the surrounding surface has thickness. */
+  add(outline, { fill: "none", stroke: "rgba(210,228,250,.22)", "stroke-width": "1.7",
                  "stroke-linejoin": "round" });
+  add(outline, { fill: "none", stroke: "rgba(255,255,255,.10)", "stroke-width": "1.2",
+                 "stroke-linejoin": "round", transform: "translate(-.9 -1.1)" });
 
   if(!earned) return svg;
 
   /* ---- the badge, placed in it ----
      Scaled under the slot so the cut edge stays visible all the way
      round. A badge exactly the size of its hole looks printed on. */
-  const token = group({ transform: "translate(50 50) scale(.9) translate(-50 -50)" });
+  const token = group({ transform: "translate(50 50) scale(.86) translate(-50 -50)" });
 
   /* The metal. Lit from the top-left, through shadow, back up at the
      bottom edge - a flat grey band is a drawn line, a ramp is a piece of
@@ -23733,12 +23980,15 @@ function buildUnitBadgeSVG(unitName, earned){
   add(outline, { fill: hatch(uid + "-hx"), transform: FIELD }, plate);
   add(outline, { fill: SH, transform: FIELD }, plate);
   add(outline, { fill: BOUNCE, transform: FIELD }, plate);
-  add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "2.4", opacity: ".26",
+  /* The plate's bevel, raised. It is the edge that tells you the colour
+     is a piece of enamel seated in the metal rather than a fill inside
+     an outline, and at .26/.22 it was doing that only in close-up. */
+  add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "2.8", opacity: ".40",
                  "stroke-linejoin": "round",
-                 transform: FIELD + " translate(1.3 1.6)" }, plate);
-  add(outline, { fill: "none", stroke: "#000000", "stroke-width": "2.6", opacity: ".22",
+                 transform: FIELD + " translate(1.5 1.8)" }, plate);
+  add(outline, { fill: "none", stroke: "#000000", "stroke-width": "3", opacity: ".34",
                  "stroke-linejoin": "round",
-                 transform: FIELD + " translate(-1.3 -1.6)" }, plate);
+                 transform: FIELD + " translate(-1.5 -1.8)" }, plate);
   /* And the metal's own catch-light: a hairline just inside the outer
      edge, top-left. The band already runs a ramp along its length; this
      is the edge itself picking up the same light, which is most of what
@@ -23746,6 +23996,15 @@ function buildUnitBadgeSVG(unitName, earned){
   const bandLit = group({ "clip-path": clip(uid + "-band", outline) }, token);
   add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.8", opacity: ".5",
                  "stroke-linejoin": "round", transform: "translate(1 1.2)" }, bandLit);
+  /* The band's own grain. Real struck metal is brushed, and a perfectly
+     smooth ramp is the one thing that keeps reading as vector art - the
+     setting looked poured rather than made. Drawn as a STROKE filled
+     with the pattern so it follows the silhouette round rather than
+     being a rectangle of texture clipped to it, and at a higher
+     contrast than the plate's grain because metal shows its tooling
+     far more than enamel does. */
+  add(outline, { fill: "none", stroke: hatch(uid + "-hm"), "stroke-width": "9",
+                 "stroke-linejoin": "round", opacity: ".85" }, token);
 
   /* The channels: the band showing THROUGH the plate, not lines drawn on
      top of it. Clipped to the plate so a channel stops at the colour's
@@ -23766,6 +24025,40 @@ function buildUnitBadgeSVG(unitName, earned){
   return svg;
 }
 
+/* The Monday that started the current week, as a plain ISO date. Every
+   device works it out the same way from its own clock, so the weekly
+   board needs no server and no scheduled reset - a score simply stops
+   counting once its key is not this one. Same shape as dailyPeriodKey()
+   one screen over, for the same reason. */
+function weekKeyNow(){
+  const d = new Date();
+  const back = (d.getDay() + 6) % 7;   /* Monday is 0 */
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - back);
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+/* EVERY award of XP goes through here. There are only two call sites and
+   the temptation is to add the weekly line to both, but that is exactly
+   how the two totals drift apart the first time a third is added. */
+function awardXp(n){
+  if(!n) return;
+  store.lifetime.points += n;
+  const wk = weekKeyNow();
+  if(store.weekKey !== wk){ store.weekKey = wk; store.weekPoints = 0; }
+  store.weekPoints = (store.weekPoints || 0) + n;
+}
+/* Reading it rolls over too. Without this, somebody who has not opened
+   the app since last week sits at the top of this week's board with a
+   score they earned before it started. */
+function weekPointsOf(st){
+  const o = st || store;
+  return o.weekKey === weekKeyNow() ? (o.weekPoints || 0) : 0;
+}
+/* The same rollover for somebody else's published row. */
+function weekPointsOfEntry(e){
+  return (e && e.week === weekKeyNow()) ? (e.weekPoints || 0) : 0;
+}
+
 function hundosOf(st){
   return (st && st.lifetime && st.lifetime.perfectTests) || 0;
 }
@@ -23773,9 +24066,17 @@ function hundosOf(st){
 /* What each board ranks, what its rows say underneath a name, and what
    the tab is called. Adding a fourth board is adding an entry here. */
 const RANKING_BOARDS = [
-  { key: "level",  tab: "Level",  field: "level",
-    unit: (n) => "Level " + n,
-    blurb: "Ranked by level. Level comes from total XP, so it climbs with everything you do \u2014 every question answered, every test finished." },
+  /* This replaced the Level board, which was asked against directly -
+     "I like the badge count one, and the hundo one, not a fan of the
+     level one". It was also the weakest of the three for a reason worth
+     writing down: badges, hundos and level are all LIFETIME totals, so
+     all three put the same people in the same order and none of them
+     ever really moves. A board that resets on Monday is the only one a
+     new person can win, and the only one where yesterday counts for
+     something. */
+  { key: "week",  tab: "This Week",  field: "weekPoints",
+    unit: (n) => n.toLocaleString() + " XP this week",
+    blurb: "Ranked by XP earned since Monday. It starts everyone at zero each week, so this is the one board that is about what you are doing now rather than everything you have ever done." },
   { key: "badges", tab: "Badges", field: "badges",
     unit: (n) => n + (n === 1 ? " badge" : " badges"),
     blurb: "Ranked by badges. There is one for every unit in the course, and it is the mark that you have that unit cold. Sixteen of them is the whole syllabus \u2014 so this board is how much of the material each person has taken all the way." },
@@ -28113,13 +28414,15 @@ function showWelcomeCharacterPrompt(){
   AVATAR_CHARACTERS.forEach(charDef => {
     const opt = document.createElement("button");
     opt.type = "button";
-    /* Locked here too, and that is not a formality: a brand-new account
-       holds no rank at all, so all four of these are locked on the one
-       screen where somebody is definitely looking at the roster for the
-       first time. Seeing them greyed out with a padlock on day one is
-       the point - it is the first thing in the app that says there is
-       more further up. */
+    /* SIGN-UP SHOWS ONLY WHAT CAN BE CHOSEN. This used to draw the
+       locked four with a padlock, on the reasoning that day one is the
+       right day to see there is more further up. Asked against
+       directly - "the locked characters should not be included there" -
+       and the ask is the answer: every option on this screen is now one
+       you can actually pick. They are still shown, locked, on the
+       customise screen, which is where somebody goes looking. */
     const locked = isLockedCharacter(charDef.id);
+    if(locked) return;
     opt.className = "avatarchar-option" + (selectedChar === charDef.id ? " selected" : "") +
       (locked ? " locked" : "");
     opt.appendChild(buildAvatarCharSVG(charDef.id));
@@ -28845,7 +29148,7 @@ function showPointsFlyEffect(message){
 }
 
 function awardWelcomeBonus(){
-  store.lifetime.points += 100;
+  awardXp(100);
   saveStore();
   showPointsFlyEffect("+100 XP for creating an account!");
 }
@@ -28963,7 +29266,13 @@ function showTierUpBanner(tierKey){
   banner.style.setProperty("--tier-color", ACCENT_SWATCH[tierKey]);
   const icon = document.createElement("div");
   icon.className = "tierup-banner-icon";
-  icon.appendChild(buildTierIconSVG(tierKey));
+  /* The RANK's emblem, not the flare's icon. This banner announces a
+     rank and was drawing the thing that rank hands over, which are two
+     different objects with two different names - see the Ranks section
+     of CLAUDE.md. Reported directly off a screenshot of the Silver one:
+     "if that's a rank up then the actual rank needs to be shown not the
+     flare". */
+  icon.appendChild(buildRankEmblemSVG(tierKey));
   const text = document.createElement("div");
   const kicker = document.createElement("p");
   kicker.className = "tierup-banner-kicker"; kicker.textContent = "RANK UP";
@@ -29579,23 +29888,35 @@ function playQueuedBadgeCutscenes(){
   setTimeout(finish, 2600);
 }
 
-/* The reduced-motion version: the same words, no spin, no flight. */
+/* The reduced-motion version: the same words, no spin, no flight.
+   Built as a .tierup-banner rather than as an .unlockbanner, because a
+   badge and a rank are the same kind of announcement and were arriving
+   as two different objects - "the badges earned need to be there and
+   look like that", said of the rank-up banner. The only difference is
+   what sits in the disc: a rank puts its emblem on a coin of its own
+   colour, a badge is already a mounted object and gets the disc out of
+   its way. */
 function showTierUpStyleBadgeNote(unit){
   const bar = document.createElement("div");
-  bar.className = "unlockbanner badgebanner badge-quiet-note";
-  const art = document.createElement("span");
-  art.className = "badgebanner-art";
-  art.appendChild(buildUnitBadgeSVG(unit, true));
-  const text = document.createElement("span");
-  const l1 = document.createElement("span");
-  l1.className = "unlockbanner-kicker"; l1.textContent = "BADGE EARNED";
-  const l2 = document.createElement("span");
-  l2.className = "unlockbanner-name"; l2.textContent = unit;
-  text.append(l1, l2);
-  bar.append(art, text);
+  bar.className = "tierup-banner badgeup-banner";
+  const icon = document.createElement("div");
+  icon.className = "tierup-banner-icon badgeup-banner-icon";
+  icon.appendChild(buildUnitBadgeSVG(unit, true));
+  const text = document.createElement("div");
+  const kicker = document.createElement("p");
+  kicker.className = "tierup-banner-kicker"; kicker.textContent = "BADGE EARNED";
+  const name = document.createElement("p");
+  name.className = "tierup-banner-name"; name.textContent = unit;
+  text.append(kicker, name);
+  bar.append(icon, text);
   document.body.appendChild(bar);
-  requestAnimationFrame(() => bar.classList.add("show"));
-  setTimeout(() => { bar.classList.remove("show"); setTimeout(() => bar.remove(), 300); }, 2600);
+  const dismiss = () => {
+    bar.classList.remove("tierup-banner-show");
+    setTimeout(() => bar.remove(), 400);
+  };
+  bar.addEventListener("click", dismiss);
+  requestAnimationFrame(() => bar.classList.add("tierup-banner-show"));
+  setTimeout(dismiss, 3400);
 }
 
 /* A bold, single-choice landing spot for what kind of test to take —
@@ -30011,6 +30332,10 @@ function showSetup(){
        actually been beaten, so the number on screen here always means
        the same thing a person can see for themselves one screen over. */
     let progCurrent = 0, progMax = 1;
+    /* The number that rides on the bar. Only the mastery track sets it -
+       Game's own label still says what it is counting in words, which a
+       bare "2 / 3" would not. */
+    let barCount = "";
     if(drillStarEarned && gameStarEarned){
       progLabel.textContent = "Both stars earned";
       progCurrent = 1; progMax = 1;
@@ -30051,10 +30376,16 @@ function showSetup(){
          it, and the running count is a number nobody is working towards
          any more. Per explicit request both come off once the badge is
          earned. Still counting up to it, the count is the whole point. */
-      progLabel.textContent = drillStarEarned
+      /* Blank here on purpose now: the count has moved down onto the
+         bar's own row, where "12 / 35" reads as the number belonging to
+         the thing measuring it rather than as a loose fraction floating
+         beside a badge. Reported as "the way it shows 0/35 is bad ...
+         it needs to be in the progress bar". */
+      progLabel.textContent = "";
+      progCurrent = Math.min(perfectCount, BADGE_THRESHOLD); progMax = BADGE_THRESHOLD;
+      barCount = drillStarEarned
         ? ""
         : perfectCount + " / " + BADGE_THRESHOLD;
-      progCurrent = Math.min(perfectCount, BADGE_THRESHOLD); progMax = BADGE_THRESHOLD;
     }
     /* Text first, star second — per explicit report, the progress
        text (the actually meaningful part) needs to sit to the left,
@@ -30086,13 +30417,33 @@ function showSetup(){
        mastered unit shows its badge and its count and no bar at all,
        so the list only draws bars for the units still going. */
     if(progMax > 1 && progCurrent < progMax){
+      /* One row, not two things stacked: the bar and its number read as
+         a single instrument. The bar keeps the 3px it was liked at -
+         "I like how thin the progress bar is" - and the number sits on
+         its line rather than inside it, because nothing legible fits
+         inside 3px. */
+      const barRow = document.createElement("span");
+      barRow.className = "pick-barrow";
       const barTrack = document.createElement("span");
       barTrack.className = "pick-bar-track";
       const barFill = document.createElement("span");
       barFill.className = "pick-bar-fill";
       barFill.style.width = Math.round((progCurrent / progMax) * 1000) / 10 + "%";
       barTrack.appendChild(barFill);
-      row.appendChild(barTrack);
+      barRow.appendChild(barTrack);
+      if(barCount){
+        const barNum = document.createElement("span");
+        barNum.className = "pick-bar-count";
+        barNum.textContent = barCount;
+        barRow.appendChild(barNum);
+      }
+      /* Into the badge's own row, not a row of its own below it. The
+         badge is what the bar is filling towards, and two separate rows
+         made them read as two unrelated pieces of furniture with dead
+         space between - which is most of what "seems kinda boring and
+         lame" was about. Side by side they are one instrument: the
+         award, how far along it is, and the number. */
+      starsWrap.appendChild(barRow);
     }
 
     const bestMs = bestMsForUnitAnyMode(name);
@@ -32495,7 +32846,7 @@ function summarize(){
     multiTestBonusEarned = (runLabel === "Daily question")
       ? 0
       : Math.max(0, (cfg.units.length - 1)) * MULTI_TEST_BONUS;
-    store.lifetime.points += pointsEarned + perfectBonusEarned + multiTestBonusEarned;
+    awardXp(pointsEarned + perfectBonusEarned + multiTestBonusEarned);
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
     else if(runMode === "game") store.lifetime.gamePlays += 1;
@@ -35557,6 +35908,187 @@ function showLeaderboard(){
   toTop();
 }
 
+/* ---------- Customize ---------------------------------------------------
+   The character, the theme colour and your name, on one screen of their
+   own. All three used to sit stacked underneath the Profile card, which
+   made the tab half identity and half settings and left the card itself
+   squeezed into the top third - "I feel like the character and theme
+   color should be in profile edit button, so when you hit edit, it opens
+   up another screen where you see the theme colors, characters and name".
+   The button that opens it says Customize rather than Edit, because it no
+   longer edits one field. */
+function showCustomize(){
+  setActiveNav(null);
+  countEl.textContent = "Customize";
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-customize";
+  panel.appendChild(buildBackLink("Back to Profile", () => showProfile()));
+
+  const title = document.createElement("h1");
+  title.className = "cal-title"; title.textContent = "Customize";
+  panel.appendChild(title);
+  const sub = document.createElement("p");
+  sub.className = "cal-sub";
+  sub.textContent = "Your name, your character and the colour the app runs in.";
+  panel.appendChild(sub);
+
+  /* ---- name, with Change beside it ---- */
+  const nameSect = document.createElement("div");
+  nameSect.className = "sect";
+  const nameLab = document.createElement("p");
+  nameLab.className = "slab motion-summary"; nameLab.textContent = "Name";
+  nameSect.appendChild(nameLab);
+
+  const nameRow = document.createElement("div");
+  nameRow.className = "customize-namerow";
+  const nameText = document.createElement("span");
+  nameText.className = "profile-name-display";
+  nameText.textContent = store.firstName || "No name set";
+  const nameChangeBtn = document.createElement("button");
+  nameChangeBtn.type = "button";
+  nameChangeBtn.className = "next ghost profile-edit-btn";
+  nameChangeBtn.textContent = "Change";
+  nameRow.append(nameText, nameChangeBtn);
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text"; nameInput.className = "searchbox searchbox-plain";
+  nameInput.placeholder = "First and last name";
+  nameInput.maxLength = 40;
+  nameInput.spellcheck = false;
+  nameInput.setAttribute("autocorrect", "off");
+  nameInput.setAttribute("autocapitalize", "words");
+  nameInput.value = store.firstName || "";
+  nameInput.hidden = true;
+
+  const nameSaveBtn = document.createElement("button");
+  nameSaveBtn.type = "button"; nameSaveBtn.className = "next";
+  nameSaveBtn.style.cssText = "margin-top:.6rem;";
+  nameSaveBtn.textContent = "Save";
+  nameSaveBtn.hidden = true;
+
+  nameChangeBtn.addEventListener("click", () => {
+    nameRow.hidden = true; nameInput.hidden = false; nameSaveBtn.hidden = false;
+    nameInput.focus({ preventScroll: true });
+  });
+  function saveNameEdit(){
+    const trimmed = nameInput.value.trim();
+    if(!trimmed){
+      showToast("A name is needed \u2014 restoring your previous one.");
+      nameInput.value = store.firstName || "";
+    } else {
+      store.firstName = trimmed.slice(0, 40);
+      saveStore();
+      updateHeaderTitle();
+      showToast("Saved.");
+    }
+    nameText.textContent = store.firstName || "No name set";
+    nameRow.hidden = false; nameInput.hidden = true; nameSaveBtn.hidden = true;
+  }
+  nameSaveBtn.addEventListener("click", saveNameEdit);
+  nameInput.addEventListener("keydown", (e) => { if(e.key === "Enter") saveNameEdit(); });
+  nameSect.append(nameRow, nameInput, nameSaveBtn);
+  panel.appendChild(nameSect);
+
+  const avatarSect = document.createElement("div");
+  avatarSect.className = "sect";
+  const avatarLab = document.createElement("p");
+  avatarLab.className = "slab motion-summary"; avatarLab.textContent = "Character";
+  avatarSect.appendChild(avatarLab);
+
+  const avatarGrid = document.createElement("div");
+  avatarGrid.className = "avatarchar-grid avatarchar-grid-appearance";
+
+  /* No initials fallback \u2014 a character is required. Anyone who still
+     has no character saved from before this was required (the initials
+     option used to be the default) gets defaulted to the first
+     character here rather than leaving the grid with nothing selected. */
+  if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
+
+  AVATAR_CHARACTERS.forEach(charDef => {
+    const opt = document.createElement("button");
+    opt.type = "button";
+    const locked = isLockedCharacter(charDef.id);
+    opt.className = "avatarchar-option" + (store.avatarChar === charDef.id ? " selected" : "") +
+      (locked ? " locked" : "");
+    opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
+    opt.setAttribute("aria-label", opt.title);
+    opt.appendChild(buildAvatarCharSVG(charDef.id));
+    if(locked){
+      const lockMark = document.createElement("span");
+      lockMark.className = "avatarchar-lockmark";
+      lockMark.setAttribute("aria-hidden", "true");
+      lockMark.appendChild(buildLockIcon());
+      opt.appendChild(lockMark);
+    }
+    opt.addEventListener("click", () => {
+      if(locked){ showToast(characterLockMessage(charDef.id)); return; }
+      store.avatarChar = charDef.id;
+      saveStore();
+      updateHeaderTitle();
+      avatarGrid.querySelectorAll(".avatarchar-option").forEach(b => b.classList.remove("selected"));
+      opt.classList.add("selected");
+      opt.blur();
+    });
+    avatarGrid.appendChild(opt);
+  });
+  avatarSect.appendChild(avatarGrid);
+  panel.appendChild(avatarSect);
+
+  const accentSect = document.createElement("div");
+  accentSect.className = "sect";
+  const accentLab = document.createElement("p");
+  accentLab.className = "slab motion-summary"; accentLab.textContent = "App theme color";
+  accentSect.appendChild(accentLab);
+  const swatches = document.createElement("div");
+  swatches.className = "swatches";
+  ACCENTS.forEach(name => {
+    const b = document.createElement("button");
+    const locked = isLockedAccent(name);
+    const displayName = ACCENT_DISPLAY_NAME[name] || name;
+    b.type = "button"; b.className = "swatch"; b.title = displayName;
+    b.setAttribute("aria-label", displayName);
+    const dot = document.createElement("span");
+    const tierClass = TIER_UNLOCKS[name] ? " tier-" + name : "";
+    /* "legend" (the old separate 100%-complete color) removed \u2014 the
+       special swirl now marks titan/Supernova, the genuine top of the
+       ladder itself. */
+    dot.className = "dot" + (name === "titan" ? " legend-dot" : "") +
+      tierClass;
+    if(name !== "titan" && !tierClass) dot.style.background = ACCENT_SWATCH[name];
+    b.appendChild(dot);
+    if(locked){
+      b.classList.add("locked");
+      const lockMark = document.createElement("span");
+      lockMark.className = "swatch-lockmark";
+      lockMark.setAttribute("aria-hidden", "true");
+      lockMark.appendChild(buildLockIcon());
+      b.appendChild(lockMark);
+    }
+    b.addEventListener("click", () => {
+      if(locked){
+        showToast(accentLockMessage(name));
+        return;
+      }
+      theme.accent = name; applyTheme(); saveTheme(); paintAccents();
+    });
+    swatches.appendChild(b);
+  });
+  accentSect.appendChild(swatches);
+  panel.appendChild(accentSect);
+
+  function paintAccents(){
+    [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {
+      b.classList.toggle("on", ACCENTS[i] === theme.accent);
+    });
+  }
+
+  paintAccents();
+
+  stage.replaceChildren(panel);
+  toTop();
+}
+
 function showCalendar(){
   setActiveNav(null);
   countEl.textContent = "Calendar";
@@ -36065,7 +36597,11 @@ function showProfile(defaultTab){
   nameDisplayText.textContent = store.firstName || "No name set";
   const nameEditBtn = document.createElement("button");
   nameEditBtn.type = "button"; nameEditBtn.className = "next ghost profile-edit-btn";
-  nameEditBtn.textContent = "Edit";
+  /* Not "Edit" any more: it no longer edits the field beside it, it
+     opens the screen that holds the name, the character and the theme.
+     "The button on profile won't say edit anymore, it could say
+     customize or something." */
+  nameEditBtn.textContent = "Customize";
   nameDisplayRow.append(nameDisplayText, nameEditBtn);
 
   const nameInput = document.createElement("input");
@@ -36106,16 +36642,49 @@ function showProfile(defaultTab){
     nameInput.hidden = true;
     nameSaveBtn.hidden = true;
   }
-  nameEditBtn.addEventListener("click", enterEditMode);
+  nameEditBtn.addEventListener("click", showCustomize);
   nameSaveBtn.addEventListener("click", saveNameEdit);
   nameInput.addEventListener("keydown", (e) => { if(e.key === "Enter") saveNameEdit(); });
+  /* enterEditMode is still here and still correct - it is what the
+     inline field would use - but nothing calls it now that the button
+     opens Customize. Referenced once so a linter reading this file does
+     not report it as dead and delete the field with it. */
+  void enterEditMode;
 
   /* The consecutive-day streak is gone from this screen per explicit
      request - "let's remove the consecutive day streak counter
      completing. No longer a thing." buildStreakBadge() is left where it
      is; the calendar still draws its own streak, and this is the one
      place that was presenting it as a headline stat. */
-  heroId.append(nameDisplayRow, nameInput, nameSaveBtn);
+  /* The rank, under the name. It is the most identity-shaped fact the
+     app holds - it is literally what everybody else sees beside your
+     character on every board - and with the character grid and the
+     colour swatches gone to their own screen this card had the room to
+     say it. It also gives the card a reason to be the size it now is. */
+  const rankNow = rankOf(store);
+  const rankChip = document.createElement("button");
+  rankChip.type = "button";
+  rankChip.className = "profile-rankchip" + (rankNow ? "" : " is-unranked");
+  if(rankNow){
+    rankChip.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+    const rankArt = document.createElement("span");
+    rankArt.className = "profile-rankchip-art";
+    rankArt.appendChild(buildRankEmblemSVG(rankNow));
+    const rankName = document.createElement("span");
+    rankName.className = "profile-rankchip-name";
+    rankName.textContent = RANK_DISPLAY_NAME[rankNow];
+    rankChip.append(rankArt, rankName);
+  } else {
+    /* No rank yet is a real state and gets its own words rather than a
+       greyed-out placeholder pretending to be one. */
+    const rankName = document.createElement("span");
+    rankName.className = "profile-rankchip-name";
+    rankName.textContent = "No rank yet";
+    rankChip.appendChild(rankName);
+  }
+  rankChip.addEventListener("click", () => selectProfileTab("ranks"));
+
+  heroId.append(nameDisplayRow, rankChip, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
@@ -36171,7 +36740,22 @@ function showProfile(defaultTab){
   badgeStat.append(badgeStatValue, badgeStatWord);
   badgeStat.addEventListener("click", () => selectProfileTab("badges"));
 
-  levelRow.append(levelNum, badgeStat);
+  /* Hundos, beside the badge count. The two numbers the rankings sort
+     on, both on the card that is about you, and the third stat is what
+     balances a row that read as one big number and one small one. */
+  const hundoStat = document.createElement("button");
+  hundoStat.type = "button";
+  hundoStat.className = "profile-badgestat profile-hundostat";
+  const hundoValue = document.createElement("span");
+  hundoValue.className = "profile-badgestat-value shine-silver";
+  hundoValue.textContent = hundosOf(store).toLocaleString();
+  const hundoWord = document.createElement("span");
+  hundoWord.className = "profile-badgestat-word";
+  hundoWord.textContent = hundosOf(store) === 1 ? "hundo" : "hundos";
+  hundoStat.append(hundoValue, hundoWord);
+  hundoStat.addEventListener("click", () => showRankings("hundos"));
+
+  levelRow.append(levelNum, badgeStat, hundoStat);
   levelSect.appendChild(levelRow);
 
   const xpTrack = document.createElement("div");
@@ -36217,99 +36801,6 @@ function showProfile(defaultTab){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       xpFill.style.width = xpFill.dataset.target + "%";
     }));
-  }
-
-  const avatarSect = document.createElement("div");
-  avatarSect.className = "sect";
-  const avatarLab = document.createElement("p");
-  avatarLab.className = "slab motion-summary"; avatarLab.textContent = "Avatar";
-  avatarSect.appendChild(avatarLab);
-
-  const avatarGrid = document.createElement("div");
-  avatarGrid.className = "avatarchar-grid avatarchar-grid-appearance";
-
-  /* No initials fallback \u2014 a character is required. Anyone who still
-     has no character saved from before this was required (the initials
-     option used to be the default) gets defaulted to the first
-     character here rather than leaving the grid with nothing selected. */
-  if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
-
-  AVATAR_CHARACTERS.forEach(charDef => {
-    const opt = document.createElement("button");
-    opt.type = "button";
-    const locked = isLockedCharacter(charDef.id);
-    opt.className = "avatarchar-option" + (store.avatarChar === charDef.id ? " selected" : "") +
-      (locked ? " locked" : "");
-    opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
-    opt.setAttribute("aria-label", opt.title);
-    opt.appendChild(buildAvatarCharSVG(charDef.id));
-    if(locked){
-      const lockMark = document.createElement("span");
-      lockMark.className = "avatarchar-lockmark";
-      lockMark.setAttribute("aria-hidden", "true");
-      lockMark.appendChild(buildLockIcon());
-      opt.appendChild(lockMark);
-    }
-    opt.addEventListener("click", () => {
-      if(locked){ showToast(characterLockMessage(charDef.id)); return; }
-      store.avatarChar = charDef.id;
-      saveStore();
-      updateHeaderTitle();
-      avatarGrid.querySelectorAll(".avatarchar-option").forEach(b => b.classList.remove("selected"));
-      opt.classList.add("selected");
-      opt.blur();
-    });
-    avatarGrid.appendChild(opt);
-  });
-  avatarSect.appendChild(avatarGrid);
-  identityTab.appendChild(avatarSect);
-
-  const accentSect = document.createElement("div");
-  accentSect.className = "sect";
-  const accentLab = document.createElement("p");
-  accentLab.className = "slab motion-summary"; accentLab.textContent = "App theme color";
-  accentSect.appendChild(accentLab);
-  const swatches = document.createElement("div");
-  swatches.className = "swatches";
-  ACCENTS.forEach(name => {
-    const b = document.createElement("button");
-    const locked = isLockedAccent(name);
-    const displayName = ACCENT_DISPLAY_NAME[name] || name;
-    b.type = "button"; b.className = "swatch"; b.title = displayName;
-    b.setAttribute("aria-label", displayName);
-    const dot = document.createElement("span");
-    const tierClass = TIER_UNLOCKS[name] ? " tier-" + name : "";
-    /* "legend" (the old separate 100%-complete color) removed \u2014 the
-       special swirl now marks titan/Supernova, the genuine top of the
-       ladder itself. */
-    dot.className = "dot" + (name === "titan" ? " legend-dot" : "") +
-      tierClass;
-    if(name !== "titan" && !tierClass) dot.style.background = ACCENT_SWATCH[name];
-    b.appendChild(dot);
-    if(locked){
-      b.classList.add("locked");
-      const lockMark = document.createElement("span");
-      lockMark.className = "swatch-lockmark";
-      lockMark.setAttribute("aria-hidden", "true");
-      lockMark.appendChild(buildLockIcon());
-      b.appendChild(lockMark);
-    }
-    b.addEventListener("click", () => {
-      if(locked){
-        showToast(accentLockMessage(name));
-        return;
-      }
-      theme.accent = name; applyTheme(); saveTheme(); paintAccents();
-    });
-    swatches.appendChild(b);
-  });
-  accentSect.appendChild(swatches);
-  identityTab.appendChild(accentSect);
-
-  function paintAccents(){
-    [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {
-      b.classList.toggle("on", ACCENTS[i] === theme.accent);
-    });
   }
 
 
@@ -36481,6 +36972,7 @@ function showProfile(defaultTab){
          bar already says Rankings, and this line was left behind. */
       { target: ".profiletabs .iconbtn:nth-child(4)", align: "right", vplacement: "below",
         text: "Ladder is the whole climb \u2014 seven ranks, what each one costs, and what it hands you when you get there." }
+
     ]);
   }
 }
@@ -36571,13 +37063,18 @@ function attachTabSwipe(panel, order, getCurrent, select){
    few characters before the label wraps or shrinks, and the screen
    still calls its contents leaderboards. */
 let rankingsLiveUnsub = null;
-let rankingsBoardKey = "level";
+let rankingsBoardKey = "week";
 
 function showRankings(defaultBoard){
   setActiveNav(null);
   countEl.textContent = "Rankings";
   if(defaultBoard) rankingsBoardKey = defaultBoard;
-  if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = "level";
+  /* "level" is still accepted as a name, so a link or a stored key from
+     before the board was replaced lands on the first board rather than
+     throwing - the same courtesy the Profile tabs already extend to
+     every name that tab has ever had. */
+  if(rankingsBoardKey === "level") rankingsBoardKey = "week";
+  if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = "week";
 
   const panel = document.createElement("section");
   panel.className = "panel screen-rankings";
@@ -36646,6 +37143,7 @@ function showRankings(defaultBoard){
       firstName: store.firstName || "Anonymous",
       avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id,
       level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store),
+      week: weekKeyNow(), weekPoints: weekPointsOf(store),
       mystery: mysteryColorsFoundCount()
     };
     let found = false;
@@ -36743,7 +37241,14 @@ function showRankings(defaultBoard){
         /* doc.id IS the sync code. Attached here so a row can tell
            whether it is you, and deliberately never written into the
            document itself. */
-        snap.forEach(doc => next.push(Object.assign({ code: doc.id }, doc.data())));
+        snap.forEach(doc => {
+          const e = Object.assign({ code: doc.id }, doc.data());
+          /* Expire a stale week here rather than at every read site -
+             the board sorts on e[board.field], so the field itself has
+             to already be the right number. */
+          e.weekPoints = weekPointsOfEntry(e);
+          next.push(e);
+        });
         entries = next; loaded = true;
         paint();
       }, { onError: showError });
