@@ -45,6 +45,83 @@ addEventListener('DOMContentLoaded', function(){
   put(); setInterval(put, 400);
 });"""
 
+# A leaderboard with people on it. The Firebase CDN is blocked in the
+# sandbox, so the three Rankings boards would otherwise show exactly one
+# row - your own, synthesised by liveEntries() - which is a true picture
+# of this machine and a useless picture of the app. This stubs
+# window.firebase before any page script runs, so initFirebase() picks it
+# up by its normal path and the boards fill with classmates.
+#
+# It is a SCREENSHOT AID and lives nowhere near the app. Nothing here is
+# written back anywhere: every write resolves and discards.
+# Characters come from AVATAR_CHARACTERS and nowhere else: ninja, ghost,
+# queen, wizard, grizzly, alien, samurai, dragon. buildAvatarCharSVGSafe
+# falls back to the default for an id it does not know, so an invented
+# one does not fail loudly - it just puts four ninjas on the board.
+CLASSMATES = [
+    ("MADI-0001", "Madison", "ninja",   23, 4, 141, 0),
+    ("DEVO-0002", "Devonte", "ghost",   31, 6, 188, 0),
+    ("ALEX-0003", "Alex",    "grizzly", 47, 9, 262, 0),
+    ("KIMB-0004", "Kim",     "alien",   12, 2,  64, 0),
+    ("PATR-0005", "Pat",     "wizard",  58, 11, 310, 0),
+    ("LEEA-0006", "Lee",     "dragon",  72, 15, 402, 3),
+    ("RAYM-0007", "Ray",     "queen",    8, 1,  27, 0),
+    ("JOSE-0008", "Jose",    "samurai", 39, 7, 205, 0),
+    ("TARA-0009", "Tara",    "ghost",   19, 3,  96, 0),
+    ("BROO-0010", "Brooke",  "queen",   27, 5, 150, 0),
+]
+FAKE_FIREBASE = """
+(function(){
+  var ROWS = __ROWS__;
+  function snapOf(name){
+    var rows = name === 'leaderboard' ? ROWS : [];
+    return { forEach: function(cb){ rows.forEach(function(r){
+      cb({ id: r.code, data: function(){ return r; } }); }); } };
+  }
+  function docRef(){
+    return {
+      get: function(){ return Promise.resolve({ exists:false, data:function(){ return null; } }); },
+      set: function(){ return Promise.resolve(); },
+      update: function(){ return Promise.resolve(); },
+      delete: function(){ return Promise.resolve(); },
+      onSnapshot: function(next){
+        setTimeout(function(){ next({ exists:false, data:function(){ return null; } }); }, 40);
+        return function(){};
+      }
+    };
+  }
+  function collRef(name){
+    var c = {
+      doc: function(){ return docRef(); },
+      where: function(){ return c; },
+      onSnapshot: function(next){
+        setTimeout(function(){ next(snapOf(name)); }, 60);
+        return function(){};
+      }
+    };
+    return c;
+  }
+  window.firebase = {
+    apps: [],
+    initializeApp: function(){ this.apps.push({}); },
+    firestore: function(){ return { collection: collRef }; }
+  };
+})();"""
+
+# The account the post-onboarding screens are shot with. A fresh sign-up
+# renders every one of them as its EMPTY state, which is half the app
+# photographed as "nothing here yet".
+SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
+        '"leaderboardOptIn":true,"lastModified":1700000000000,'
+        '"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
+        '"seenMainMenuTour":true,"seenRankingsTour":true,"seenAppearanceTour":true,'
+        '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
+        '"TCOLE Rules":35,"Penal Code":35,"Racial Profiling":22,"Victims of Crime":14,'
+        '"Verbal Communication":31,"Identity Crimes":8,"Civil Process and Liability":19},'
+        '"lifetime":{"points":12400,"answered":5400,"correct":4980,"drillPlays":64,'
+        '"examPlays":22,"gamePlays":9,"perfectTests":141,"currentStreak":23,'
+        '"longestStreak":57}}')
+
 # label, w, h, insets, installed
 DEVICES = [
     ("iphone-17-pro-max", 440,  956, (62, 0, 34, 0), True),
@@ -70,38 +147,60 @@ def serve():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f"http://127.0.0.1:{port}/index.html"
 
+def rows_json():
+    import json
+    return json.dumps([
+        {"code": c, "firstName": n, "avatarChar": a, "level": lv,
+         "badges": bd, "hundos": hu, "mystery": my, "correct": hu * 34}
+        for (c, n, a, lv, bd, hu, my) in CLASSMATES])
+
+
+def new_page(br, ins, installed, seeded):
+    """One context, set up the way a real device would arrive at it."""
+    ctx = br.new_context(viewport={"width": new_page.w, "height": new_page.h},
+                         device_scale_factor=2)
+    if installed:
+        ctx.add_init_script(STANDALONE)
+    ctx.add_init_script(FAKE_FIREBASE.replace("__ROWS__", rows_json()))
+    if seeded:
+        ctx.add_init_script(
+            "try{localStorage.setItem('class26e.drill.v1', %s);"
+            "localStorage.setItem('class26e.synccode','MADI-0001');"
+            "localStorage.setItem('class26e.frame.ok','go-live-1');"
+            "localStorage.setItem('class26e.daily.seen','x');}catch(e){}"
+            % ("'" + SEED + "'"))
+    page = ctx.new_page()
+    body = patched(ins)
+    page.route("**/index.html", lambda route, request, b=body: route.fulfill(
+        status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
+    if ins[0]:
+        page.add_init_script(STATUS_BAR.replace("__H__", str(ins[0])))
+    return ctx, page
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    only = sys.argv[1] if len(sys.argv) > 1 else None
     srv, url = serve()
     try:
         with sync_playwright() as pw:
             br = pw.chromium.launch(executable_path=CHROME)
             for label, w, h, ins, installed in DEVICES:
-                ctx = br.new_context(viewport={"width": w, "height": h}, device_scale_factor=2)
-                if installed:
-                    ctx.add_init_script(STANDALONE)
-                page = ctx.new_page(); body = patched(ins)
-                page.route("**/index.html", lambda route, request, b=body: route.fulfill(
-                    status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
+                if only and only not in label: continue
+                new_page.w, new_page.h = w, h
                 errs = []
-                page.on("pageerror", lambda e: errs.append(str(e)[:160]))
-                if ins[0]:
-                    page.add_init_script(STATUS_BAR.replace("__H__", str(ins[0])))
-                page.goto(url); page.wait_for_timeout(3200)
-                page.evaluate("document.getElementById('splashscreen')?.remove()")
-                page.wait_for_timeout(400)
 
-                def shot(n, name, bar_ok=False):
+                def shot(page, n, name, bar_ok=False):
                     page.wait_for_timeout(350)
                     page.screenshot(path=f"{OUT}/{label}-{n:04.1f}-{name}.png")
                     bad = page.evaluate("""()=>{
                         const t = document.querySelector('.bottomtabs');
                         const loading = document.getElementById('genprofile-overlay')
                                      || document.getElementById('splashscreen');
-                        return {bar: t.hidden ? 0 : Math.round(t.getBoundingClientRect().height),
+                        return {bar: (!t || t.hidden) ? 0 : Math.round(t.getBoundingClientRect().height),
                                 tourOverLoading: !!(loading && document.getElementById('tour-tooltip'))};}""")
-                    # Home and Settings are supposed to have a tab bar; an
-                    # onboarding screen never is.
+                    # Home and everything past it is supposed to have a tab
+                    # bar; an onboarding screen never is.
                     if bad["bar"] and not bar_ok:
                         print(f"  !! {label} {name}: TAB BAR ON AN ONBOARDING SCREEN ({bad['bar']}px)")
                     if not bad["bar"] and bar_ok:
@@ -109,42 +208,129 @@ def main():
                     if bad["tourOverLoading"]:
                         print(f"  !! {label} {name}: TOOLTIP OVER A LOADING SCREEN")
 
-                shot(1, "welcome")
+                # ---------- 1. a genuinely fresh install, walked ----------
+                ctx, page = new_page(br, ins, installed, seeded=False)
+                page.on("pageerror", lambda e: errs.append(str(e)[:160]))
+                page.goto(url)
+                # The splash IS a screen and it is one of the ones asked
+                # for. The Firebase CDN is blocked here so it never clears
+                # itself, which for once is convenient.
+                page.wait_for_timeout(900)
+                shot(page, 0, "splash")
+                page.wait_for_timeout(2400)
+                page.evaluate("document.getElementById('splashscreen')?.remove()")
+                page.wait_for_timeout(400)
+
+                shot(page, 1, "welcome")
                 # the sign-in-with-a-code screen, then back
-                page.click(".next.ghost.cosmic-welcome-btn"); shot(2, "sign-in-with-code")
+                page.click(".next.ghost.cosmic-welcome-btn"); shot(page, 2, "sign-in-with-code")
+                page.fill(".synccode-entry-panel .searchbox", "MADI-0001"); page.wait_for_timeout(250)
+                shot(page, 2.5, "sign-in-with-code-filled")
                 page.click(".synccode-entry-panel .back-link"); page.wait_for_timeout(400)
                 # the create-account path
-                page.click(".cosmic-welcome-btn.playbtn");            shot(3, "whats-new")
-                page.click(".releasenotes-panel .next.playbtn");      shot(4, "what-this-actually-is")
-                page.click(".welcomeintro-panel .next.playbtn");      shot(5, "pick-your-class")
+                page.click(".cosmic-welcome-btn.playbtn");            shot(page, 3, "whats-new")
+                page.click(".releasenotes-panel .next.playbtn");      shot(page, 4, "what-this-actually-is")
+                page.click(".welcomeintro-panel .next.playbtn");      shot(page, 5, "pick-your-class")
                 page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)
-                page.click(".classselect-panel .next.playbtn");       shot(6, "enter-a-username")
+                shot(page, 5.5, "pick-your-class-picked")
+                page.click(".classselect-panel .next.playbtn");       shot(page, 6, "enter-a-username")
                 page.fill(".searchbox", "Madison"); page.wait_for_timeout(250)
-                # The armed state as well as the gated one: these two screens
-                # hide Continue until something is chosen, and where it lands
-                # once it appears is the thing worth looking at.
-                shot(6.5, "enter-a-username-filled")
-                page.click(".onboarding-shortform-panel .next.playbtn"); shot(7, "choose-a-character")
+                # The armed state as well as the gated one: these screens
+                # hide Continue until something is chosen, and where it
+                # lands once it appears is the thing worth looking at.
+                shot(page, 6.5, "enter-a-username-filled")
+                page.click(".onboarding-shortform-panel .next.playbtn"); shot(page, 7, "choose-a-character")
                 page.click(".avatarchar-option"); page.wait_for_timeout(250)
-                shot(7.5, "choose-a-character-picked")
-                page.click(".charselect-panel .next.playbtn");        shot(8, "youre-all-set")
+                shot(page, 7.5, "choose-a-character-picked")
+                page.click(".charselect-panel .next.playbtn");        shot(page, 8, "youre-all-set")
                 page.click(".onboarding-shortform-panel .next.playbtn")
-                # Wait for the loading overlay to actually finish rather than
-                # guessing. The old fixed 6s landed mid-overlay on a 10s
-                # "GENERATING PROFILE", and clicking on through it is what
-                # produced a screenshot of a Settings tour running on top of a
-                # loading screen.
-                page.wait_for_selector("#genprofile-overlay", state="detached", timeout=20000)
+                # The loading screen, caught while it is still up. Waiting
+                # for it to detach is what stops a Settings tour being
+                # photographed on top of it; catching it first is how it
+                # gets photographed at all.
+                page.wait_for_selector("#genprofile-overlay", timeout=8000)
+                page.wait_for_timeout(900)
+                shot(page, 8.5, "generating-profile")
+                page.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
                 page.wait_for_timeout(1200)
-                shot(9, "home-with-tour", bar_ok=True)
-                for _ in range(14):                            # click the tour through
+                shot(page, 9, "home-with-tour", bar_ok=True)
+                for _ in range(16):                            # click the tour through
                     if not page.evaluate("()=>!!document.getElementById('tour-next')"): break
                     page.evaluate("()=>document.getElementById('tour-next').click()")
                     page.wait_for_timeout(260)
+                page.wait_for_timeout(900)
+                shot(page, 10, "home-brand-new", bar_ok=True)
+                ctx.close()
+
+                # ---------- 2. a used account, walked from Home ----------
+                # Everything past onboarding is shot against a real one. A
+                # fresh sign-up renders Profile, Badges, Ranks and all three
+                # boards as their EMPTY states, which is half the app
+                # photographed as "nothing here yet".
+                ctx, page = new_page(br, ins, installed, seeded=True)
+                page.on("pageerror", lambda e: errs.append(str(e)[:160]))
+                page.goto(url); page.wait_for_timeout(3000)
+                page.evaluate("document.getElementById('splashscreen')?.remove()")
                 page.wait_for_timeout(600)
-                shot(10, "home", bar_ok=True)
+                shot(page, 20, "home", bar_ok=True)
+
+                def home(pg):
+                    pg.evaluate("()=>document.getElementById('bottomtab-home').click()")
+                    pg.wait_for_timeout(500)
+
+                # the daily question, and Home's own "?" is how you get there
+                page.click(".daily-question-fab"); page.wait_for_timeout(700)
+                shot(page, 21, "daily-question", bar_ok=False)
+                home(page)
+
+                # Start Studying -> mode -> units
+                page.click(".panel.home.screen-home-actual .playbtn"); page.wait_for_timeout(600)
+                shot(page, 22, "mode-selection", bar_ok=True)
+                page.click(".modeselect .modecard"); page.wait_for_timeout(600)
+                shot(page, 23, "unit-selection", bar_ok=True)
+                # the start sheet that unit selection opens
+                page.evaluate("""()=>{const b=[...document.querySelectorAll('.screen-setup button')]
+                  .find(x=>/start/i.test(x.textContent)); if(b) b.click();}""")
+                page.wait_for_timeout(700)
+                shot(page, 23.5, "unit-selection-start-sheet", bar_ok=True)
+                home(page)
+
+                # the three boards
+                page.evaluate("()=>document.getElementById('bottomtab-rewards').click()")
+                page.wait_for_timeout(900)
+                for i, (key, name) in enumerate([("level", "level"), ("badges", "badges"),
+                                                 ("hundos", "hundos")]):
+                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
+                      if(b) b.click();}""", i)
+                    page.wait_for_timeout(700)
+                    shot(page, 24 + i * 0.1, "rankings-" + name, bar_ok=True)
+
+                # the four Profile tabs
+                page.evaluate("()=>document.getElementById('bottomtab-profile').click()")
+                page.wait_for_timeout(900)
+                # Whole numbers per tab, halves for a scrolled view. The
+                # first version numbered them 25 + i/10 and added 0.05 for
+                # the scroll, which rounds two different screens to the same
+                # filename - one silently overwrote the other.
+                for i, name in enumerate(["profile", "badges", "stats", "ranks"]):
+                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
+                      if(b) b.click();}""", i)
+                    page.wait_for_timeout(800)
+                    shot(page, 25 + i, "profile-" + name, bar_ok=True)
+                    if name in ("badges", "ranks"):
+                        page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
+                        page.wait_for_timeout(450)
+                        shot(page, 25 + i + 0.5, "profile-" + name + "-scrolled", bar_ok=True)
+                        page.evaluate("()=>window.scrollTo(0,0)"); page.wait_for_timeout(300)
+
+                # settings, top and bottom
                 page.evaluate("()=>document.getElementById('bottomtab-settings').click()")
-                shot(11, "settings", bar_ok=True)
+                page.wait_for_timeout(900)
+                shot(page, 29, "settings", bar_ok=True)
+                page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
+                page.wait_for_timeout(500)
+                shot(page, 29.5, "settings-scrolled", bar_ok=True)
+
                 real = [e for e in errs if not any(k in e for k in
                         ("firebase", "firestore", "gstatic", "Failed to fetch", "net::"))]
                 print(f"{label}: done" + (f"  ERRORS {real[:2]}" if real else ""))

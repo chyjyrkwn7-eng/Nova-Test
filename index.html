@@ -2446,28 +2446,11 @@
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
   }
   .rank-place{ font-family:var(--mono); font-size:.85rem; font-weight:800; color:var(--soft); width:2.2rem; flex-shrink:0; }
-  /* position:relative on the WRAP, not the avatar, so the level badge
+  /* position:relative on the WRAP, not the avatar, so the rank emblem
      can hang over the avatar's edge without being clipped by it. */
   .rank-avatar-wrap{ position:relative; width:2.6rem; height:2.6rem; flex-shrink:0; }
   .rank-avatar{ display:block; width:100%; height:100%; }
   .rank-avatar svg{ width:100%; height:100%; }
-  /* The level, on the avatar's bottom-right corner. Small, but a
-     separate solid chip with its own ring rather than bare text: over
-     an avatar's own artwork, plain text lands on whatever colour
-     happens to be underneath it and stops being readable on exactly
-     the characters with light patches. Fixed colours for the same
-     reason the medals use fixed ones - var(--accent) is the VIEWER's
-     unlocked theme, so it would recolour everyone else's level to
-     whatever the person looking happens to have equipped. */
-  .rank-level{
-    position:absolute; right:-.22rem; bottom:-.22rem;
-    min-width:1.15rem; height:1.15rem; padding:0 .22rem;
-    display:flex; align-items:center; justify-content:center;
-    border-radius:999px; box-sizing:border-box;
-    background:#2563EB; color:#FFFFFF;
-    font-family:var(--mono); font-size:.62rem; font-weight:800; line-height:1;
-    border:1.5px solid var(--paper);
-  }
   .rank-name-wrap{ display:flex; flex-direction:column; min-width:0; flex:1; }
   .rank-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rank-stat{ font-size:.78rem; color:var(--soft); }
@@ -30976,7 +30959,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-76";
+const APP_BUILD = "2026-09-22-77";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -34540,14 +34523,14 @@ function renderRankingRows(rows, entries, board, opts){
     const avatar = document.createElement("span");
     avatar.className = "rank-avatar";
     avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
-    /* The level sits on the avatar's corner rather than beside it, so a
-       long username keeps the whole rest of the row. It is on every
-       board, not just the Level one - it is who someone is, the same
-       way the avatar is, rather than that board's ranked number. */
-    const lvl = document.createElement("span");
-    lvl.className = "rank-level";
-    lvl.textContent = Number(entry.level) || 1;
-    avatarWrap.append(avatar, lvl);
+    avatarWrap.appendChild(avatar);
+    /* The rank hangs off the corner, through the one builder every list
+       of people uses. These three boards had their OWN level chip here
+       and never called it - so when the level number was taken off
+       everywhere, it stayed on the screen it is most visible on, and
+       the rank emblem never arrived there at all. Two row builders for
+       one idea is how that happens; there is one now. */
+    decorateAvatar(avatarWrap, entry.level, entry.badges, entry.mystery);
 
     const nameWrap = document.createElement("div");
     nameWrap.className = "rank-name-wrap";

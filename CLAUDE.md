@@ -1036,6 +1036,14 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   is correct: there is no rank to show and a placeholder would say
   otherwise. `check-behaviour` and `check-vroom` both assert its
   absence, so it cannot come back by accident.
+  **Two row builders for one idea is how a fix misses the screen it
+  matters most on.** The three rankings boards had their *own* row
+  markup and never called `decorateAvatar()` — so when the level chip
+  was taken off everywhere, it stayed on the boards, which is the place
+  anyone actually looks at other people, and the rank emblem never
+  arrived there at all. Checking the builder is not checking the screen:
+  `check-behaviour` asserts against a real `.rank-row` now, built by the
+  app, rather than against `decorateAvatar()` in isolation.
 
 ### Badges
 

@@ -462,6 +462,26 @@ def check_ranks(br):
     check("no level number beside the character", not row["level"], row)
     check("somebody below the first rank gets nothing at all",
           row["unranked"] and row["unrankedExtras"] == 0, row)
+
+    # And on the REAL screen, not just through the helper. The three
+    # Rankings boards had a second row builder of their own with its own
+    # level chip, so when the number came off everywhere it stayed on the
+    # screen it is most visible on - and the rank emblem never arrived
+    # there at all. Testing the builder alone is what missed it.
+    # With no network the board carries exactly the row liveEntries()
+    # synthesises for you, which is one row and enough to check.
+    pg.evaluate("()=>{ store.leaderboardOptIn = true; syncCode = 'MADI-0001';"
+                "      document.getElementById('bottomtab-rewards').click(); }")
+    pg.wait_for_timeout(1200)
+    board = pg.evaluate("""()=>{
+      const rows = [...document.querySelectorAll('.rank-row')];
+      return {rows:rows.length,
+              marks:rows.filter(r=>r.querySelector('.lb-rankmark')).length,
+              levelChips:document.querySelectorAll('.rank-level').length};}""")
+    check("a rankings row carries the rank emblem and no level chip",
+          board["rows"] >= 1 and board["marks"] == board["rows"]
+          and board["levelChips"] == 0, board)
+    ctx.close()
     ctx.close()
 
 
