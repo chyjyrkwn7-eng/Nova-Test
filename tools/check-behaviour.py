@@ -414,22 +414,30 @@ def check_ranks(br):
 
     # One column on a phone and the card on its side there; upright and
     # four across from 46rem. Two short cards per row was the phone
-    # layout and it was reported as atrocious.
+    # layout and it was reported as atrocious. The card is a GRID, so
+    # what turns is the area map, not a flex direction: the name sits
+    # BESIDE the emblem on a phone and ABOVE it on a tablet, which no
+    # flex direction can express with one piece of markup.
     lay = pg.evaluate("""()=>{const c=document.querySelector('.rankcard');
-      return {wide:getComputedStyle(c).flexDirection};}""")
-    check("the card stands upright on a tablet", lay["wide"] == "column", lay)
+      const r=s=>c.querySelector(s).getBoundingClientRect();
+      return {areas:getComputedStyle(c).gridTemplateAreas,
+              nameAbove: r('.rankcard-head').bottom <= r('.rankcard-art').top + 1};}""")
+    check("the name sits above the emblem on a tablet",
+          lay["nameAbove"] and "art" in lay["areas"], lay)
     ctx.close()
     ctx2, pg2 = booted(br, 393, 852, seed=seed)
     pg2.evaluate("()=>showProfile('ranks')")
     pg2.wait_for_timeout(1200)
     lay2 = pg2.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankcard')];
       const t=document.querySelector('.ranktrack').getBoundingClientRect();
-      return {dir:getComputedStyle(cs[0]).flexDirection,
-              perRow:cs.filter(c=>Math.abs(c.getBoundingClientRect().top -
-                                           cs[0].getBoundingClientRect().top) < 2).length,
-              full:Math.round(cs[0].getBoundingClientRect().width) >= Math.round(t.width) - 2};}""")
-    check("one full-width row per rank on a phone",
-          lay2["dir"] == "row" and lay2["perRow"] == 1 and lay2["full"], lay2)
+      const c=cs[0];
+      const r=s=>c.querySelector(s).getBoundingClientRect();
+      return {beside: r('.rankcard-head').left >= r('.rankcard-art').right - 1,
+              perRow:cs.filter(x=>Math.abs(x.getBoundingClientRect().top -
+                                           c.getBoundingClientRect().top) < 2).length,
+              full:Math.round(c.getBoundingClientRect().width) >= Math.round(t.width) - 2};}""")
+    check("one full-width row per rank on a phone, name beside the emblem",
+          lay2["beside"] and lay2["perRow"] == 1 and lay2["full"], lay2)
     ctx2.close()
     ctx, pg = booted(br, 834, 1194, seed=seed)
     pg.evaluate("()=>showProfile('ranks')")

@@ -947,15 +947,46 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   arms**, never on their axes, because a sparkle on an arm's axis is
   that arm made longer, which is a spoke again.
   `RANK_STAR` is the whole progression as a table — arms, reach, waist,
-  a half-step-rotated burst behind, a soft oversized corona, glints,
-  core — and reading down any column it only ever grows. Iron is a
-  four-point spark; Crimson is the burst the app is named after.
+  a half-step-rotated burst behind, a concentric bevel, a second star,
+  a bloom, glints, scattered sparks, lens streaks, core, halo — and
+  reading down any column it only ever grows. Iron is a four-point
+  spark; Crimson is the burst the app is named after.
+  Three of those fields exist because the top three ranks stopped
+  escalating: **`bevel`** is a brighter concentric copy of the same star
+  inside itself, which is the facet line a cut stone has and the
+  cheapest depth there is; **`star2`** is a second star rotated half a
+  step, sixteen visible points instead of eight, kept for the top two
+  only because busier is exactly what the climax of a ladder should be
+  and exactly what the bottom of one should not; and **`flare`/`vflare`**
+  are lens streaks through the centre, always at **different** lengths,
+  because equal ones make a cross and a cross is a plus sign, not a
+  flare. The scattered sparks go in mirrored pairs at varying radii —
+  evenly spaced ones at one radius are a ring of dots, and a ring of
+  dots round a star is a wheel again.
 - **A locked rank still shows its colour.** The emblem is always drawn in
   the rank's own colour and the card only turns it down; it used to
   redraw in grey with the name in `--soft`, so four of the seven cards
   were the same colourless card and you could not see what you were
   heading towards. `check-behaviour` asserts all seven `--rank-color`
   values are distinct and set.
+- **A rank card has a backdrop, in three layers and none of them an
+  image**: the rank's own emblem enormous and almost invisible behind
+  everything, a diagonal wash of its colour, and a vignette to stop the
+  wash reaching the corners. The watermark reuses `buildRankEmblemSVG`
+  rather than being a second drawing, so the two can never disagree, and
+  it has to be **too big to read as an object** — at 78% it sat inside
+  the card as a smaller second emblem below the real one, which is a
+  duplicate, not a watermark.
+- **The card is a GRID, and that is what lets one piece of markup be two
+  layouts.** The name sits BESIDE the emblem on a phone and ABOVE it on
+  a tablet, and no `flex-direction` can express that with one DOM order
+  — `grid-template-areas` can. On the wide layout the header strip pulls
+  back out through the card's own padding to run edge to edge with a
+  rule under it, the way the reference's tier name does.
+- **The glow comes off the emblem with a CSS `drop-shadow`, not an SVG
+  filter.** SVG filters are the one feature that has bitten this app on
+  real iOS hardware; `filter:drop-shadow()` on the element is safe and is
+  what the hero already animates.
 - **The meter belongs to the rank you are climbing to, and nothing
   else.** Every unreached rank carried one, which put a half-full bar on
   Crimson while you were working on Gold — progress towards something
