@@ -933,12 +933,38 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   needs all three Secret Flares, so without it every remote person is
   capped at Elite however far they have actually got. An older document
   lacking the field reads as 0 and self-heals on that person's next push.
-- **Every rank is the same mark at a different stage of its life, and
-  the mark is a burst of light.** Two sets came before it. The app's V
-  inside a frame that gained wings and horns escalated but had nothing
-  to do with the app it belongs to. The one after that was a star inside
-  a corona ring with rays coming off it, and it **read as a wheel** —
-  which is what a ring plus evenly spaced radial lines always reads as.
+- **SEVEN DIFFERENT MARKS, not one mark at seven sizes.** Three sets
+  came before. The app's V inside a frame that gained wings and horns
+  escalated but had nothing to do with the app. The one after that was a
+  star inside a corona ring with rays coming off it, and it **read as a
+  wheel** — which is what a ring plus evenly spaced radial lines always
+  reads as. The third was generated from a single table (same star, more
+  points, bigger radius) and came back as *"I dont like how they are all
+  nearly identical just different in size, that's not the idea i had in
+  mind."*
+  **The escalation is a change of KIND, not of size.** Iron, Bronze and
+  Silver are service insignia — one, two and three chevrons, flat,
+  struck from metal, centred on the frame whatever the count. Gold is
+  the turn: the chevrons collapse to a single base and a star takes the
+  emblem. Sapphire drops the base entirely for a cut stone held between
+  two crescents. Amethyst crowns it, doubles its points and throws
+  sparks. **Supernova** is the app going off — a white-hot core rather
+  than a coloured one, a blast shell drawn as broken arcs, flares longer
+  than the frame and debris past the shell.
+  `check-behaviour` asserts this structurally rather than by eye: the
+  bottom three contain a straight-segment path with no curve in it, only
+  the top one contains an arc command, and no two ranks produce the same
+  shape signature.
+- **The glow is a CIRCLE filled with the falloff gradient, not a burst
+  shape filled with it.** A twelve-point burst at a wide waist is a
+  bulging rounded square, and filled with a soft gradient that is exactly
+  what it looked like — a coloured tile behind the emblem rather than
+  light coming off it.
+- **Reflecting an angle is `PI - th`, and the offset from straight up is
+  not the angle.** Every "mirrored pair" of sparks in two successive
+  versions landed both copies on the SAME side, because `[a, PI - a]`
+  was being applied to the offset from `UP` rather than to the absolute
+  angle. Visible as a star with all its sparks on the right.
   **Nothing in the current one is a circle or a spoke.** The arms are
   concave-sided: each side is a quadratic curve whose control point sits
   on the bisector at `waist`, so the tips are sharp and the sides are
@@ -946,23 +972,17 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   mistaken for a rim. The small sparkles sit **in the gaps between the
   arms**, never on their axes, because a sparkle on an arm's axis is
   that arm made longer, which is a spoke again.
-  `RANK_STAR` is the whole progression as a table — arms, reach, waist,
-  a half-step-rotated burst behind, a concentric bevel, a second star,
-  a bloom, glints, scattered sparks, lens streaks, core, halo — and
-  reading down any column it only ever grows. Iron is a four-point
-  spark; Crimson is the burst the app is named after.
-  Three of those fields exist because the top three ranks stopped
-  escalating: **`bevel`** is a brighter concentric copy of the same star
-  inside itself, which is the facet line a cut stone has and the
-  cheapest depth there is; **`star2`** is a second star rotated half a
-  step, sixteen visible points instead of eight, kept for the top two
-  only because busier is exactly what the climax of a ladder should be
-  and exactly what the bottom of one should not; and **`flare`/`vflare`**
-  are lens streaks through the centre, always at **different** lengths,
-  because equal ones make a cross and a cross is a plus sign, not a
-  flare. The scattered sparks go in mirrored pairs at varying radii —
-  evenly spaced ones at one radius are a ring of dots, and a ring of
-  dots round a star is a wheel again.
+  **Lens streaks are always at different lengths** horizontally and
+  vertically, because equal ones make a cross and a cross is a plus
+  sign, not a flare. **Scattered sparks go in mirrored pairs at varying
+  radii** — evenly spaced ones at one radius are a ring of dots, and a
+  ring of dots round a star is a wheel again.
+- **The top rank is called Supernova**, and that is the one place a rank
+  is not named after its colour. Asked for by name: *"the very last one
+  needs to be called supernova and it needs to be very cool."* Its key
+  is still `titan` and its colour is still `#E23B3B`. It shares a name
+  with its own flare, which the rule about ranks and rewards would
+  normally forbid — here it is the point: the rank IS the app going off.
 - **A locked rank still shows its colour.** The emblem is always drawn in
   the rank's own colour and the card only turns it down; it used to
   redraw in grey with the name in `--soft`, so four of the seven cards
@@ -1005,14 +1025,31 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   rebuild was asked for. A meter appears only on a rank you have not
   reached; on a reached one it is a bar that is always full, which is
   noise.
-- **One full-width row per rank on a phone; the upright card is for
-  46rem and up.** Two short cards per row was the phone layout and it
-  was reported as atrocious, fairly: a 152px column wraps "Vanguard
-  emblem by your name" onto four lines, and seven of those stacked two
-  abreast is a wall with no reading order. A phone has width and not
-  height, so the card lies on its side there — emblem left, everything
-  else beside it — and the seven read top to bottom as the climb they
-  are. Same markup either way; only `flex-direction` turns.
+- **One full-width row per rank, at every width.** Two short cards per
+  row was the phone layout and it was reported as atrocious; the upright
+  four-across card that replaced it on a tablet was reported next — seven
+  of them wrap four-then-three, so the climb reads left to right and then
+  left to right again. A ladder has one reading order. The phone
+  arrangement was already the simple one and was already liked (*"I also
+  like how you have it shown on the iPhone, you are making it a
+  scrollable screen, that's a great idea"*), so a wide screen gets the
+  same thing with more room rather than a second design: only sizes
+  change at 46rem and 62rem, no grid areas move.
+- **The tab is called "Ladder", not "Ranks".** The bottom bar already
+  says Rankings and two things with the same name was reported as
+  confusing. Renaming the bottom tab was the other option and is the
+  worse one — "Rankings" there is a measured WIDTH decision (see
+  `showRankings`) and "Leaderboard" does not fit a 320px phone's bar.
+  The tab KEY is still `"ranks"`, and `"ladder"` was already an accepted
+  alias, so nothing stored or linked had to move.
+- **There is no Secret Flares box on this tab.** It was the one thing on
+  the screen that was not a rank, with its own header, its own progress
+  bar and its own vocabulary, and it came off per explicit request
+  (*"this rank screen needs to be very simple to understand ... very
+  clean"*). The hunt is untouched: the flares are still hidden in the
+  app, finding all three still unlocks the Eclipse colour, and the top
+  rank still needs them — which its own card says, because its
+  requirement line lists them like any other requirement.
 
 - **Only list rewards that exist.** Each card names three: the flare on
   Home, the theme colour, and the rank's emblem beside your name. The
@@ -1072,8 +1109,48 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   note rather than the spin, because the global
   `[data-reduce-motion="true"] *{animation:none}` would otherwise strip
   the keyframes and leave a badge sitting motionless behind a dim.
-- **These are ENAMEL IN A SILVER SETTING, not gems and not flat
-  tokens.** One pass cut every badge like a stone — a pavilion of shaded
+- **These are STAINED GLASS IN A BLUE-SILVER SETTING.** They were
+  enamel in a neutral silver setting for one round and came back as
+  *"it almost looks like the colored stuff is colored stained glass,
+  within the nice blue/silver looking metal and its all shiny."* Two
+  things make that true rather than described: every pane carries its
+  own light (bright where the light falls, deep where it does not,
+  which is what a translucent material does and a painted one does
+  not), and the divisions between panes are **leading** — one thin line
+  of the same metal — rather than each pane being a separately rimmed
+  object stacked on the one below.
+- **No metal on metal.** The stacking above is exactly what came back as
+  *"some badges have details or pieces where it looks like metal is
+  sitting on metal"*: the old drawing gave every inner field a dark
+  stroke AND a silver stroke, then laid a metal motif on a dark underlay
+  on top of that — three rings of metal and an ornament, on a badge 60px
+  wide. The motif is leading now: drawn once, in the metal, no underlay.
+  Leading does not need separating from the thing it divides.
+- **No pane may be near-black or near-white**, and `glassTint()` is the
+  floor and the ceiling. Glass works because light gets through it, so a
+  black pane in a silver setting is a hole; and the setting is blue-
+  silver now, so a pale pane has nothing to be. Both ends are clamped
+  where the colour is USED rather than where it is declared, so the
+  families themselves stay as they are.
+- **`badgeHexRgb` takes `rgb(r,g,b)` as well as `#RRGGBB`, and that is
+  load-bearing.** The secondary pane colour IS a `badgeShade()` result
+  for half the sixteen units, so anything that shades it a second time
+  parsed `"rgb(..."` as hex, got NaN for all three channels and painted
+  the pane BLACK. It worked for as long as that colour was only ever a
+  flat fill; the moment it became the input to a gradient ramp, four
+  badges lost their inner colour outright.
+- **Corners are rounded, on the badge AND on its slot.** A hard-cornered
+  polygon cut into a lining reads as a vector path, which is what *"the
+  empty cut outs look bad and inconsistent and not very smooth"* was
+  pointing at. The radius is clamped to under half the shorter edge at
+  each vertex so a star's point stays a point. Round one and not the
+  other and they stop fitting each other — it is one outline.
+- **The recess is not black.** It is the lining seen in shadow, so a
+  desaturated blue-grey in the same family as the metal, with wide
+  low-opacity strokes for the lip. A hairline reads as a drawn outline;
+  material giving way is soft.
+- The older note, still true about the SETTING: it is not gems and not
+  flat tokens. One pass cut every badge like a stone — a pavilion of shaded
   faces around a bright table — and it read as sixteen jewels. The next
   led with a heavy black keyline and put a thin pale line outside it,
   which is backwards: the black was the dominant edge, so what the
@@ -1359,9 +1436,11 @@ re-evaluated on the next check.
 - **Tabbed screens (Rankings, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
-  Profile's four tabs are **Profile, Badges, Stats, Ranks**, driven off
+  Profile's four tabs are **Profile, Stats, Badges, Ladder**, driven off
   one `profileTabDefs` list rather than four hand-written copies of the
-  same four lines. `"achievements"`, `"ladder"` and `"unlocks"` are all
+  same four lines. `PROFILE_TABS` is the swipe order and has to carry
+  the same order as the buttons — a thumb swipe that skips a tab is
+  worse than no swipe. `"achievements"`, `"ladder"` and `"unlocks"` are all
   still accepted as tab names, so every name this tab has ever had lands
   on it rather than falling back to Profile.
   It was five for a while, and five labels only ever fitted a 375px phone
@@ -1378,6 +1457,14 @@ re-evaluated on the next check.
 - **Shared classes are genuinely shared** (`.sect`, `.slab`, `.iconbtn`,
   `.panel`). A one-screen fix needs a screen-level ancestor scope; editing the
   bare class changes every screen, usually by accident.
+- **The Profile tab is one card, not two.** The identity block (name,
+  character) and the level block (level, badges, XP bar) were two slabs
+  and are one now, with a rule between them — *"maybe the top two boxes,
+  the one with the level and the other with the name, could be joined"*.
+  The consecutive-day streak came off it entirely. The class calendar
+  and the recent test review sit BELOW the card as two destination rows:
+  they are places to go, not facts about you, and inside the card they
+  were the only tappable things in a block of read-only text.
 - **Theming** is CSS custom properties keyed off `data-theme` and `data-accent`
   on `<html>`. Write the rule once, then override with a
   `[data-theme=...]`/`[data-accent=...]` prefixed version. Never a one-off
