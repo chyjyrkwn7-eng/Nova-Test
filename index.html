@@ -8577,16 +8577,29 @@
      colour swatches under it, so the two rows read as one block. Four
      equal FULL-WIDTH columns on a phone; eight on a tablet, which is one
      row for all eight characters. */
+  /* SIX ACROSS, NOT FOUR, NOW THAT THERE ARE TWELVE.
+     Four across was right for eight characters (two even rows). Twelve
+     at four across is THREE rows, which added ~75px to a screen that
+     already scrolls on a small phone - measured, it pushed the level
+     card's own top off the top of the viewport on an SE. Six across is
+     two even rows again, the panel goes back to the height it was, and
+     the grid still spans the full width of the swatches below it, which
+     is what "it should be as wide as the colors below it" actually
+     asked for. Each cell is ~55px on a 375px phone, comfortably over
+     the 44px tap-target floor. */
   .avatarchar-grid-appearance{
-    grid-template-columns:repeat(4, minmax(0, 1fr));
-    justify-items:center; gap:1rem .6rem;
+    grid-template-columns:repeat(6, minmax(0, 1fr));
+    justify-items:center; gap:1rem .4rem;
   }
   @media (min-width:27rem){
     .badge-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
   }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
-    .avatarchar-grid-appearance{ grid-template-columns:repeat(8, minmax(0, 1fr)); gap:0 .5rem; }
+    /* Six here too, for the same reason: eight columns with twelve
+       items is a row of eight and a ragged row of four, which reads as
+       a mistake. Two rows of six reads as laid out. */
+    .avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); gap:.6rem .5rem; }
     /* 6rem, not the 7rem an earlier pass tried: that one came back as
        "absolutely massive". This is a third bigger than what a large
        screen was actually getting and still short of that. */

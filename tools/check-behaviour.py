@@ -88,7 +88,7 @@ LAUNCH_LIE = """
 
 USED_ACCOUNT = (
     '{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-    '"leaderboardOptIn":true,"lastModified":1700000000000,"seenProfileTour":true,'
+    '"leaderboardOptIn":true,"lastModified":1700000000000,"seenProfileTour":true,"tourRev":99,'
     '"testHistory":[{"ts":1700000000000,"mode":"exam","label":"Practice test",'
     '"score":92,"total":25,"correct":23,"units":["1"],"answers":[]}],'
     '"lifetime":{"points":14820,"answered":5400,"correct":4980,"drillPlays":64,'
@@ -305,7 +305,7 @@ def check_badges(br):
 def check_cutscene(br):
     print("\n5. queued badges play on the main menu, back to back")
     seed = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-            '"lastModified":1700000000000,"seenProfileTour":true,'
+            '"lastModified":1700000000000,"seenProfileTour":true,"tourRev":99,'
             '"pendingBadgeUnlocks":["Professionalism and Ethics","TCOLE Rules"],'
             '"unitPerfects":{"Professionalism and Ethics":35,"TCOLE Rules":35},'
             '"lifetime":{"points":14820,"correct":880,"perfectTests":141}}')
@@ -346,7 +346,7 @@ def check_ranks(br):
     # Level 23 (12,400 XP on the 300 @ +5% curve) and 4 badges reaches
     # Veteran (20 / 4) and leaves Vanguard (30 / 6) as the next one.
     seed = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-            '"lastModified":1700000000000,"seenProfileTour":true,'
+            '"lastModified":1700000000000,"seenProfileTour":true,"tourRev":99,'
             '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
             '"TCOLE Rules":35,"Penal Code":35},'
             '"lifetime":{"points":12400,"correct":4980,"perfectTests":141}}')
