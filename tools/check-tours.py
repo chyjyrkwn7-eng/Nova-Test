@@ -73,7 +73,7 @@ SCENARIOS = [
     {"key": "settings", "flag": "seenSettingsTour", "source": "showAppearance",
      "setup": "showAppearance()", "note": "one step per section"},
     {"key": "profile", "flag": "seenProfileTour", "source": "showProfile",
-     "setup": "showProfile('profile')", "note": "avatar, calendar, Stats, Badges, Ladder"},
+     "setup": "showProfile('profile')", "note": "avatar, calendar, Stats, Badges, Rank"},
     {"key": "rankings", "flag": "seenRewardsTour", "source": "showRankings",
      "setup": "showRankings()", "note": "the three boards, search, Find me"},
     # summarize() runs at the end of a test and needs a finished run behind

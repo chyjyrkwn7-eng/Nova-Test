@@ -87,7 +87,7 @@ with sync_playwright() as pw:
     got = pg.evaluate("()=>({code:syncCode, ls:localStorage.getItem('class26e.synccode')})")
     check("a code is issued at boot", bool(got["code"]) and got["ls"] == got["code"], str(got))
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
-    pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(400)
+    pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
     pg.evaluate("()=>document.querySelector('.rank-me-btn').click()"); pg.wait_for_timeout(300)
     res = pg.evaluate("""()=>({me:!!document.querySelector('[data-me="1"]'),
         flash:!!document.querySelector('.rank-flash'),
@@ -102,7 +102,7 @@ with sync_playwright() as pw:
                         "localStorage.setItem('class26e.syncoff','1');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
-    pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(400)
+    pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
     pg.evaluate("()=>document.querySelector('.rank-me-btn').click()"); pg.wait_for_timeout(300)
     res = pg.evaluate("""()=>({code:syncCode,
         msg:(document.querySelector('.daily-alert')||{}).textContent||''})""")
@@ -119,7 +119,7 @@ with sync_playwright() as pw:
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % hidden)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
-    pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(400)
+    pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
     pg.evaluate("()=>document.querySelector('.rank-me-btn').click()"); pg.wait_for_timeout(300)
     msg = pg.evaluate("()=>(document.querySelector('.daily-alert')||{}).textContent||''")
     check("Find me names the Settings toggle", "Show me in the rankings" in msg, repr(msg))

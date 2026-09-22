@@ -530,6 +530,22 @@ iPad in landscape. `min(36rem, 48vh)` serves both. The same applies to the
 margins around it: fixed `rem` gaps that look right at 1194 are what tip a
 1024-tall iPad over, so they are `min(2.4rem, 3vh)` and so on.
 
+**The sign-up picker is FOUR across, and that is a different screen
+from the one the six-column rule was written for.** Six was right while
+it showed all twelve characters — two even rows. The locked four came
+off it (they are hidden at sign-up now), and eight items in six columns
+is a row of six and a ragged row of two, reported as uneven. Four is two
+even rows again. **The room that frees went into the rows, not into the
+characters**: `max-width` stays at `3.7rem` on a phone and `6rem` from
+tablet up, because both numbers were arrived at from device reports —
+`7rem` came back as "absolutely massive" and the phone size was signed
+off as it stands. The grid is a flex child of an `align-items:center`
+panel, so it sizes to its own content and that `max-width` is what
+decides how wide it sits; raising it is safe for overflow (fit-content
+clamps to the panel, which is why a 320px phone already renders 54.6px
+tracks against a 59.2px ceiling) but it is a LOOK change, not a bug fix,
+so it wants asking about rather than assuming.
+
 **A GRID'S COLUMN COUNT IS A HEIGHT DECISION.** The character picker was
 four across, which is two even rows of eight. Adding the four rank
 characters made it twelve — three rows — and that added ~75px to a
@@ -1183,13 +1199,14 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   scrollable screen, that's a great idea"*), so a wide screen gets the
   same thing with more room rather than a second design: only sizes
   change at 46rem and 62rem, no grid areas move.
-- **The tab is called "Ladder", not "Ranks".** The bottom bar already
-  says Rankings and two things with the same name was reported as
-  confusing. Renaming the bottom tab was the other option and is the
-  worse one — "Rankings" there is a measured WIDTH decision (see
-  `showRankings`) and "Leaderboard" does not fit a 320px phone's bar.
-  The tab KEY is still `"ranks"`, and `"ladder"` was already an accepted
-  alias, so nothing stored or linked had to move.
+- **The bottom tab is "Leaderboard" and the Profile tab is "Rank".**
+  Both were renamed in the end. This note used to say Leaderboard would
+  not fit a 320px phone's bar and that renaming the bottom tab was the
+  worse option — **measured after the change, the bar is 296px wide
+  inside a 320px screen and no label clips**, so that was a guess wearing
+  the clothes of a measurement. The Profile tab KEY is still `"ranks"`,
+  and `"ladder"` was already an accepted alias, so nothing stored or
+  linked had to move. `showRankings()` is still the function name.
 - **There is no Secret Flares box on this tab, and there is no hunt
   behind it either.** The box came off first, as the one thing on the
   screen that was not a rank (*"this rank screen needs to be very simple
@@ -1563,16 +1580,20 @@ re-evaluated on the next check.
   "Finished" and goes to the test Setup screen, which no tab reaches, and the
   end-of-test summary force-hides the tab bar (`window.forceHideBottomTabs`),
   so it has no other exit.
-- **Tabbed screens (Rankings, Profile)** share one pattern: a
+- **Tabbed screens (Leaderboard, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
-  Profile's four tabs are **Profile, Stats, Badges, Ladder**, driven off
+  Profile's four tabs are **Profile, Stats, Badges, Rank**, driven off
   one `profileTabDefs` list rather than four hand-written copies of the
   same four lines. `PROFILE_TABS` is the swipe order and has to carry
   the same order as the buttons — a thumb swipe that skips a tab is
   worse than no swipe. `"achievements"`, `"ladder"` and `"unlocks"` are all
   still accepted as tab names, so every name this tab has ever had lands
   on it rather than falling back to Profile.
+  **`check-behaviour` asserts those four labels**, and it went red on
+  the build that renamed them — a gate that encodes a decision has to be
+  re-read whenever the decision changes, or it fails the app for being
+  right.
   It was five for a while, and five labels only ever fitted a 375px phone
   by being tightened for five specifically (`:has(.iconbtn:nth-child(5))`)
   and allowed to step just outside the panel's side padding below 26rem;
@@ -1811,11 +1832,20 @@ iPad while looking perfectly normal on a phone). Madison's own two are an
 the reference devices, and a change that moves them needs saying out loud.
 
 **Use `tools/shoot-flow.py`, do not mount screens.** It clicks through from a
-fresh install on seven devices and fails loudly on a tab bar during
+fresh install and fails loudly on a tab bar during
 onboarding, a missing tab bar on Home, or a tooltip over a loading screen. It
 also draws the status bar, because a screenshot with an unexplained black band
 at the top has now been misread twice — once as a tab-bar bug, once as the
 update banner "not aligned to the top".
+
+**It shoots the two reference devices by default, and that was asked for**
+— *"Send me only screenshots for everything from the iPad Pro and
+iPhone"* — because seven devices' worth of a whole walk is more than
+anyone reads. The other five are still in `DEVICES` and still correct:
+`--all` runs the lot and a substring (`shoot-flow.py ipad-mini`) runs
+one. That is a change to what gets SENT, not to what gets CHECKED — the
+whole matrix is still the bar, and `sweep-layout.py`,
+`check-positions.py` and `check-fixes.py` still run every device.
 
 Fixed-position elements render oddly in Playwright `fullPage` screenshots, so
 screenshot the viewport and scroll, and measure with `getBoundingClientRect()`

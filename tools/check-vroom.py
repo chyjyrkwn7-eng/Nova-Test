@@ -97,8 +97,32 @@ FAKE_FIRESTORE = """
               return { exists: !!d, id: id, data: () => JSON.parse(JSON.stringify(d || {})) };
             }); },
             update(fields){ return later(() => {
+              /* Read AND write inside the same tick of this callback, so an
+                 update behaves the way Firestore's does: whatever is on
+                 disk when it runs is what it appends to. That is what lets
+                 the concurrent-chat check below mean something - two sends
+                 issued at the same moment resolve one after the other
+                 here, and arrayUnion has to survive that. */
               const d = read(coll, id) || {};
-              Object.keys(fields).forEach(k => setDeep(d, k, fields[k]));
+              Object.keys(fields).forEach(k => {
+                const v = fields[k];
+                if(v && typeof v === "object" && v.__arrayUnion){
+                  const parts = k.split(".");
+                  let cur = d;
+                  for(let i = 0; i < parts.length - 1; i++){
+                    if(typeof cur[parts[i]] !== "object" || cur[parts[i]] === null) cur[parts[i]] = {};
+                    cur = cur[parts[i]];
+                  }
+                  const leaf = parts[parts.length - 1];
+                  const arr = Array.isArray(cur[leaf]) ? cur[leaf].slice() : [];
+                  /* Firestore de-duplicates by deep equality. */
+                  const seen = JSON.stringify(v.__arrayUnion);
+                  if(!arr.some(x => JSON.stringify(x) === seen)) arr.push(v.__arrayUnion);
+                  cur[leaf] = arr;
+                } else {
+                  setDeep(d, k, v);
+                }
+              });
               write(coll, id, d);
             }); },
             delete(){ return later(() => {
@@ -120,6 +144,15 @@ FAKE_FIRESTORE = """
         }
       };
     }
+  };
+  /* The app reaches for firebase.firestore.FieldValue.arrayUnion when it
+     sends a chat message. The real SDK is blocked in the sandbox, so
+     without this the send path throws and the chat checks would fail for
+     a reason that has nothing to do with the chat. */
+  window.firebase = window.firebase || {};
+  window.firebase.firestore = window.firebase.firestore || {};
+  window.firebase.firestore.FieldValue = {
+    arrayUnion: function(v){ return { __arrayUnion: v }; }
   };
   window.__useFake = function(){ fbDb = window.__fakeDb; };
 })();
@@ -315,6 +348,71 @@ def main():
         front = seen["guest"]["gone"] - starts["host"]
         check("the foreground device uncovers on the shared instant",
               -50 <= front <= 250, "%dms after startAt" % front)
+
+        # ---- 5. the chat cannot lose a message -----------------------
+        # The bug this is written against: send() used to .get() the whole
+        # document, push onto the array it found, and .update() the result.
+        # Two people typing at once each read the array BEFORE the other's
+        # message existed, so whoever wrote second erased the first. In a
+        # lobby whose whole purpose is agreeing on units, that is the one
+        # failure that matters.
+        print("\n5. two people typing at once")
+        for pg in (host, guest):
+            pg.evaluate("()=>{ if(window.__chatKill) window.__chatKill(); "
+                        "const box=document.createElement('div');"
+                        "box.id='chatprobe';document.body.appendChild(box);"
+                        "window.__chatKill = buildVroomChatPanel(box); }")
+        host.wait_for_timeout(400)
+        # Fired without awaiting each other, which is the whole point.
+        host.evaluate("()=>{ const i=document.querySelector('#chatprobe .vroom-chat-input');"
+                      "i.value='from the host'; "
+                      "document.querySelector('#chatprobe .vroom-chat-send').click(); }")
+        guest.evaluate("()=>{ const i=document.querySelector('#chatprobe .vroom-chat-input');"
+                       "i.value='from the guest'; "
+                       "document.querySelector('#chatprobe .vroom-chat-send').click(); }")
+        host.wait_for_timeout(1200 + args.latency * 4)
+        texts = host.evaluate("()=>[...document.querySelectorAll('#chatprobe .vroom-chat-msg')]"
+                              ".map(e=>e.textContent)")
+        joined = " | ".join(texts)
+        check("both messages survive a simultaneous send",
+              ("from the host" in joined) and ("from the guest" in joined), joined)
+        seen_on_guest = guest.evaluate(
+            "()=>[...document.querySelectorAll('#chatprobe .vroom-chat-msg')]"
+            ".map(e=>e.textContent).join(' | ')")
+        check("and both reach the other device",
+              ("from the host" in seen_on_guest) and ("from the guest" in seen_on_guest),
+              seen_on_guest)
+
+        # ---- 6. two lobbies at once ----------------------------------
+        # Each lobby is its own document keyed by its join code, so they
+        # should never see each other - but "should" is not a check, and
+        # ~40 classmates can easily have two rooms open at the same time.
+        print("\n6. two lobbies at the same time")
+        second = open_tab("Rosa", "queen", 4000, "CCCC-3333", badges=2)
+        second.evaluate("()=>{ vroomCode='ZZZZ-9999'; vroomMyKey='CCCC-3333';"
+                        " vroomIsHost=true;"
+                        " fbDb.collection('vrooms').doc('ZZZZ-9999')"
+                        "   .set({ host:'CCCC-3333', participants:{}, chatMessages:[] }); }")
+        second.wait_for_timeout(300 + args.latency * 2)
+        second.evaluate("()=>{ const box=document.createElement('div');"
+                        "box.id='chatprobe';document.body.appendChild(box);"
+                        "window.__chatKill = buildVroomChatPanel(box); }")
+        second.wait_for_timeout(300 + args.latency * 2)
+        second.evaluate("()=>{ const i=document.querySelector('#chatprobe .vroom-chat-input');"
+                        "i.value='other room only'; "
+                        "document.querySelector('#chatprobe .vroom-chat-send').click(); }")
+        second.wait_for_timeout(800 + args.latency * 4)
+        bleed = host.evaluate("()=>[...document.querySelectorAll('#chatprobe .vroom-chat-msg')]"
+                              ".map(e=>e.textContent).join(' | ')")
+        check("the second lobby's chat does not reach the first",
+              "other room only" not in bleed, bleed)
+        own = second.evaluate("()=>[...document.querySelectorAll('#chatprobe .vroom-chat-msg')]"
+                              ".map(e=>e.textContent).join(' | ')")
+        check("and the second lobby sees only its own",
+              ("other room only" in own) and ("from the host" not in own), own)
+        codes = host.evaluate("()=>vroomCode") , second.evaluate("()=>vroomCode")
+        check("the two lobbies are two different documents",
+              codes[0] != codes[1], codes)
 
         ctx.close()
         br.close()

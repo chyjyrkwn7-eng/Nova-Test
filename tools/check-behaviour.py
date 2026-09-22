@@ -200,7 +200,7 @@ def check_swipe(br):
     for label, w, h in DEVICES:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
         cdp = ctx.new_cdp_session(pg)
-        for screen, show in [("Rankings", "()=>showRankings('level')"),
+        for screen, show in [("Rankings", "()=>showRankings('week')"),
                              ("Profile", "()=>showProfile()")]:
             pg.evaluate(show)
             pg.wait_for_timeout(500)
@@ -218,9 +218,17 @@ def check_swipe(br):
                   moved != start and back == start,
                   "%s -> %s -> %s" % (start, moved, back))
         # The listeners live on .wrap, which outlives the screen inside it.
-        pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(250)
+        pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(250)
         pg.evaluate("()=>showHome()"); pg.wait_for_timeout(250)
-        pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(400)
+        pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
+        # READ OFF THE SCREEN, never hard-coded. This asserted the
+        # literal "Badges" and went red the day the boards became This
+        # Week / Level / Hundos - failing the app for a change that was
+        # asked for. What the check is actually about is "exactly one
+        # step, not two", so it wants the SECOND tab whatever it is
+        # called, and it now asks the app which that is.
+        tabs = pg.evaluate("()=>[...document.querySelectorAll('.panel .navsegment .iconbtn')]"
+                           ".map(b=>b.textContent)")
         _swipe(cdp, w * 0.75, h * 0.45, -w * 0.5, 18)
         pg.wait_for_timeout(400)
         once = pg.evaluate(ACTIVE_TAB)
@@ -229,7 +237,7 @@ def check_swipe(br):
         pg.wait_for_timeout(400)
         still_home = pg.evaluate("()=>!!document.querySelector('.panel.home')")
         check("%s a second visit still steps exactly one tab" % label,
-              once == "Badges", once)
+              len(tabs) > 1 and once == tabs[1], "%s of %s" % (once, tabs))
         check("%s leaving detaches the swipe" % label, still_home)
         ctx.close()
 
@@ -375,11 +383,12 @@ def check_ranks(br):
     pg.wait_for_timeout(1500)
     tabs = pg.evaluate("""()=>[...document.querySelectorAll('.profiletabs .iconbtn')]
                               .map(b=>b.textContent)""")
-    # Stats before Badges, and the last one is "Ladder" - the bottom bar
-    # already says Rankings and two things called the same was reported
-    # as confusing. The key is still "ranks"; only the label moved.
-    check("four tabs, in the order asked for, and no second Rankings",
-          tabs == ["Profile", "Stats", "Badges", "Ladder"], tabs)
+    # Stats before Badges, and the last one is "Rank" - the bottom tab
+    # says Leaderboard and this one says Rank, which is the vocabulary
+    # asked for after "Ladder"/"Rankings" was reported as confusing. The
+    # key is still "ranks"; only the label moved.
+    check("four tabs, in the order asked for, and the last one is Rank",
+          tabs == ["Profile", "Stats", "Badges", "Rank"], tabs)
 
     cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
       name:c.querySelector('.rankcard-name').textContent,

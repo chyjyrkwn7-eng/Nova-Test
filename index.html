@@ -1605,7 +1605,32 @@
      the line every other onboarding screen shares - the single most
      load-bearing row in the whole position table. Two rows of six
      costs nothing anywhere else. */
-  .avatarchar-grid{ display:grid; grid-template-columns:repeat(6, 1fr); gap:.5rem .35rem; justify-items:center; }
+  /* FOUR across on the sign-up picker, not six. Six was right when this
+     screen showed all twelve characters - two even rows. The locked four
+     came off it, so eight in six columns is a row of six and a ragged row
+     of two, which reads as a mistake. Four is two even rows again.
+     The column count follows the number of items, which is the actual
+     rule here: this file already learned it once when adding four
+     characters turned two even rows into three and pushed the level card
+     off the top of an SE. */
+  .avatarchar-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:.6rem .45rem; justify-items:center; }
+  /* Four columns instead of six leaves room for each one to be bigger,
+     which is the point of the change rather than a side effect: eight
+     characters shown larger is a better picker than twelve shown small. */
+  .panel.home.charselect-panel .avatarchar-option{ max-width:4.6rem; }
+  @media (min-width:40rem){
+    .panel.home.charselect-panel .avatarchar-option{ max-width:6rem; }
+  }
+  /* The name field is sized for the widest screen it appears on and was
+     reported as wider than it needs to be on a phone - "a good size for
+     the larger devices but could be a smidge shortened for the phones".
+     A ceiling only below 32rem, so nothing on a tablet moves. */
+  @media (max-width:32rem){
+    .panel.home.onboarding-shortform-panel .searchbox{ max-width:15rem; }
+  }
+  /* The customise screen still shows all twelve, locked ones included, so
+     it keeps six. */
+  .avatarchar-grid.avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); }
   /* No circular frame or background \u2014 just the character itself,
      sized generously since there's no longer a small circle
      constraining it. Selection shows as a gentle lift and glow
@@ -1698,6 +1723,36 @@
        moment (the selection transition) it's actually needed for. */
     transform:scale(1.12) translateZ(0);
   }
+  /* The glow on the one you have picked, in that character's OWN colour.
+     --char-glow is set per option in JS from AVATAR_GLOW; it falls back
+     to the accent so an unknown id still lights up.
+     Two layers, same as every other glow in this app: a pool of light
+     behind the artwork (::before, so it cannot affect layout) and a
+     drop-shadow on the drawing itself, which is what makes the light
+     look like it is coming OFF the character rather than sitting behind
+     a square. filter:drop-shadow on the element, never an SVG filter -
+     SVG filters are the one thing that has bitten this app on real iOS
+     hardware. */
+  .avatarchar-option{ --char-glow:var(--accent); }
+  .avatarchar-option.selected::before{
+    content:""; position:absolute; left:50%; top:42%;
+    width:150%; aspect-ratio:1; transform:translate(-50%, -50%);
+    border-radius:50%; pointer-events:none; z-index:0;
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--char-glow) 42%, transparent) 0%,
+      color-mix(in srgb, var(--char-glow) 17%, transparent) 38%,
+      transparent 68%);
+  }
+  .avatarchar-option.selected .avatarchar-svg,
+  .avatarchar-option.selected svg{
+    position:relative; z-index:1;
+    filter:drop-shadow(0 0 5px color-mix(in srgb, var(--char-glow) 85%, transparent))
+           drop-shadow(0 0 16px color-mix(in srgb, var(--char-glow) 45%, transparent));
+  }
+  /* A locked one is a preview, not something you hold, so it gives off
+     nothing even while it is the one being looked at. */
+  .avatarchar-option.locked.selected::before{ display:none; }
+  .avatarchar-option.locked.selected svg{ filter:saturate(.3); }
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
      cells \u2014 per explicit report that the picker "doesn't enlarge"
@@ -2449,7 +2504,17 @@
     max-height:0; overflow:hidden; padding-top:0;
     transition:max-height .35s ease, padding-top .35s ease;
   }
+  /* 2000px WAS A CLIP, NOT A CAP. overflow:hidden is what makes the
+     slide work, so anything past 2000px of content was cut off with no
+     way to reach it - the page cannot scroll to a box the box itself
+     has clipped away. On the calendar that never showed; on Answer
+     Review one unit is thousands of pixels of questions, which is the
+     reported "it's not scrollable, it doesn't let you scroll down to
+     look at all the questions". The cap is now only for the animation:
+     openCollapsible() drops it the moment the slide finishes, so an
+     open section has no height limit at all. */
   .cal-month-body.cal-month-body-open{ max-height:2000px; padding-top:.6rem; }
+  .cal-month-body.cal-month-body-open.is-settled{ max-height:none; overflow:visible; }
   /* Widened per a follow-up report that these still read as squished
      together on phone too, not just tablet — and that the search bar
      sat too close to the first month card below it, which the earlier
@@ -2792,7 +2857,7 @@
   .vroom-racebar{ padding:.5rem 1.1rem .3rem; }
   .vroom-racebar[hidden]{ display:none; }
   .vroom-racetrack{
-    position:relative; height:2.6rem;
+    position:relative; height:4.3rem;
     background:rgba(128,128,128,.14); border-radius:999px;
     margin-right:1.6rem; /* room for the fixed finish flag beyond 100% */
   }
@@ -2805,18 +2870,133 @@
     font-size:1.3rem; line-height:1;
   }
   .vroom-racetrack-markers{ position:absolute; inset:0; }
+  /* LANES, because two people on the same question used to sit on top of
+     each other and a lobby has no size limit - "don't let the racing line
+     look bad and crowded, ensure you can still kinda see where people are
+     at". Every marker keeps its EXACT horizontal position; only its
+     vertical lane moves, so the line stays accurate to read. Three lanes
+     is what the bar has room for at the top of a phone screen.
+     --lane is set per marker in JS (0, 1 or 2). */
   .vroom-race-marker{
-    position:absolute; top:50%; width:2rem; height:2rem;
-    transform:translate(-50%, -50%); transition:left .6s ease;
+    position:absolute;
+    top:calc(50% + (var(--lane, 0) - 1) * 1.28rem);
+    width:1.7rem; height:1.7rem;
+    transform:translate(-50%, -50%); transition:left .6s ease, top .25s ease;
     display:flex; align-items:center; justify-content:center;
     border-radius:999px; border:2px solid; overflow:visible;
   }
+  /* The pointer. A marker in an outer lane is no longer sitting on the
+     line, so it draws a hairline back down to it and a small tick where
+     it actually is - which is the "arrow so the line is very accurate to
+     look at" this was asked for. The middle lane IS the line, so it
+     draws nothing. */
+  .vroom-race-marker::before{
+    content:""; position:absolute; left:50%; width:1px;
+    background:currentColor; opacity:.55; transform:translateX(-50%);
+  }
+  .vroom-race-marker.lane-0::before{ top:100%; height:1.28rem; }
+  .vroom-race-marker.lane-2::before{ bottom:100%; height:1.28rem; }
+  .vroom-race-marker.lane-1::before{ display:none; }
+  .vroom-race-marker::after{
+    content:""; position:absolute; left:50%; top:50%;
+    width:5px; height:5px; margin:-2.5px 0 0 -2.5px;
+    border-radius:999px; background:currentColor;
+    opacity:0; pointer-events:none;
+  }
+  /* The tick ON the line, drawn by the pointer's own end rather than by
+     a second element: an outer-lane marker gets a dot at the line's
+     height, exactly under its centre. */
+  .vroom-race-marker.lane-0::after{ opacity:.9; top:calc(100% + 1.28rem); }
+  .vroom-race-marker.lane-2::after{ opacity:.9; top:calc(0% - 1.28rem); }
   .vroom-race-marker-avatar{ width:100%; height:100%; border-radius:999px; overflow:hidden; }
   .vroom-race-marker-initials{
-    position:absolute; bottom:-1.05rem; left:50%; transform:translateX(-50%);
-    font-size:.62rem; font-weight:800; white-space:nowrap; color:var(--soft);
+    position:absolute; bottom:-.92rem; left:50%; transform:translateX(-50%);
+    font-size:.58rem; font-weight:800; white-space:nowrap; color:var(--soft);
   }
+  /* A label under every marker is what made this crowded: with three
+     lanes a label under lane 0 lands on lane 1. The characters ARE the
+     identification - a classmate's avatar is the same one they carry on
+     the boards - so only YOUR OWN marker is labelled, and it is labelled
+     because "which one am I" is the one question an avatar cannot
+     answer about yourself at 27px. */
+  .vroom-race-marker-initials{ display:none; }
+  .vroom-race-marker.is-me{ border-width:3px; }
+  .vroom-race-marker.is-me .vroom-race-marker-initials{ display:block; }
   .vroom-race-marker.is-finished{ box-shadow:0 0 10px 1px currentColor; }
+  /* The standings landing, one row at a time from last place up. A beat
+     of suspense rather than a cutscene - the whole reveal is under a
+     second and a half for four people, and a row that is still waiting
+     its turn is invisible rather than half-drawn. */
+  /* Both exits, matched and centred, per explicit request. A grid
+     rather than flex so the two share one track width whatever their
+     labels say - "the same size" has to survive a wording change. */
+  .vroom-exit-row{
+    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:.7rem; justify-items:stretch; align-items:stretch;
+    max-width:26rem; margin:1.4rem auto 0;
+  }
+  .vroom-exit-row .vroom-exit-btn{ width:100%; margin:0; }
+  @media (max-width:23rem){
+    .vroom-exit-row{ grid-template-columns:minmax(0, 1fr); }
+  }
+  .vroom-result-reveal{
+    opacity:0;
+    animation:vroom-result-in .42s cubic-bezier(.2,.8,.25,1.1) forwards;
+  }
+  @keyframes vroom-result-in{
+    from{ opacity:0; transform:translateY(14px) scale(.97); }
+    to{ opacity:1; transform:none; }
+  }
+  /* reduce-motion strips the keyframes, which would leave every row at
+     opacity 0 - the animation is what makes them visible. The global
+     rule cannot know that, so this hands the rows back. */
+  [data-reduce-motion="true"] .vroom-result-reveal{ opacity:1; animation:none; }
+  @media (prefers-reduced-motion:reduce){
+    .vroom-result-reveal{ opacity:1; animation:none; }
+  }
+  /* The placeholder marker while nobody has a place yet. */
+  .lb-rank.is-pending{
+    color:var(--soft); font-weight:700; opacity:.7;
+  }
+  /* Your own score, broken down. Its own surface rather than a row in the
+     list, because it is the one thing on this screen that is about you
+     rather than about the room - and it is there the moment you finish,
+     while everybody else's is still sealed. */
+  .vroom-mine{
+    margin:.2rem 0 1.1rem; padding:1rem 1.1rem .9rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.09);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .vroom-mine[hidden]{ display:none; }
+  .vroom-mine-head{
+    margin:0 0 .65rem; font-size:.7rem; font-weight:800; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--soft);
+  }
+  .vroom-mine-row{
+    display:grid; grid-template-columns:1fr auto auto; gap:.6rem;
+    align-items:baseline; padding:.3rem 0; text-align:left;
+  }
+  .vroom-mine-row.is-total{
+    grid-template-columns:1fr auto; margin-top:.35rem; padding-top:.6rem;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
+  .vroom-mine-label{ font-size:.86rem; font-weight:600; color:var(--ink); }
+  .vroom-mine-raw{ font-size:.84rem; color:var(--soft); font-variant-numeric:tabular-nums; }
+  /* A fixed width on the arithmetic column, so the + and the minus line up
+     under each other rather than drifting with the length of the number. */
+  .vroom-mine-delta{
+    font-size:.84rem; font-weight:800; color:var(--soft);
+    font-variant-numeric:tabular-nums; min-width:4.2rem; text-align:right;
+  }
+  .vroom-mine-total{
+    font-size:1.25rem; font-weight:900; color:var(--theme-c1);
+    font-variant-numeric:tabular-nums;
+  }
+  .vroom-mine-note{
+    margin:.6rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.35;
+    text-align:left;
+  }
   /* The finale reveal screen \u2014 each line fades/slides in together
      once the wait is over (vroom-finale-in added right as the reveal
      becomes visible), then the total count-up runs after a short
@@ -2847,12 +3027,99 @@
      elaborate \u2014 the actual ask was for the capability to exist, not
      for a particular chat-bubble aesthetic. */
   .vroom-chat{ margin-top:1.5rem; border-top:1px solid var(--rule); padding-top:1rem; }
+  .vroom-chat-titlerow{
+    display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  }
   .vroom-chat-title{ font-family:var(--serif); font-size:1rem; font-weight:700; margin:0 0 .6rem; }
+  /* Both of these are phone-only furniture. Above 40rem the panel is
+     already on screen, so a button to open it and a button to close it
+     are two controls that do nothing. */
+  .vroom-chat-close{
+    display:none; background:none; border:none; color:var(--soft);
+    font-size:1.6rem; line-height:1; padding:0 .35rem; margin:-.5rem -.35rem .6rem 0;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .vroom-chat-slot{ display:flex; justify-content:center; }
+  /* The button sits in the TOP RIGHT of whatever screen it is on, per
+     explicit request - "put the chat buttons at the top for any screen
+     it can be on. Top right or something." It is absolute inside the
+     panel rather than fixed, so it scrolls with the screen it belongs
+     to and can never end up floating over a different one; the panel
+     itself carries position:relative for it (.vroom-has-chat). The
+     back link is a centred pill, so the top-right corner is free. */
+  .panel.vroom-has-chat{ position:relative; }
+  .vroom-chat-toggle{
+    display:none; align-items:center; gap:.45rem;
+    position:absolute; top:0; right:0; z-index:6;
+    margin:0; padding:.62rem 1.1rem; border-radius:999px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+    color:var(--ink); font:inherit; font-size:.85rem; font-weight:700;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+    min-height:44px;
+  }
+  /* The dot. Its own colour rather than the accent, because the accent is
+     whatever theme somebody picked and an unread marker has to read as an
+     unread marker on all seven. */
+  .vroom-chat-dot{
+    width:.55rem; height:.55rem; border-radius:999px; background:#FF5F56;
+    box-shadow:0 0 0 2px rgba(255,95,86,.28);
+  }
+  @media (max-width:40rem){
+    .vroom-chat-toggle{ display:inline-flex; }
+    .vroom-chat-close{ display:block; }
+    /* The sheet. Fixed to the bottom edge, above the tab bar's z-index so
+       nothing paints through it, and it carries the safe-area inset so the
+       input is not under the home indicator. */
+    .vroom-chat{
+      position:fixed; left:0; right:0; bottom:0; z-index:320;
+      margin:0; padding:1rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+      max-height:min(78vh, 32rem);
+      display:flex; flex-direction:column;
+      border-top:1px solid rgba(255,255,255,.12);
+      border-radius:20px 20px 0 0;
+      /* Liquid Glass, not a panel. At .92 this was opaque - the blur was
+         doing nothing you could see, because there was nothing showing
+         through to blur. .52 with a heavier blur is the recipe every
+         other glass surface in the app uses. */
+      background:rgba(20,25,32,.52);
+      will-change:backdrop-filter;
+      backdrop-filter:blur(22px) saturate(1.6);
+      -webkit-backdrop-filter:blur(22px) saturate(1.6);
+      box-shadow:0 -12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+      transform:translateY(102%);
+      transition:transform .28s cubic-bezier(.2,.8,.25,1);
+      touch-action:pan-y;
+    }
+    /* A solid-coloured child inside a backdrop-filter surface can tear on
+       real iOS - reported on the update banner's own button. The parent
+       already has will-change; the Send button needs its own compositing
+       layer so it is rasterised once rather than resampled through the
+       filter every frame. */
+    .vroom-chat .vroom-chat-send{
+      transform:translateZ(0); backface-visibility:hidden; isolation:isolate;
+    }
+    /* The grab handle. A sheet you can swipe needs to look like one. */
+    .vroom-chat::before{
+      content:""; display:block; width:2.4rem; height:.28rem; border-radius:999px;
+      background:rgba(255,255,255,.28); margin:-.35rem auto .7rem;
+      flex:0 0 auto;
+    }
+    .vroom-chat.is-dragging{ transition:none; }
+    .vroom-chat.is-open{ transform:translateY(0); }
+    .vroom-chat .vroom-chat-list{ flex:1 1 auto; max-height:none; }
+    /* The tab bar would otherwise sit on top of an open sheet. */
+    body.vroom-chat-open .bottomtabs{ opacity:0; pointer-events:none; }
+  }
   .vroom-chat-list{
     max-height:11rem; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;
     margin-bottom:.7rem; padding-right:.2rem;
   }
-  .vroom-chat-msg{ font-size:.85rem; line-height:1.4; }
+  /* text-align:left explicitly. The chat is embedded in whatever screen
+     is hosting it, and two of those centre their text - so the messages
+     inherited it and came out ragged down the middle, which reads as a
+     bug rather than as a style. */
+  .vroom-chat, .vroom-chat-list{ text-align:left; }
+  .vroom-chat-msg{ font-size:.85rem; line-height:1.4; text-align:left; }
   .vroom-chat-msg-name{ font-weight:700; }
   .vroom-chat-msg-name.is-me{ color:var(--accent); }
   .vroom-chat-msg-time{ font-size:.68rem; color:var(--soft); margin-left:.3rem; }
@@ -3609,6 +3876,14 @@
     color:var(--soft); font-weight:600; cursor:pointer; margin-bottom:1rem;
     display:block; text-align:left; position:relative; z-index:1;
   }
+  /* display:block on a class beats [hidden]'s UA display:none on
+     specificity, so this button ignored .hidden = true entirely. The
+     Virtual Room results screen gates "Back to Home" on everybody having
+     finished - a real gate, not a courtesy message - and that gate has
+     never actually worked: the button was always there to tap. Same trap
+     as .opt .box and .bottomtab-label, found by looking at a screenshot
+     of the waiting state rather than at the line that sets .hidden. */
+  .back-link[hidden]{ display:none; }
   @media (hover:hover){ .back-link:hover{ color:var(--ink); } }
   .startbar{
     display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
@@ -5969,6 +6244,20 @@
     box-shadow:0 0 16px 3px color-mix(in srgb, var(--tier-glow) 80%, transparent),
       inset 0 0 8px 0 color-mix(in srgb, var(--tier-glow) 40%, transparent);
   }
+  /* GLOWING BLACK. The body is genuinely dark - mixing the lit rule's
+     55% of a near-black with white would only have made another grey -
+     and the light is all in the rim and the halo. A black disc with no
+     halo would read as a hole in the screen rather than as a flare,
+     which is why the ring outside it is the brightest part. */
+  .cosmic-badge-noir{
+    background:#0B0D11;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0) 60%);
+    border:2px solid rgba(226,234,244,.78);
+    color:rgba(240,245,252,.92);
+    box-shadow:0 0 14px 2px rgba(214,226,240,.5),
+      0 0 3px 0 rgba(255,255,255,.7),
+      inset 0 0 10px 0 rgba(0,0,0,.85);
+  }
   /* The one-time "just unlocked" celebration \u2014 plays once, the first
      time this specific badge is rendered in its lit state, then never
      again for that same tier. A bright flash-and-settle rather than a
@@ -6472,7 +6761,15 @@
        these two are what is left to spend and they are nearly spent:
        every phone from 46rem up now sits within a pixel or two of the
        tightest one in the matrix. */
-    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.2rem; }
+    /* Raised from .2rem, reported directly: "the good morning Madison
+       and text there and the text above the start studying button is
+       now too close to the button. Move it slightly back up." The
+       greeting's margin-top:auto above is the ONLY auto margin in this
+       column, so every pixel added here comes out of that auto - the
+       text group moves UP by exactly this much and the button does not
+       move at all, which is the half of the request that matters.
+       Measured rather than chosen; see the table in CLAUDE.md. */
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:1.3rem; }
     .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:0; }
   }
   /* Short AND wide is excluded by the 60rem height floor, and that is
@@ -6486,7 +6783,10 @@
        re-declared here because the tablet type block sets the greeting's
        margin-top explicitly further up. */
     .panel.home.screen-home-actual .homegreeting{ margin-top:auto; }
-    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:min(3.2rem, 3.6vh); }
+    /* Same report, same reasoning, on a tablet: raised from
+       min(3.2rem, 3.6vh). The greeting's auto above is what pays for
+       it, so the button holds its position. */
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:min(4.6rem, 5vh); }
     .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:min(2.8rem, 3vh); }
   }
   /* The button and the line above it were still phone-sized against a
@@ -6712,7 +7012,17 @@
          at 432px/27rem wide, so its right edge always sits at
          50% + 13.5rem; 50% - 19rem puts this FAB's own right edge
          about 1.5rem past that, i.e. a deliberate small gap to its
-         right, not touching it. bottom:2rem centers this vertically
+         right, not touching it.
+         THAT MEASUREMENT HAS SINCE MOVED AND TOOK THE GAP WITH IT.
+         Renaming the bottom tab from Rankings to Leaderboard widened
+         the bar from 432px to 480px/30rem - it is centred and sized to
+         its own labels - so its right edge went to 50% + 15rem and this
+         circle ended up 10px INSIDE it on every tablet and laptop in
+         the matrix, an iPad Pro 11" included. 21rem restores the gap at
+         22px. The number to keep in step is the bar's own measured
+         width: a label change anywhere in .bottomtabs moves it, and
+         check-fixes is what catches that (it names the device and the
+         overlap; it went red on exactly this). bottom:2rem centers this vertically
          against the tab bar's own measured mid-height (was 1.3rem,
          sitting a bit low relative to it). The small max() floor is
          just a safety net at the narrow end of this breakpoint (a
@@ -6725,7 +7035,7 @@
          measured across the matrix 1.83rem puts the two centre lines at
          exactly 0px apart. */
       bottom:calc(1.83rem + env(safe-area-inset-bottom, 0px));
-      right:max(calc(50% - 19rem), 1rem);
+      right:max(calc(50% - 21rem), 1rem);
     }
   }
   @media (hover:hover){ .homeversion-btn:hover{ opacity:.85; } }
@@ -7019,7 +7329,18 @@
      a progress bar do not share a 340px line. */
   .rankhero{
     display:flex; flex-direction:column; align-items:center; gap:.9rem;
-    padding:1.15rem 1.1rem 1.05rem; margin:0 0 1.4rem;
+    /* Top padding raised from 1.15rem to give the emblem's own pool of
+       light somewhere to land inside the card. */
+    padding:1.55rem 1.1rem 1.05rem; margin:0 0 1.4rem;
+    /* THE GLOW WAS ESCAPING THE BOX - reported directly. The emblem's
+       ::before pool is inset:-40% of a 6.6rem art (so ~1.8x the art,
+       against 18px of padding above it) and the svg carries a 30px
+       drop-shadow on top of that, and nothing clipped either. Both are
+       tightened below so the light mostly fits, and this is the net
+       under them: a card with a radius clips to that radius, so the
+       glow can never reach past the edge again whatever a later change
+       does to its radius. */
+    overflow:hidden;
     border-radius:1.3rem; text-align:center;
     background:
       radial-gradient(120% 140% at 50% -20%,
@@ -7044,7 +7365,7 @@
      The global [data-reduce-motion="true"] *{animation:none} rule
      switches the breath off without this having to name it. */
   .rankhero-art::before{
-    content:""; position:absolute; inset:-40%; border-radius:50%;
+    content:""; position:absolute; inset:-20%; border-radius:50%;
     pointer-events:none;
     background:radial-gradient(circle at 50% 46%,
       color-mix(in srgb, var(--rank-color, var(--accent)) 52%, transparent) 0%,
@@ -7055,8 +7376,8 @@
   }
   .rankhero-art svg{
     width:100%; height:100%; display:block; overflow:visible; position:relative;
-    filter:drop-shadow(0 0 7px color-mix(in srgb, var(--rank-color, var(--accent)) 95%, transparent))
-           drop-shadow(0 0 30px color-mix(in srgb, var(--rank-color, var(--accent)) 62%, transparent));
+    filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color, var(--accent)) 95%, transparent))
+           drop-shadow(0 0 17px color-mix(in srgb, var(--rank-color, var(--accent)) 62%, transparent));
   }
   /* Somebody below the first rank holds nothing, so there is no light to
      give off - the emblem there is a preview of what is coming, not a
@@ -7861,7 +8182,8 @@
      intact while removing it for ordinary taps/clicks. */
   .floatbtn:focus{ outline:none; }
   .floatbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
-  .floatbtn:disabled{
+  .floatbtn:disabled,
+  .floatbtn.is-inert{
     opacity:1; background:var(--rule); color:var(--soft);
   }
 
@@ -8170,6 +8492,13 @@
     position:relative; overflow:hidden;
   }
   [data-layout="modern"] .back-link:active{ background-color:#141416; }
+  /* Same specificity as the rule above and ~4,500 lines later, so this is
+     what actually has to carry [hidden] - the plain .back-link[hidden]
+     further up loses on source order. Exactly the trap this file already
+     documents for .opt .box, .next's box-shadow and .bottomtab-label, and
+     the reason the Virtual Room's "nobody leaves until everyone finishes"
+     gate has never once hidden its button. */
+  [data-layout="modern"] .back-link[hidden]{ display:none; }
   @media (hover:hover){ [data-layout="modern"] .back-link:hover{ color:#fff; } }
   [data-layout="modern"] .floatbtn{ border-radius:0; box-shadow:none; }
   /* The original floating button is kept functional (its click handler
@@ -8437,7 +8766,11 @@
   .profile-hero{ padding:1.9rem 1.45rem 1.6rem; }
   .profile-hero .profile-hero-top{ gap:1.1rem; }
   .profile-hero .profile-hero-avatar{ width:6.2rem; height:6.2rem; }
-  .profile-hero .profile-name-display{ font-size:1.62rem; }
+  /* 1.45, not 1.62: at the larger size "Madison" plus a button that now
+     says Customize wrapped onto two lines on a 440px phone, which pushed
+     the rank chip down and left the row looking broken. */
+  .profile-hero .profile-name-display{ font-size:1.45rem; }
+  .profile-hero .profile-edit-btn{ padding:.38rem .7rem; font-size:.74rem; }
   .profile-hero .profile-level{ padding-top:1.15rem; margin-top:1.15rem; }
   .profile-hero .profile-classline{ margin-top:1.25rem; padding:.95rem 1.05rem; }
   @media (min-width:40rem){
@@ -8445,33 +8778,106 @@
     .profile-hero .profile-hero-avatar{ width:7.8rem; height:7.8rem; }
     .profile-hero .profile-name-display{ font-size:2.05rem; }
   }
+  /* The class box, below the identity card. Its own surface, because it
+     is about the course rather than about you - the same reasoning that
+     keeps the two boxes on this tab distinct rather than one long slab. */
+  .profile-classcard{
+    margin-top:1rem; padding:1.15rem 1.15rem 1.05rem; border-radius:18px;
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .profile-classcard-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:.6rem; flex-wrap:wrap; margin-bottom:.85rem;
+  }
+  .profile-classcard-title{
+    font-family:var(--serif); font-size:1.12rem; font-weight:800; margin:0;
+    color:var(--ink);
+  }
+  .profile-classcard-count{
+    font-size:.76rem; font-weight:800; letter-spacing:.03em;
+    color:var(--theme-c1); font-variant-numeric:tabular-nums;
+  }
+  /* Label in a fixed column, body beside it, so Today and Next line up
+     down the left edge whatever length their text runs to. */
+  .profile-classday{
+    display:flex; gap:.7rem; padding:.55rem 0;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+  .profile-classday-label{
+    flex:0 0 3.1rem; font-size:.68rem; font-weight:800; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--soft); padding-top:.18rem;
+  }
+  .profile-classday-body{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
+  .profile-classday-when{
+    font-size:.72rem; font-weight:700; color:var(--soft); letter-spacing:.02em;
+  }
+  .profile-classday-what{
+    font-size:.87rem; font-weight:600; line-height:1.3; color:var(--ink);
+    overflow-wrap:break-word;
+  }
+  .profile-classday.is-today .profile-classday-what{ color:var(--theme-c1); }
+  .profile-classday-what.is-holiday{ color:var(--soft); font-style:italic; }
+  .profile-classday-what.is-none{ color:var(--soft); }
+  .profile-classcard-btns{
+    display:flex; gap:.6rem; margin-top:.95rem; flex-wrap:wrap;
+  }
+  /* One button across the whole row. It was one of a pair sharing the
+     width; on its own it is the card's single action and reads like one. */
+  .profile-classcard-btn{
+    flex:1 1 100%; min-width:0; font-size:.88rem;
+    padding:.8rem 1rem; line-height:1.25;
+  }
+  @media (min-width:40rem){
+    .profile-classcard{ padding:1.5rem 1.6rem 1.4rem; }
+    .profile-classcard-title{ font-size:1.3rem; }
+    .profile-classday-what{ font-size:.95rem; }
+    .profile-classcard-btn{ font-size:.92rem; }
+  }
   /* Customize: the name and its Change button on one line. */
   .customize-namerow{
     display:flex; align-items:center; justify-content:flex-start; gap:.7rem;
     flex-wrap:wrap;
   }
-  /* The rank chip on the profile card. A coin and a word, in the rank's
-     own colour, tappable through to the Ladder. */
-  .profile-rankchip{
-    display:inline-flex; align-items:center; gap:.45rem; margin-top:.45rem;
-    padding:.3rem .8rem .3rem .35rem; border-radius:999px; cursor:pointer;
-    background:color-mix(in srgb, var(--rank-color, #7A8694) 16%, rgba(255,255,255,.04));
-    border:1px solid color-mix(in srgb, var(--rank-color, #7A8694) 38%, transparent);
-    font:inherit; -webkit-tap-highlight-color:transparent;
+  /* One line under the name, in the rank's own colour. The emblem is on
+     the character where it sits everywhere else in the app, so this only
+     has to name it. */
+  /* A pill: the emblem in its own circle, the rank's name beside it,
+     both in the rank's colour. */
+  .profile-ranklineup{
+    display:inline-flex; align-items:center; gap:.45rem;
+    margin:.4rem 0 0; padding:.26rem .7rem .26rem .28rem;
+    border-radius:999px;
+    background:color-mix(in srgb, var(--rank-color, var(--accent)) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 42%, transparent);
+    font-size:.78rem; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--rank-color, var(--soft));
   }
-  .profile-rankchip.is-unranked{ padding:.3rem .8rem; }
-  .profile-rankchip-art{
-    width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center;
-    border-radius:999px; background:rgba(8,10,14,.6); flex-shrink:0;
+  .profile-rankcoin{
+    width:1.55rem; height:1.55rem; flex:0 0 auto; padding:.14rem;
+    box-sizing:border-box; border-radius:999px;
+    background:rgba(9,11,15,.88);
+    border:1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent);
   }
-  .profile-rankchip-art svg{ width:100%; height:100%; display:block; }
-  .profile-rankchip-name{
-    font-size:.82rem; font-weight:800; letter-spacing:.03em;
-    color:var(--rank-color, var(--soft));
+  .profile-rankcoin svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .profile-rankword{ white-space:nowrap; }
+  .profile-ranklineup.is-unranked{
+    display:block; padding:0; border:none; background:none;
+    color:var(--soft); letter-spacing:.03em; margin-top:.15rem;
   }
+  /* The coin on the profile card's own character, bigger than the 42px
+     version on a leaderboard row because the character it sits on is. */
+  .profile-hero-avatar{ position:relative; }
+  /* Inset, not hanging off the corner: on a leaderboard row the avatar
+     sits in the middle of the row and the coin can overhang, but here the
+     avatar is against the card's own rounded corner and the coin was
+     being clipped by it. */
+  .profile-hero-avatar .lb-rankmark{ width:2rem; height:2rem; left:-.15rem; top:-.15rem; }
   @media (min-width:40rem){
-    .profile-rankchip-art{ width:1.9rem; height:1.9rem; }
-    .profile-rankchip-name{ font-size:.95rem; }
+    .profile-ranklineup{ font-size:.88rem; }
+    .profile-rankcoin{ width:1.95rem; height:1.95rem; }
+    .profile-hero-avatar .lb-rankmark{ width:2.5rem; height:2.5rem; }
   }
   /* One line, not a section. It replaced a headed block with two
      buttons in it, which was reported as not belonging on this screen. */
@@ -8494,19 +8900,38 @@
   }
   .profile-classline-arrow{ font-size:1.2rem; line-height:1; opacity:.7; }
 
-  /* Three stats now, not two - level, badges and hundos - so the row
-     has to survive a 320px screen. It wraps and each item can shrink;
-     the gap comes down to match. */
+  /* Three stats now, not two - level, badges and hundos. A flex row with
+     space-between wrapped the third onto its own line on a phone, which
+     reads as a mistake rather than as a layout; three equal columns fit
+     at every width down to 320 and keep the numbers on one line. */
+  /* Two stats, built identically: number on top, caption under it, on a
+     shared baseline. They used to be two different shapes - the level had
+     its word beside the number and the badges had theirs below - so the
+     row could never look like a pair however it was aligned. */
   .profile-level-row{
-    display:flex; align-items:flex-end; justify-content:space-between;
-    gap:.5rem 1rem; margin-bottom:.85rem; flex-wrap:wrap; min-width:0;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:1rem; margin-bottom:.9rem;
   }
   .profile-level-row > *{ min-width:0; }
-  .profile-level-num{ display:flex; align-items:baseline; gap:.45rem; min-width:0; }
-  .profile-level-word{
-    font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+  .profile-level-num{
+    display:flex; flex-direction:column; align-items:flex-start; gap:.1rem;
   }
-  .profile-level-value{ font-size:2.7rem; font-weight:900; line-height:.9; }
+  .profile-badgestat{
+    display:flex; flex-direction:column; align-items:flex-end; gap:.1rem;
+    text-align:right;
+  }
+  .profile-level-num{ display:flex; align-items:baseline; gap:.45rem; min-width:0; }
+  /* The two captions are the same size, weight and tracking, because they
+     are the same kind of thing. */
+  /* Byte for byte the same as .profile-badgestat-word. They are the same
+     kind of label on the same row, so one of them being uppercase and
+     letter-spaced while the other was not is the sort of mismatch that
+     reads as "not lined up" even when everything measures correctly. */
+  .profile-level-word{
+    font-size:.7rem; font-weight:700; letter-spacing:.06em; color:var(--soft);
+  }
+  .profile-level-value{ font-size:2.4rem; font-weight:900; line-height:.9; }
+  @media (min-width:40rem){ .profile-level-value{ font-size:2.9rem; } }
   .profile-badgestat{
     display:flex; flex-direction:column; align-items:flex-end; gap:.1rem;
     background:none; border:none; padding:.35rem 0 .35rem .5rem; margin:-.35rem 0;
@@ -8558,6 +8983,39 @@
     animation:xp-sheen 2.8s linear infinite;
   }
   @keyframes xp-sheen{ from{ background-position:-120% 0; } to{ background-position:220% 0; } }
+  /* The end-of-run level block. Deliberately the same track and fill
+     classes the Profile bar uses (.xpbar-track/.xpbar-fill) rather than
+     a second pair that could drift - only the surround is new. */
+  .results-level{
+    margin:1.1rem auto 0; max-width:30rem; padding:.9rem 1rem 1rem;
+    border-radius:1rem;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.09);
+  }
+  .results-level-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:.6rem; margin:0 0 .55rem;
+  }
+  .results-level-num{
+    font-size:.95rem; font-weight:800; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--ink);
+  }
+  .results-level-gain{
+    font-size:.95rem; font-weight:800; color:var(--accent);
+    font-variant-numeric:tabular-nums;
+  }
+  .results-level-track{ margin:0; }
+  .results-level-line{
+    margin:.5rem 0 0; font-size:.78rem; color:var(--soft);
+    font-variant-numeric:tabular-nums; text-align:center;
+  }
+  /* A run that crossed a level says so, once the bar has wrapped. */
+  .results-level.is-levelup .results-level-num{ color:var(--accent); }
+  @media (min-width:40rem){
+    .results-level{ padding:1.1rem 1.25rem 1.2rem; }
+    .results-level-num, .results-level-gain{ font-size:1.05rem; }
+    .results-level-line{ font-size:.86rem; }
+  }
   .profile-xp-line{
     margin:.6rem 0 0; font-size:.82rem; font-weight:600; color:var(--soft);
     font-variant-numeric:tabular-nums;
@@ -9362,7 +9820,7 @@
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Rankings</span>
+        <span class="bottomtab-label">Leaderboard</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-settings" data-dest="settings">
         <span class="bottomtab-icon"></span>
@@ -21110,12 +21568,42 @@ new MutationObserver(() => {
 
    Not reproducible in Chromium, which has no soft keyboard and no visual
    viewport offset to leave behind; this is the standard remedy for it. */
+/* BLUR BEFORE THE SCREEN CHANGES, not after it. The observer below is the
+   backstop and it was the only remedy for a long time, but it runs on the
+   mutation - by which point iOS has already torn the keyboard down and
+   left the page panned, and window.scrollTo(0,0) in that same tick is
+   fighting a scroll restoration that has not finished happening.
+   pointerdown fires before the click, before any navigation, and before
+   the keyboard starts to go: blurring there lets iOS dismiss and restore
+   the scroll on its own, the way it does everywhere else in the OS.
+   Capture phase, because a handler on the button itself would run after
+   the browser had already decided what to do with focus. */
+document.addEventListener("pointerdown", (e) => {
+  const a = document.activeElement;
+  if(!a || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+  /* Not when the tap is on the field itself, or inside it - moving the
+     caret must not dismiss the keyboard. */
+  if(a === e.target || (a.contains && a.contains(e.target))) return;
+  a.blur();
+}, true);
+
 new MutationObserver(() => {
   const focused = document.activeElement;
   if(focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)){
     focused.blur();
-    window.scrollTo(0, 0);
   }
+  /* Correct the scroll more than once. iOS restores it asynchronously as
+     the keyboard animates away (~250ms), so a single scrollTo in this tick
+     is applied and then undone by the restoration that follows it - which
+     is exactly the "it stays that way for the rest of the session" this
+     was supposed to have fixed. Three passes cover the animation without
+     ever fighting a scroll the person made themselves: each one only acts
+     if the page is still pushed down. */
+  const settle = () => { if(window.scrollY > 0) window.scrollTo(0, 0); };
+  settle();
+  requestAnimationFrame(settle);
+  setTimeout(settle, 160);
+  setTimeout(settle, 400);
 }).observe(stage, { childList: true });
 
 /* Only the setup screen's Start button and the in-question Next button
@@ -21406,6 +21894,19 @@ const AVATAR_DISPLAY_NAME = {
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut"
 };
+/* The glow a SELECTED character gives off - "give the character you have
+   selected a nice glow, a glow that kinda matches the color of the
+   character too". Each one is read off the character's own artwork
+   rather than picked from a palette: the ghost's white, the queen's
+   purple robe, the dragon's red, the officer's police blue. A key the
+   table does not know falls back to the accent, so a character from
+   another build still lights up rather than going dark. */
+const AVATAR_GLOW = {
+  ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
+  grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
+  officer: "#3D74E8", clown: "#F05A9B", robot: "#6FD3E8", astronaut: "#F2B233"
+};
+function avatarGlowColor(id){ return AVATAR_GLOW[id] || "var(--accent)"; }
 /* Same shape as isLockedAccent/accentLockMessage, deliberately: a
    character and a colour are both things a rank hands over, and two
    different answers to "is this unlocked yet" is how one of them ends up
@@ -21519,155 +22020,167 @@ function buildAvatarCharSVG(charId){
      exactly what read as too much shine. */
 
   if(def.kind === "ghost"){
-    /* Classic sheet-ghost silhouette: a rounded head/body with a
-       wavy, zigzag bottom edge \u2014 built from a circle for the rounded
-       top plus a separate wavy-bottom polygon, rather than one
-       hand-drawn curved outline, for the same reliability reason
-       every other character in this set has needed. Simple dark oval
-       eyes and mouth, no pupils needed \u2014 a ghost's whole identity is
-       the pale, soft, faintly glowing silhouette itself. */
-    const bodyFill = headGrad("#FFFFFF", "#F1F0F5", "#D8D6E0");
-    /* One single path now, not a circle plus a separate rectangle \u2014
-       even though both used the same gradient fill, an SVG gradient
-       by default calculates its color spread relative to each
-       shape's OWN individual bounding box, not a shared one. Two
-       different shapes "sharing" one gradient like that actually get
-       two independently-computed shadings, which is exactly what was
-       showing as a visible seam right where the circle and
-       rectangle met \u2014 not a stroke or outline, just mismatched
-       shading across the boundary. One path (an arc for the rounded
-       top, straight lines for the flat sides and bottom) has one
-       bounding box and one consistent gradient across the whole
-       shape, so there's nothing left to seam. */
-    svg.appendChild(mk("path", { d: "M7 33 L7 17 A13 13 0 0 1 33 17 L33 33 Z", fill: bodyFill }));
-    svg.appendChild(mk("ellipse", { cx: 15, cy: 18, rx: 2.1, ry: 2.8, fill: "#262A33" }));
-    svg.appendChild(mk("ellipse", { cx: 25, cy: 18, rx: 2.1, ry: 2.8, fill: "#262A33" }));
-    svg.appendChild(catchlight(15.5, 16.7, .45));
-    svg.appendChild(catchlight(25.5, 16.7, .45));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 24, rx: 1.7, ry: 2.1, fill: "#262A33" }));
+    /* The old one was a tombstone: an arc on top of a flat-bottomed box,
+       with three dark blobs on it. The comment above it claimed a "wavy,
+       zigzag bottom edge" that the path never actually drew - which is
+       its own lesson about believing a comment over a render.
+       One path, so the gradient stays continuous (that part was right),
+       but the hem is a real scallop now and the sheet has a fold down
+       each side, which is what turns a silhouette into cloth. */
+    const bodyFill = headGrad("#FFFFFF", "#EFEDF4", "#CFCCD9");
+    svg.appendChild(mk("path", {
+      d: "M7 31.4 L7 17 A13 13 0 0 1 33 17 L33 31.4 "
+       + "Q30.8 34.6 28.6 31.6 Q26.4 28.6 24.2 31.6 Q22 34.6 20 31.6 "
+       + "Q18 28.6 15.8 31.6 Q13.6 34.6 11.4 31.6 Q9.2 28.6 7 31.4 Z",
+      fill: bodyFill }));
+    /* The folds. Two soft darker bands rather than lines - a drawn line
+       on a white sheet reads as an outline, a band reads as shadow. */
+    svg.appendChild(mk("path", { d: "M11.4 14.6 Q9.4 22 10.3 30.6", fill: "none",
+                                 stroke: "rgba(90,86,110,.16)", "stroke-width": 2.6,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M28.6 14.6 Q30.6 22 29.7 30.6", fill: "none",
+                                 stroke: "rgba(90,86,110,.16)", "stroke-width": 2.6,
+                                 "stroke-linecap": "round" }));
+    /* Arms, as two small lifted nubs. Without them a ghost is a shape;
+       with them it is doing something. */
+    svg.appendChild(mk("path", { d: "M7.2 21.5 Q4.6 20.6 5.4 18.2 Q6.6 19.4 7.6 19.6 Z",
+                                 fill: bodyFill }));
+    svg.appendChild(mk("path", { d: "M32.8 21.5 Q35.4 20.6 34.6 18.2 Q33.4 19.4 32.4 19.6 Z",
+                                 fill: bodyFill }));
+    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 18.2, rx: 2.2, ry: 2.9, fill: "#2A2E38" }));
+    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 18.2, rx: 2.2, ry: 2.9, fill: "#2A2E38" }));
+    svg.appendChild(catchlight(14.5, 16.9, .6));
+    svg.appendChild(catchlight(24.1, 16.9, .6));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 24.4, rx: 1.9, ry: 2.4, fill: "#2A2E38" }));
+    /* A blush of the app's own magenta, low opacity. It is the one thing
+       stopping this being three greys. */
+    svg.appendChild(mk("ellipse", { cx: 12.9, cy: 22.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .16 }));
+    svg.appendChild(mk("ellipse", { cx: 27.1, cy: 22.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .16 }));
     return svg;
   }
 
   if(def.kind === "wizard"){
-    /* A tall, bent-tip conical hat with a wide brim is the single most
-       recognizable wizard silhouette \u2014 the bend at the tip specifically
-       is what separates "wizard hat" from "birthday party hat," so
-       it's built deliberately as an angled polygon rather than a
-       straight triangle. A long grey beard covering most of the lower
-       face, the same reliable ellipse-extension technique used for
-       the king's beard, is the other half of the identity. */
-    const hatFill = headGrad("#5B4B8A", "#453A6B", "#2C2448");
-    const skinFill = headGrad("#EFC7A3", "#E3B48C", "#C5946A");
-    const beardFill = headGrad("#E8E6E0", "#D4D1C8", "#B0ADA2");
-    /* A long beard tapering to a point, not a round blob \u2014 that
-       taper is the actual detail that separates "wizard beard" from
-       any other character's beard; a wizard's is traditionally much
-       longer and comes to a point rather than staying rounded. Built
-       as one polygon extending well below the chin. */
-    svg.appendChild(mk("polygon", { points: "10,25 30,25 28,31 24,35 20,37 16,35 12,31", fill: beardFill }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 20, r: 9, fill: skinFill }));
-    /* The brim and cone combined into one single path (kept from the
-       last fix, still correct \u2014 one shape, one gradient, no seam),
-       but the bend point smoothed to a gentler angle change: the
-       previous sharp kink at the tip, combined with the radial
-       gradient's own falloff across this oddly-shaped bounding box,
-       was creating a visible brightness break right at the bend that
-       read as a separate triangular flap rather than one continuous
-       folded hat. A dedicated gloss highlight on the hat itself
-       (matching the same technique every other shape on every other
-       character uses) is what actually unifies it into one lit
-       surface instead of leaving it as flat gradient fill alone. */
-    svg.appendChild(mk("path", { d: "M8,15 L13,14.5 L16.5,6 L22,3.3 L26,6.5 L27,14.5 L32,15 A12,2.6 0 0 1 8,15 Z", fill: hatFill }));
-    svg.appendChild(mk("circle", { cx: 22, cy: 2, r: 1.1, fill: "#E8B923" }));
-    /* Small stars scattered on the hat itself \u2014 a classic, instantly
-       recognizable wizard-hat decoration, and a second, independent
-       cue beyond the silhouette alone for what this actually is. */
-    svg.appendChild(mk("polygon", { points: "13,8.7 13.4,9.6 14.3,10 13.4,10.4 13,11.3 12.6,10.4 11.7,10 12.6,9.6", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "26.5,10.5 26.8,11.1 27.4,11.4 26.8,11.7 26.5,12.3 26.2,11.7 25.6,11.4 26.2,11.1", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "19,5.5 19.3,6.1 19.9,6.4 19.3,6.7 19,7.3 18.7,6.7 18.1,6.4 18.7,6.1", fill: "#E8B923" }));
-    svg.appendChild(mk("path", { d: "M14.5 18.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M21.7 18.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16.3, cy: 18.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 23.7, cy: 18.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(catchlight(16.6, 18.55, .32));
-    svg.appendChild(catchlight(24.0, 18.55, .32));
-    /* A subtle contact shadow where the brim's edge crosses over the
-       forehead \u2014 a thin, soft dark arc right at the boundary, the
-       same cue real illustration uses to sell "this object is resting
-       on top of that one" rather than two flat layers with no
-       relationship to each other. */
-    svg.appendChild(mk("path", { d: "M11.5 15.5a9 2 0 0017 0", fill: "none", stroke: "rgba(0,0,0,.22)", "stroke-width": 1.1, "stroke-linecap": "round" }));
-    /* A mustache/mouth line was missing entirely before \u2014 the face
-       went straight from eyes to beard with nothing between them. A
-       simple rounded rectangle, the same reliable technique used for
-       the samurai and king's mustaches. */
-    /* A defined mustache shape now, not a plain flat bar \u2014 a rounded
-       center rectangle plus two small drooping ends, which reads as
-       an actual mustache silhouette rather than a straight rule under
-       the nose. Polygons for the ends, the same reliable straight-line
-       technique used throughout this set. */
-    svg.appendChild(mk("rect", { x: 16, y: 21.4, width: 8, height: 1.5, rx: .75, fill: "#B0ADA2" }));
-    svg.appendChild(mk("polygon", { points: "15.3,21.3 16.3,21.3 15.6,23.3 14.7,22.9", fill: "#B0ADA2" }));
-    svg.appendChild(mk("polygon", { points: "23.7,21.3 24.7,21.3 25.3,22.9 24.4,23.3", fill: "#B0ADA2" }));
+    /* The hat was taking the top half of the frame and the face was a
+       9-unit circle underneath it. Same correction as the officer: the
+       head is the character, the hat sits on it. The beard is a real
+       shape with a moustache over it rather than a grey pentagon, and
+       there are robes at the bottom.  */
+    const hatFill = headGrad("#6B57A6", "#463A6E", "#281F46");
+    const skinFill = headGrad("#F3CEA8", "#E3B48C", "#C08C61");
+    const beardFill = headGrad("#F4F2EC", "#DAD7CE", "#ADAA9F");
+    const robeFill = headGrad("#5B4B8A", "#3C3160", "#241C3C");
+    svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32.6 14.4 30.6 L25.6 30.6 Q32.6 32.6 33.4 40 Z",
+                                 fill: robeFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.3, ry: 10, fill: skinFill }));
+    /* Beard: a wide shape from the cheeks down, cut back in at the chin
+       so it tapers rather than ending in a straight edge. */
+    svg.appendChild(mk("path", {
+      d: "M11.2 21.6 Q11.6 30.2 15.4 34 Q17.6 36.4 20 36.4 Q22.4 36.4 24.6 34 "
+       + "Q28.4 30.2 28.8 21.6 Q24.8 26.4 20 26.4 Q15.2 26.4 11.2 21.6 Z",
+      fill: beardFill }));
+    svg.appendChild(mk("ellipse", { cx: 11.4, cy: 21.8, rx: 1.9, ry: 3.2, fill: beardFill }));
+    svg.appendChild(mk("ellipse", { cx: 28.6, cy: 21.8, rx: 1.9, ry: 3.2, fill: beardFill }));
+    /* The hat, on the head rather than over it: a brim that follows the
+       skull and a crown with a real kink in it. */
+    svg.appendChild(mk("path", { d: "M9.6 14.2 Q13.4 13.2 15.4 8.4 L20.6 3 L25 7.2 L25.8 13.2 Q28.8 13.6 30.4 14.2 Z",
+                                 fill: hatFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 14.4, rx: 11.4, ry: 2.5, fill: hatFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 13.9, rx: 11.4, ry: 2.2, fill: "#54458A" }));
+    svg.appendChild(mk("circle", { cx: 20.8, cy: 2.4, r: 1.15, fill: "#E8B923" }));
+    svg.appendChild(mk("polygon", { points: "14.6,9.4 15,10.3 15.9,10.7 15,11.1 14.6,12 14.2,11.1 13.3,10.7 14.2,10.3",
+                                    fill: "#E8B923" }));
+    svg.appendChild(mk("polygon", { points: "24.4,10.4 24.7,11.1 25.4,11.4 24.7,11.7 24.4,12.4 24.1,11.7 23.4,11.4 24.1,11.1",
+                                    fill: "#FFD37A" }));
+    svg.appendChild(mk("path", { d: "M14.2 18.4c1.2-1.4 2.9-1.4 4.1 0", fill: "none",
+                                 stroke: "#D8D5CC", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.7 18.4c1.2-1.4 2.9-1.4 4.1 0", fill: "none",
+                                 stroke: "#D8D5CC", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16.3, cy: 20.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 23.7, cy: 20.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(catchlight(15.8, 20.1, .48));
+    svg.appendChild(catchlight(23.2, 20.1, .48));
+    /* The moustache, over the beard rather than beside it. */
+    svg.appendChild(mk("path", { d: "M14.6 25.4 Q17.4 23.4 20 25 Q22.6 23.4 25.4 25.4 Q22.6 27.4 20 26.2 Q17.4 27.4 14.6 25.4 Z",
+                                 fill: "#C9C6BC" }));
     return svg;
   }
 
   if(def.kind === "grizzly"){
-    const headFill = headGrad("#BC935F", "#9C6B41", "#7A5230");
-    const snoutFill = (() => { const id = uid + "-snout"; const g = mk("radialGradient", { id, cx: "40%", cy: "30%", r: "75%" }); g.appendChild(mk("stop", { offset: "0%", "stop-color": "#F0DAB8" })); g.appendChild(mk("stop", { offset: "100%", "stop-color": "#C7A87C" })); defs.appendChild(g); return "url(#" + id + ")"; })();
-    svg.appendChild(mk("circle", { cx: 10, cy: 11, r: 4.2, fill: "#8A5F3A" }));
-    svg.appendChild(mk("circle", { cx: 30, cy: 11, r: 4.2, fill: "#8A5F3A" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 22, r: 14, fill: headFill }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.5, rx: 6.5, ry: 5, fill: snoutFill }));
-    svg.appendChild(mk("circle", { cx: 15, cy: 20, r: 1.5, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 25, cy: 20, r: 1.5, fill: "#20242B" }));
-    svg.appendChild(catchlight(15.4, 19.6, .45));
-    svg.appendChild(catchlight(25.4, 19.6, .45));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 24.5, rx: 1.8, ry: 1.3, fill: "#20242B" }));
+    /* The shape was already right - this is the one of the eight that
+       needed depth rather than redrawing. Inner ears, a brow ridge, a
+       muzzle that is lit rather than flat, and a body under it. */
+    const headFill = headGrad("#C49A64", "#9C6B41", "#714A2B");
+    const bodyFill = headGrad("#9C6B41", "#7A5230", "#573A22");
+    const snoutFill = (() => {
+      const id = uid + "-snout";
+      const g = mk("radialGradient", { id, cx: "38%", cy: "26%", r: "78%" });
+      g.appendChild(mk("stop", { offset: "0%", "stop-color": "#F6E3C4" }));
+      g.appendChild(mk("stop", { offset: "100%", "stop-color": "#C09C6E" }));
+      defs.appendChild(g); return "url(#" + id + ")";
+    })();
+    svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32 14.6 30 L25.4 30 Q32.6 32 33.4 40 Z",
+                                 fill: bodyFill }));
+    svg.appendChild(mk("circle", { cx: 10, cy: 10.6, r: 4.4, fill: "#8A5F3A" }));
+    svg.appendChild(mk("circle", { cx: 30, cy: 10.6, r: 4.4, fill: "#8A5F3A" }));
+    svg.appendChild(mk("circle", { cx: 10, cy: 10.9, r: 2.3, fill: "#5E3C22" }));
+    svg.appendChild(mk("circle", { cx: 30, cy: 10.9, r: 2.3, fill: "#5E3C22" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 13.4, fill: headFill }));
+    /* The brow. Two low, wide bands - a bear's whole expression is the
+       heavy ridge above the eyes. */
+    svg.appendChild(mk("path", { d: "M12.4 17.4 Q15.6 15.8 18.4 17.2", fill: "none",
+                                 stroke: "rgba(60,38,20,.28)", "stroke-width": 1.8,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.6 17.2 Q24.4 15.8 27.6 17.4", fill: "none",
+                                 stroke: "rgba(60,38,20,.28)", "stroke-width": 1.8,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.4, rx: 6.9, ry: 5.2, fill: snoutFill }));
+    svg.appendChild(mk("circle", { cx: 15, cy: 19.8, r: 1.6, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 25, cy: 19.8, r: 1.6, fill: "#20242B" }));
+    svg.appendChild(catchlight(14.5, 19.3, .52));
+    svg.appendChild(catchlight(24.5, 19.3, .52));
+    svg.appendChild(mk("path", { d: "M17.6 23.2 Q20 21.9 22.4 23.2 Q20 25.2 17.6 23.2 Z",
+                                 fill: "#20242B" }));
+    svg.appendChild(mk("path", { d: "M20 24.6 L20 26.2 M20 26.2 Q17.9 27.8 16.6 26.2 M20 26.2 Q22.1 27.8 23.4 26.2",
+                                 fill: "none", stroke: "#3A2415", "stroke-width": .85,
+                                 "stroke-linecap": "round" }));
     return svg;
   }
 
   if(def.kind === "ninja"){
-    /* Starting over with a genuinely different silhouette this time,
-       not another refinement of the same shape \u2014 a hood that comes
-       to one clean point at the top (the actual classic ninja-cowl
-       silhouette) instead of the previous shape's double-peak/side-
-       drape construction, which kept reading as ambiguous. Added a
-       tied-knot detail at the side (two loose fabric ends hanging
-       from a knot) \u2014 a specific, recognizable real feature of how a
-       ninja hood is actually tied, not a generic hood decoration. */
-    const hoodFill = headGrad("#3A4048", "#22262C", "#121417");
-    const eyeAreaFill = headGrad("#E8C4A0", "#D9AE83", "#B58A62");
-    svg.appendChild(mk("polygon", { points: "20,2 29,9 33,20 30,31 10,31 7,20 11,9", fill: hoodFill }));
-    svg.appendChild(mk("polygon", { points: "12,18 28,18 28.5,21 26,24.5 14,24.5 11.5,21", fill: eyeAreaFill, stroke: "#1A1D21", "stroke-width": .4 }));
-    /* Eyes reworked \u2014 the previous shape had each eye's OUTER corner
-       sitting lower than its inner corner, which is literally the
-       geometry of a sad or downturned eye. Swapping which corner sits
-       higher (outer corner raised instead) is the same small change
-       that turns a droopy expression into a focused, narrowed one. */
-    svg.appendChild(mk("polygon", { points: "12.6,19.6 17.4,20.7 17.7,22.1 12.9,21", fill: "#1A1D21" }));
-    svg.appendChild(mk("polygon", { points: "22.6,20.7 27.4,19.6 27.1,21 22.3,22.1", fill: "#1A1D21" }));
-    svg.appendChild(catchlight(15.6, 20.4, .35));
-    svg.appendChild(catchlight(25.3, 20.4, .35));
-    svg.appendChild(mk("rect", { x: 15.5, y: 13.1, width: 9, height: 3, rx: .7, fill: "#B8C0C8" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 14.6, r: .65, fill: "#6B7278" }));
-    svg.appendChild(mk("circle", { cx: 30.5, cy: 17, r: 1.6, fill: "#22262C" }));
-    svg.appendChild(mk("polygon", { points: "31.5,18 35,22 33.3,22.6 30.3,19", fill: "#3A4048" }));
-    svg.appendChild(mk("polygon", { points: "30,18.5 32,23.3 30.3,23.6 28.3,19.3", fill: "#3A4048" }));
-    /* A gripping fist behind the shuriken, drawn first so the star
-       reads as held rather than floating loose beside the body \u2014
-       the actual fix for "attach it with a hand or something." */
-    /* An arm bridging from the body down to the fist \u2014 without this,
-       the hand and shuriken sat in obvious empty space with nothing
-       connecting them back to the body at all, which reads as
-       "unattached" regardless of how convincing the fist itself is. */
-    /* Moved the whole hand-and-shuriken cluster directly against the
-       body's own edge instead of leaving a gap for a separate arm
-       shape to bridge — simpler and more reliable than a thin
-       connecting polygon that could render too faintly to read. */
-    svg.appendChild(mk("ellipse", { cx: 8, cy: 30, rx: 3.1, ry: 2.6, fill: hoodFill }));
-    svg.appendChild(mk("polygon", { points: "12,29.5 8.4,28.1 7,24.5 5.6,28.1 2,29.5 5.6,30.9 7,34.5 8.4,30.9", fill: "#AEB6BE" }));
-    svg.appendChild(mk("circle", { cx: 7, cy: 29.5, r: .9, fill: "#5A6168" }));
+    /* Shoulders, and the loose shuriken is gone. It sat off the bottom-
+       left corner attached to nothing, which read as an artifact rather
+       than a prop - the one the ninja is actually holding is up beside
+       the head where it can be seen. The hood also has a real fold and a
+       wrap seam now, so it is cloth rather than a dark heptagon. */
+    const hoodFill = headGrad("#3D444D", "#242931", "#12151A");
+    const eyeAreaFill = headGrad("#EDCAA6", "#D9AE83", "#AE8159");
+    svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.4 14.4 29.2 L25.6 29.2 Q33.2 31.4 34 40 Z",
+                                 fill: hoodFill }));
+    svg.appendChild(mk("polygon", { points: "20,2.4 29.2,9 33,20 30,31 10,31 7,20 10.8,9",
+                                    fill: hoodFill }));
+    /* The wrap: a lighter band running round the crown, which is the
+       thing that says this is fabric wound on rather than a mask. */
+    svg.appendChild(mk("path", { d: "M8.6 14.6 Q20 10.4 31.4 14.6", fill: "none",
+                                 stroke: "rgba(255,255,255,.09)", "stroke-width": 2.4,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("polygon", { points: "12,18 28,18 28.5,21 26,24.8 14,24.8 11.5,21",
+                                    fill: eyeAreaFill, stroke: "#14171B", "stroke-width": .45 }));
+    svg.appendChild(mk("polygon", { points: "12.6,19.5 17.6,20.7 17.9,22.3 12.9,21.1",
+                                    fill: "#14171B" }));
+    svg.appendChild(mk("polygon", { points: "22.4,20.7 27.4,19.5 27.1,21.1 22.1,22.3",
+                                    fill: "#14171B" }));
+    svg.appendChild(catchlight(15.4, 20.5, .42));
+    svg.appendChild(catchlight(25.1, 20.5, .42));
+    /* The headband knot, trailing to one side. */
+    svg.appendChild(mk("rect", { x: 15.2, y: 12.8, width: 9.6, height: 3.1, rx: .7,
+                                 fill: "#B23A3A" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 14.35, r: .72, fill: "#7A2323" }));
+    svg.appendChild(mk("polygon", { points: "29.6,13.4 34.4,15.6 33.6,17.4 29.4,16",
+                                    fill: "#B23A3A" }));
+    svg.appendChild(mk("polygon", { points: "29.6,15.6 33.4,19 32.2,20.4 29.2,17.8",
+                                    fill: "#8E2C2C" }));
     return svg;
   }
 
@@ -21741,6 +22254,16 @@ function buildAvatarCharSVG(charId){
        outline, because a fluffy outline turns to a smudge at 42px. */
     const skin = headGrad("#FFF0E2", "#F7DCC6", "#D8B79C");
     const hair = headGrad("#FF8A5C", "#E8552F", "#A8321A");
+    /* Shoulders, like the rest of the set. These three were drawn before
+       the body became part of the recipe and read as heads floating with
+       nothing under them once the other nine had one. A ruff for the
+       clown, because a plain collar on a clown is a wasted opportunity. */
+    const ruff = headGrad("#8FE3FF", "#4FB9DC", "#2C7E9C");
+    svg.appendChild(mk("path", { d: "M6.4 40 Q7.2 32.4 14.4 30.4 L25.6 30.4 Q32.8 32.4 33.6 40 Z",
+                                 fill: "#3C4450" }));
+    [9.4, 14.2, 20, 25.8, 30.6].forEach((x, i) => {
+      svg.appendChild(mk("circle", { cx: x, cy: 30.6 + (i % 2 ? 1 : 0), r: 3.1, fill: ruff }));
+    });
     [8.6, 31.4].forEach((x, i) => {
       const s = i ? -1 : 1;
       svg.appendChild(mk("circle", { cx: x, cy: 19.5, r: 4.3, fill: hair }));
@@ -21768,6 +22291,15 @@ function buildAvatarCharSVG(charId){
   }
 
   if(def.kind === "robot"){
+    /* A chassis under the head, for the same reason every other character
+       has shoulders: without one this was a head hanging in space. */
+    const chassis = headGrad("#8E9AA8", "#697585", "#454F5C");
+    svg.appendChild(mk("path", { d: "M6.8 40 Q7.6 32.6 14.6 30.6 L25.4 30.6 Q32.4 32.6 33.2 40 Z",
+                                 fill: chassis }));
+    svg.appendChild(mk("rect", { x: 15.6, y: 32.4, width: 8.8, height: 3.4, rx: 1.1,
+                                 fill: "#2E3541" }));
+    svg.appendChild(mk("circle", { cx: 18, cy: 34.1, r: .78, fill: "#4DD4E8" }));
+    svg.appendChild(mk("circle", { cx: 22, cy: 34.1, r: .78, fill: "#FFD84D" }));
     /* The "someone that is animated" one. Everything else in the set is
        still; this has a light that travels across its visor, which is
        the whole reason it is here. The sweep is a CSS animation on a
@@ -21823,6 +22355,10 @@ function buildAvatarCharSVG(charId){
       lg.appendChild(st);
     });
     defs.appendChild(lg);
+    /* Shoulders. The suit's helmet ring already reads as a collar, so this
+       is the torso below it rather than a second collar on top. */
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6.2 32.8 13.8 30.6 L26.2 30.6 Q33.8 32.8 34.6 40 Z",
+                                 fill: headGrad("#E6ECF3", "#C2CCD8", "#8E9AA8") }));
     svg.appendChild(mk("rect", { x: 5.6, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
     svg.appendChild(mk("rect", { x: 30.8, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
     svg.appendChild(mk("rect", { x: 8.2, y: 7.6, width: 23.6, height: 24, rx: 9.4, fill: suit,
@@ -21846,319 +22382,222 @@ function buildAvatarCharSVG(charId){
   }
 
   if(def.kind === "queen"){
-    /* A pointed, jeweled crown and visible hair are what separate this
-       from every animal in the set at a glance \u2014 built as bold, simple
-       shapes rather than fussy detail that would disappear at this
-       size. Hair framing the sides rather than a full dome over the
-       top: the earlier version covered most of the head before the
-       crown was even added, which is exactly why it read as a dark
-       helmet instead of hair \u2014 the crown needs to be the dominant
-       shape on top, with hair visible around and below it, not
-       competing with it for the same space. */
-    const skinFill = headGrad("#F6D9BE", "#EFC7A3", "#D8A87D");
-    const hairFill = headGrad("#5A3E2E", "#4A3226", "#2E1F16");
-    /* An ellipse, not a perfect circle \u2014 narrower than it is tall,
-       which is what actually reads as a normal face rather than
-       "round/chubby." A perfect circle is a legitimately harder shape
-       to read as a face at this size, since real faces (and every
-       stylized version of one) taper slightly rather than staying
-       equally wide at every point. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 23, rx: 9.6, ry: 10.5, fill: skinFill }));
-    /* Hair narrowed slightly from the previous version, which was
-       reading as bulkier than intended and adding to an overall
-       "chubby" impression the face circle alone wasn't causing. */
-    svg.appendChild(mk("path", { d: "M10 18c-1.2 3-1.2 8.5.4 12.5 .8-1 1.2-2.8 1.2-6 0-2.8-.8-5-1.6-6.5z", fill: hairFill }));
-    svg.appendChild(mk("path", { d: "M30 18c1.2 3 1.2 8.5-.4 12.5-.8-1-1.2-2.8-1.2-6 0-2.8.8-5 1.6-6.5z", fill: hairFill }));
-    /* Rebuilt as a base band plus three independent triangles (SVG
-       polygons \u2014 simple straight-line points, nothing curved to
-       misrender) rather than one hand-written zigzag path. The
-       previous version's crown base sat too low once the peaks were
-       made taller, so the bottom of the crown actually overlapped the
-       eyes \u2014 exactly the "crown isn't even in the right place" bug.
-       Each shape here has an independently checked position, with a
-       clear gap held above the eye line. */
-    /* Enlarged further \u2014 wider band, taller peaks \u2014 plus a purple
-       collar hinting at royal robes across the shoulders. Correct
-       positioning alone (the previous fix) apparently wasn't enough
-       for this to read clearly as "royalty" rather than just "person
-       wearing something on their head"; a second, independent regal
-       signifier (the collar) plus a genuinely dominant crown size is
-       the more decisive fix. */
-    svg.appendChild(mk("path", { d: "M8 30c3 3 21 3 24 0v4c-3 3-21 3-24 0z", fill: "#7B4B9E" }));
-    /* The actual bug, found by checking the math: the face is an
-       ELLIPSE, narrower at the top than in the middle, but the crown
-       band was a flat rectangle spanning the same full width as the
-       face's widest point. At the height the band actually sat, the
-       face itself was only about 12 units wide, not the 24 the band
-       spanned \u2014 so both ends of the band were floating well past the
-       actual edge of the head with nothing beneath them, which is
-       exactly the visible gap that kept not lining up no matter how
-       many times the vertical position alone got adjusted. A curved
-       band that actually follows the head's own curve (arcing up and
-       over, the same way a real crown wraps a round head) replaces
-       the flat one entirely. */
-    /* Rebuilt as a stroke traced along the EXACT SAME ellipse the face
-       itself is built from (cx 20, cy 23, rx 9.6, ry 10.5) \\u2014 not a
-       separately-approximated curve with its own, slightly different
-       radii. The previous version used a filled shape with two
-       different arcs joined by straight side segments, and those
-       joints were visible seams/corners exactly where hair met crown,
-       which is what still read as "not connected" no matter how
-       closely the curve was eyeballed to match. Tracing the identical
-       ellipse guarantees the band's own center line sits precisely on
-       the head's real curve, mathematically, with zero gap possible
-       \\u2014 stroke-width gives it real thickness extending evenly to
-       both sides of that perfect line, and round caps keep the ends
-       soft rather than square-cut. */
-    svg.appendChild(mk("path", {
-      d: "M10.98,19.41 A9.6,10.5 0 0 1 29.02,19.41",
-      fill: "none", stroke: "#E8B923", "stroke-width": 5, "stroke-linecap": "round"
-    }));
-    /* A soft contact shadow where the crown's band meets the
-       forehead \u2014 the same "resting on top of" cue used on the
-       wizard's hat, so the crown reads as sitting on the head rather
-       than a flat gold shape overlapping a flat skin shape with
-       nothing connecting them. */
-    svg.appendChild(mk("path", { d: "M11 17c1.2-1 2.7-1.3 4-1", fill: "none", stroke: "rgba(0,0,0,.18)", "stroke-width": .9, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M25 16c1.3-.3 2.8 0 4 1", fill: "none", stroke: "rgba(0,0,0,.18)", "stroke-width": .9, "stroke-linecap": "round" }));
-    svg.appendChild(mk("polygon", { points: "10,13.5 16,13.5 12.5,4.5", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "14,11.5 26,11.5 20,3.3", fill: "#E8B923" }));
-    svg.appendChild(mk("polygon", { points: "24,13.5 30,13.5 27.5,4.5", fill: "#E8B923" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 5.5, r: 1.5, fill: "#C23B7A" }));
-    svg.appendChild(mk("circle", { cx: 13, cy: 13.8, r: .9, fill: "#5B8FD8" }));
-    svg.appendChild(mk("circle", { cx: 27, cy: 13.8, r: .9, fill: "#5B8FD8" }));
-    svg.appendChild(mk("path", { d: "M14.5 23.3c1-1 2.6-1 3.6 0", fill: "none", stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M21.9 23.3c1-1 2.6-1 3.6 0", fill: "none", stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16.3, cy: 23.7, r: 1, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 23.7, cy: 23.7, r: 1, fill: "#20242B" }));
-    svg.appendChild(catchlight(16.6, 23.35, .32));
-    svg.appendChild(catchlight(24.0, 23.35, .32));
-    svg.appendChild(mk("path", { d: "M17.8 28c1.4 1 3 1 4.4 0", fill: "none", stroke: "#B9556F", "stroke-width": 1.3, "stroke-linecap": "round" }));
-    /* Small dangling earrings, a quick polish detail \u2014 visible just
-       below the hair at ear height. */
-    svg.appendChild(mk("circle", { cx: 10, cy: 25.5, r: .8, fill: "#5B8FD8" }));
-    /* Right-side earring removed \u2014 it was landing at nearly the exact
-       same spot as the scepter's orb (added afterward), which has a
-       radius wide enough to completely swallow it. One accessory per
-       side reading clearly beats two competing for the same few
-       pixels and neither being visible. */
-    /* A small scepter in the corner \u2014 same strategy as the ninja's
-       shuriken and the samurai's katana: one unambiguous accessory
-       that settles the identity on its own, rather than relying on
-       the crown and collar alone to carry the whole read. */
-    svg.appendChild(mk("rect", { x: 28.3, y: 27, width: 1.6, height: 9, rx: .6, fill: "#E8B923" }));
-    svg.appendChild(mk("circle", { cx: 29.1, cy: 26, r: 2, fill: "#7B4B9E" }));
-    svg.appendChild(catchlight(28.4, 25.3, .5));
-    /* A real, measured misalignment, not a perceptual illusion \u2014
-       checked directly against every other character's own actual
-       eye coordinates in source: this face sits at eye-level 23.7,
-       while the other seven cluster tightly around 18-20.6. That's
-       what was actually reading as "everyone else is higher than
-       this one," including the neighboring alien specifically called
-       out, even though the alien's own eyes (20) are perfectly
-       normal on their own. The crown's topmost point already sits at
-       y=3.3, just 0.3 units from this shared viewBox's own y=3 edge,
-       so shifting this character's content up by the ~3.7 units
-       needed to match the others would clip the crown outright.
-       Widening this character's own viewBox specifically (not the
-       one every other character still shares, which stays exactly as
-       it was) is what creates real headroom for that shift without
-       cutting anything off or changing this character's own scale
-       within its picker cell. */
-    svg.setAttribute("viewBox", "3 -1 34 38");
-    const queenGroup = mk("g", { transform: "translate(0,-3.7)" });
-    [...svg.children].forEach(child => { if(child.tagName !== "defs") queenGroup.appendChild(child); });
-    svg.appendChild(queenGroup);
+    /* Bigger face, smaller crown. The crown was nearly as tall as the
+       head, which is what made this read as headwear with a face under
+       it rather than as somebody wearing a crown - the same fault the
+       officer had. Shoulders and a collar underneath, so the gown is
+       attached to a person. */
+    const skinFill = headGrad("#F8DCC2", "#EFC7A3", "#D3A276");
+    const hairFill = headGrad("#5F4131", "#452F23", "#291B13");
+    const gownFill = headGrad("#8E58B4", "#6E3F92", "#4A2764");
+    svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.6 14.4 29.4 L25.6 29.4 Q33.2 31.6 34 40 Z",
+                                 fill: gownFill }));
+    svg.appendChild(mk("path", { d: "M14.4 29.4 Q20 34.4 25.6 29.4 L25.6 31.2 Q20 36.2 14.4 31.2 Z",
+                                 fill: "#B489D6" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 33.6, r: 1.5, fill: "#E8B923" }));
+    /* Hair behind the face, then the face, then the hair that falls in
+       front of it - three layers, which is what stops hair reading as
+       two shapes parked either side of a circle. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 11.6, ry: 11.4, fill: hairFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: skinFill }));
+    svg.appendChild(mk("path", { d: "M10.8 17.4 Q9.4 24.6 11.4 30.8 Q13.2 26 12.8 20.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M29.2 17.4 Q30.6 24.6 28.6 30.8 Q26.8 26 27.2 20.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M11.6 15.6 Q20 10.6 28.4 15.6 Q20 13.8 11.6 15.6 Z",
+                                 fill: hairFill }));
+    /* The crown: a band and three points, about half the height it was. */
+    svg.appendChild(mk("path", { d: "M11.4 12.4 L13.6 6.6 L16.8 10.6 L20 5.2 L23.2 10.6 L26.4 6.6 L28.6 12.4 Z",
+                                 fill: "#E8B923" }));
+    svg.appendChild(mk("rect", { x: 11.2, y: 12.1, width: 17.6, height: 2.5, rx: .8,
+                                 fill: "#D2A417" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 6.6, r: 1.35, fill: "#C23B7A" }));
+    svg.appendChild(mk("circle", { cx: 13.6, cy: 8.2, r: .85, fill: "#5B8FD8" }));
+    svg.appendChild(mk("circle", { cx: 26.4, cy: 8.2, r: .85, fill: "#5B8FD8" }));
+    svg.appendChild(mk("path", { d: "M14.4 19.4c1.1-1.2 2.8-1.2 3.9 0", fill: "none",
+                                 stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.7 19.4c1.1-1.2 2.8-1.2 3.9 0", fill: "none",
+                                 stroke: "#3D2A1E", "stroke-width": 1.3, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16.3, cy: 21.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 23.7, cy: 21.6, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(catchlight(15.8, 21.1, .48));
+    svg.appendChild(catchlight(23.2, 21.1, .48));
+    svg.appendChild(mk("ellipse", { cx: 13.4, cy: 24.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .22 }));
+    svg.appendChild(mk("ellipse", { cx: 26.6, cy: 24.4, rx: 1.7, ry: 1.1,
+                                    fill: "#C23B7A", opacity: .22 }));
+    svg.appendChild(mk("path", { d: "M17.6 26.4c1.5 1.3 3.3 1.3 4.8 0", fill: "none",
+                                 stroke: "#B9556F", "stroke-width": 1.35, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 10.4, cy: 24.6, r: .95, fill: "#5B8FD8" }));
+    svg.appendChild(mk("circle", { cx: 29.6, cy: 24.6, r: .95, fill: "#5B8FD8" }));
     return svg;
   }
 
   if(def.kind === "alien"){
-    /* Everything about this face is the eyes \u2014 huge, black, almond,
-       taking up most of the head \u2014 with a smooth, slightly elongated
-       cranium and no ears at all. That absence (no ears, no hair, no
-       visible nose) is as important to the silhouette as anything
-       actually drawn. */
-    const headFill = headGrad("#9FD9A8", "#7BC98A", "#4E9B60");
-    svg.appendChild(mk("path", { d: "M20 5c-7 0-12 5.5-12 13 0 6.5 4 11 8 13.5 1.3.8 2.7 1.2 4 1.2s2.7-.4 4-1.2c4-2.5 8-7 8-13.5 0-7.5-5-13-12-13z", fill: headFill }));
-    svg.appendChild(mk("ellipse", { cx: 14.5, cy: 20, rx: 4.6, ry: 6.2, fill: "#12151A" }));
-    svg.appendChild(mk("ellipse", { cx: 25.5, cy: 20, rx: 4.6, ry: 6.2, fill: "#12151A" }));
-    svg.appendChild(catchlight(13, 17.2, .9));
-    svg.appendChild(catchlight(24, 17.2, .9));
-    svg.appendChild(mk("path", { d: "M17.5 29.5c1.5 1 3.5 1 5 0", fill: "none", stroke: "#2C4A34", "stroke-width": 1.1, "stroke-linecap": "round" }));
+    /* Everything about this face is the eyes - huge, black, almond,
+       taking up most of the head - with a smooth tapering cranium and no
+       ears, no hair, no nose. That absence is as much of the silhouette
+       as anything drawn.
+       What it was missing was a BODY: a head floating with no neck reads
+       as a sticker, which is exactly what separated these from the new
+       four. It also has a brow and a jaw shadow now, so the cranium is a
+       dome rather than a flat green shape. */
+    const headFill = headGrad("#A6E0AF", "#77C486", "#428B55");
+    const suitFill = headGrad("#4E7F86", "#37606B", "#20404A");
+    svg.appendChild(mk("path", { d: "M7.4 40 Q8 31.2 15.4 29 L24.6 29 Q32 31.2 32.6 40 Z",
+                                 fill: suitFill }));
+    svg.appendChild(mk("path", { d: "M15.4 29 Q20 33.4 24.6 29 L24.6 30.6 Q20 35 15.4 30.6 Z",
+                                 fill: "#6FA3AB" }));
+    svg.appendChild(mk("path", {
+      d: "M20 4.6c-7.4 0-12.6 5.8-12.6 13.6 0 7 4.4 11.8 8.6 14.3 1.3.8 2.7 1.2 4 1.2"
+       + "s2.7-.4 4-1.2c4.2-2.5 8.6-7.3 8.6-14.3C32.6 10.4 27.4 4.6 20 4.6z",
+      fill: headFill }));
+    /* The dome's own shading: a bright pool up on the forehead and a
+       shadow under the cheekbones, which is what a head has and a green
+       oval does not. */
+    svg.appendChild(mk("ellipse", { cx: 17.4, cy: 11.4, rx: 5.6, ry: 3.6,
+                                    fill: "#FFFFFF", opacity: .17 }));
+    svg.appendChild(mk("path", { d: "M11.6 25.6 Q20 31.6 28.4 25.6", fill: "none",
+                                 stroke: "rgba(24,58,32,.22)", "stroke-width": 2.4,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("ellipse", { cx: 14.3, cy: 20, rx: 4.8, ry: 6.4, fill: "#0E1116",
+                                    transform: "rotate(-12 14.3 20)" }));
+    svg.appendChild(mk("ellipse", { cx: 25.7, cy: 20, rx: 4.8, ry: 6.4, fill: "#0E1116",
+                                    transform: "rotate(12 25.7 20)" }));
+    /* Two lights in each eye, not one. A single dot on a black almond
+       reads as a printing error; a large soft one with a small hard one
+       below it reads as wet. */
+    svg.appendChild(catchlight(12.7, 17, 1.25));
+    svg.appendChild(catchlight(24.1, 17, 1.25));
+    svg.appendChild(catchlight(16, 22.6, .5));
+    svg.appendChild(catchlight(27.4, 22.6, .5));
+    svg.appendChild(mk("path", { d: "M17.6 28.6c1.6 1.1 3.2 1.1 4.8 0", fill: "none",
+                                 stroke: "#2A5436", "stroke-width": 1.1,
+                                 "stroke-linecap": "round" }));
     return svg;
   }
 
   if(def.kind === "samurai"){
-    /* Completely different approach this time, not another variation
-       on a helmet \u2014 four separate attempts at a kabuto silhouette
-       never landed. A topknot (chonmage) with a simple forehead
-       headband (hachimaki) is a far more universally recognized
-       samurai/warrior shorthand in illustration, and far simpler to
-       render clearly at this size than an elaborate helmet ever was.
-       The katana stays \u2014 that accessory strategy has worked
-       everywhere else it's been tried. */
-    const skinFill = headGrad("#EFC7A3", "#E3B48C", "#C5946A");
-    const hairFill = headGrad("#3A322A", "#241E18", "#120E0A");
-    const armorFill = headGrad("#6B2A2A", "#4A1C1C", "#2E1010");
-    svg.appendChild(mk("circle", { cx: 20, cy: 21, r: 10, fill: skinFill }));
-    /* Armor shoulders now drawn AFTER (on top of) the face circle,
-       not before it \u2014 this is the actual "can't see the body" bug:
-       with the face painted second, its own lower edge was covering
-       the exact part of the armor that should overlap the neck to
-       read as connected, leaving the shoulders looking like two
-       separate floating triangles below a disembodied head instead
-       of an actual body. Drawing order alone fixes this: the armor's
-       upper edge now visibly tucks under the jaw the way a real
-       collar would. */
-    /* The actual "hands" bug, found by tracing the shape: this polygon
-       reached up to y=22, well into the cheek/jaw area (the face
-       spans roughly y=11 to y=31), which is exactly why a shoulder-
-       armor shape was being read as a dark hand pressed against the
-       face. Redrawn to stay clear of the face entirely \u2014 nothing
-       above y=27, a clean line below the jaw \u2014 so these read
-       unambiguously as shoulder plates, not hands. */
-    svg.appendChild(mk("polygon", { points: "5,27 12,27.5 15,31 9,37 3,35", fill: armorFill }));
-    svg.appendChild(mk("polygon", { points: "35,27 28,27.5 25,31 31,37 37,35", fill: armorFill }));
-    /* Hair pulled back to the topknot, visible at the sides and back. */
-    svg.appendChild(mk("path", { d: "M9.5 15c-1.5 2.5-2 6.5-.8 10.5.8-1.2 1.5-2.2 1.8-4.5.3-2.3 0-4-1-6z", fill: hairFill }));
-    svg.appendChild(mk("path", { d: "M30.5 15c1.5 2.5 2 6.5.8 10.5-.8-1.2-1.5-2.2-1.8-4.5-.3-2.3 0-4 1-6z", fill: hairFill }));
-    /* The topknot itself \u2014 a small bun on top with a thin base. */
-    svg.appendChild(mk("path", { d: "M16.5 9c0 3 1.5 6 3.5 6s3.5-3 3.5-6c0-1.6-1.5-3-3.5-3s-3.5 1.4-3.5 3z", fill: hairFill }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 7, r: 3, fill: hairFill }));
-    /* The hachimaki headband, with a small knot and trailing tails on
-       one side \u2014 one of the most recognizable warrior-specific visual
-       cues in Japanese illustration, distinct from a plain fabric
-       band. */
-    svg.appendChild(mk("rect", { x: 10.5, y: 14, width: 19, height: 3, rx: .4, fill: "#E8E3D8" }));
-    /* A contact shadow where the headband crosses the forehead, same
-       "resting on top of" cue as the wizard's hat and the queen's
-       crown. */
-    svg.appendChild(mk("path", { d: "M11 17a9 1.6 0 0018 0", fill: "none", stroke: "rgba(0,0,0,.18)", "stroke-width": .9, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 27.5, cy: 15.5, r: 1.6, fill: "#C0392B" }));
-    svg.appendChild(mk("polygon", { points: "28.5,16.5 32,20 30.5,20.8 27.5,17.3", fill: "#E8E3D8" }));
-    svg.appendChild(mk("polygon", { points: "27,17 30,21.5 28.5,22.2 26,18", fill: "#E8E3D8" }));
-    svg.appendChild(mk("path", { d: "M14 23.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.4, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M22.2 23.3c1.1-1.3 2.7-1.3 3.8 0", fill: "none", stroke: "#2C2118", "stroke-width": 1.4, "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16, cy: 23.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(mk("circle", { cx: 24, cy: 23.9, r: 1, fill: "#20242B" }));
-    svg.appendChild(catchlight(16.3, 23.55, .32));
-    svg.appendChild(catchlight(24.3, 23.55, .32));
-    /* Same defined mustache treatment as the wizard \u2014 a rounded
-       center bar plus two small drooping ends, for the same "actual
-       mustache" silhouette rather than a plain flat rule. */
-    svg.appendChild(mk("rect", { x: 15.5, y: 26.8, width: 9, height: 1.6, rx: .8, fill: "#2C2118" }));
-    svg.appendChild(mk("polygon", { points: "14.7,26.7 15.7,26.7 15,28.7 14.1,28.3", fill: "#2C2118" }));
-    svg.appendChild(mk("polygon", { points: "24.3,26.7 25.3,26.7 25.9,28.3 25,28.7", fill: "#2C2118" }));
-    /* An actual mouth beneath the mustache — previously the mustache
-       bar was the only mark in the whole lower-face area, which read
-       as an incomplete, cut-off face rather than an expression. */
-    svg.appendChild(mk("path", { d: "M17 30c1.8 1.3 4.2 1.3 6 0", fill: "none", stroke: "#8A5A42", "stroke-width": 1.1, "stroke-linecap": "round" }));
-    /* A katana: a thin diagonal blade (polygon), a small crossguard,
-       and a handle \u2014 unmistakably a sword, unmistakably samurai. */
-    svg.appendChild(mk("polygon", { points: "23,35 25,33 32,24 33.5,25.5 26.5,34.5 24.5,36.5", fill: "#D8DDE3" }));
-    svg.appendChild(mk("polygon", { points: "25.3,32.2 27.8,34.3 26.7,35.6 24.2,33.5", fill: "#E8B923" }));
-    svg.appendChild(mk("rect", { x: 22.3, y: 34.3, width: 3.6, height: 1.6, rx: .5, fill: "#2C2118", transform: "rotate(-42 24.1 35.1)" }));
-    /* The actual "not in his hand" bug: there was no hand at all \u2014
-       just the sword's own shape floating on its own near the edge
-       of the canvas, nothing gripping it. A small hand, same skin
-       tone as the face, wrapped over the handle at the exact same
-       angle as the grip itself, is what actually sells "holding"
-       rather than "sword happens to be nearby." */
-    svg.appendChild(mk("ellipse", { cx: 23.4, cy: 34.7, rx: 2.1, ry: 1.5, fill: skinFill, transform: "rotate(-42 23.4 34.7)" }));
-    svg.appendChild(mk("path", { d: "M22.4 33.8c.5-.4 1.1-.4 1.6 0M22.1 34.7c.5-.4 1.3-.4 1.9 0M22.4 35.6c.5-.4 1.1-.4 1.6 0", fill: "none", stroke: "rgba(0,0,0,.25)", "stroke-width": .35, "stroke-linecap": "round" }));
-    /* The same real, measured misalignment as the queen, and the same
-       fix \u2014 this face's own eye-level (23.9) sits well below the
-       18-20.6 cluster every other character's eyes actually fall in,
-       and the topknot already leaves only about 1 unit of headroom
-       against this shared viewBox's y=3 top edge, nowhere near enough
-       for the ~3.9-unit shift needed to match the rest. Same widened,
-       character-specific viewBox for real headroom, same technique:
-       move everything up as one group, without touching this
-       character's own scale or the viewBox every other character
-       still shares. */
-    svg.setAttribute("viewBox", "3 -1 34 38");
-    const samuraiGroup = mk("g", { transform: "translate(0,-3.9)" });
-    [...svg.children].forEach(child => { if(child.tagName !== "defs") samuraiGroup.appendChild(child); });
-    svg.appendChild(samuraiGroup);
+    /* The sword and the HAND holding it were the problem: a blade, a
+       guard, a grip and four knuckle lines all crossing the bottom-right
+       corner turned into mud at 42px, and the face lost the frame to
+       them. The blade stays because it is what names the character, one
+       shape at one angle, behind the shoulder where a sheathed sword
+       actually sits. Everything else is the face, the topknot and the
+       armour. */
+    const skinFill = headGrad("#F3CEA8", "#E3B48C", "#C08C61");
+    const hairFill = headGrad("#3E362C", "#26201A", "#12100C");
+    const armorFill = headGrad("#8A3636", "#571F1F", "#331111");
+    /* The blade first, so the shoulder overlaps it. Narrow, with a dark
+       spine down one side and a wrapped hilt at the bottom: the wide pale
+       wedge this replaces rendered as a sheet of paper stood behind the
+       head, which is what a blade with no edge and no handle looks like. */
+    svg.appendChild(mk("polygon", { points: "31.4,5.8 33,7.2 18.8,26.8 17.2,25.4",
+                                    fill: "#E4E9EE" }));
+    svg.appendChild(mk("polygon", { points: "31.4,5.8 32.2,6.5 18,26.1 17.2,25.4",
+                                    fill: "#9AA6B2" }));
+    svg.appendChild(mk("polygon", { points: "18.8,26.8 17.2,25.4 16.2,26.8 17.8,28.2",
+                                    fill: "#E8B923" }));
+    svg.appendChild(mk("polygon", { points: "17.8,28.2 16.2,26.8 13.6,30.4 15.2,31.8",
+                                    fill: "#2C2118" }));
+    svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.2 14.2 29 L25.8 29 Q33.2 31.2 34 40 Z",
+                                 fill: armorFill }));
+    /* Lamellar: three bands across the chest, which is the cheapest
+       thing that says armour rather than a red top. */
+    [32.4, 35.2, 38].forEach(y => {
+      svg.appendChild(mk("path", { d: "M7.4 " + y + " Q20 " + (y + 1.6) + " 32.6 " + y,
+                                   fill: "none", stroke: "rgba(0,0,0,.28)",
+                                   "stroke-width": .9, "stroke-linecap": "round" }));
+    });
+    svg.appendChild(mk("circle", { cx: 20, cy: 33.4, r: 1.8, fill: "#E8B923" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 9.4, ry: 10.2, fill: skinFill }));
+    /* Hair: a low hairline across the brow, the sides, and the topknot. */
+    svg.appendChild(mk("path", { d: "M10.8 16.6 Q20 9.6 29.2 16.6 Q20 13.4 10.8 16.6 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M10.9 15.4 Q8.8 22.2 10.6 28.6 Q12.6 23.4 12.4 18.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M29.1 15.4 Q31.2 22.2 29.4 28.6 Q27.4 23.4 27.6 18.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("path", { d: "M16.8 11.4 Q16.8 7.4 20 7.4 Q23.2 7.4 23.2 11.4 Z",
+                                 fill: hairFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 6.4, rx: 2.5, ry: 2.9, fill: hairFill }));
+    svg.appendChild(mk("rect", { x: 18.6, y: 8.4, width: 2.8, height: 1.5, rx: .5,
+                                 fill: "#B23A3A" }));
+    svg.appendChild(mk("path", { d: "M13.9 18.4c1.2-1.4 3-1.4 4.2 0", fill: "none",
+                                 stroke: "#2C2118", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.9 18.4c1.2-1.4 3-1.4 4.2 0", fill: "none",
+                                 stroke: "#2C2118", "stroke-width": 1.5, "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16, cy: 20.8, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(mk("circle", { cx: 24, cy: 20.8, r: 1.45, fill: "#20242B" }));
+    svg.appendChild(catchlight(15.5, 20.3, .48));
+    svg.appendChild(catchlight(23.5, 20.3, .48));
+    svg.appendChild(mk("rect", { x: 15.8, y: 24.2, width: 8.4, height: 1.7, rx: .85,
+                                 fill: "#2C2118" }));
+    svg.appendChild(mk("path", { d: "M17.4 27.6c1.7 1.1 3.5 1.1 5.2 0", fill: "none",
+                                 stroke: "#8A5A42", "stroke-width": 1.1, "stroke-linecap": "round" }));
     return svg;
   }
 
   if(def.kind === "dragon"){
-    /* A more substantial redo: bigger, sweeping curved horns (multi-
-       point polygons rather than small simple triangles) since the
-       previous horns were too modest to read as dramatic dragon
-       horns, plus a gloss highlight for real dimensionality, plus
-       more visible, higher-contrast scales. Still red, still a
-       narrower snout with visible teeth and slit nostrils \u2014 those
-       fixes worked and are kept. */
-    const headFill = headGrad("#F26B5B", "#D8402E", "#A32A1C");
-    const snoutFill = headGrad("#FF9B84", "#F26B5B", "#C24A38");
-    /* Bigger, sweeping curved horns \u2014 each a 5-point polygon that
-       widens at the base and curves back to a point, rather than a
-       small flat triangle. */
-    /* Both horn tips were reaching y=0, well past the shared y=3
-       viewBox boundary \u2014 exactly the same clipping bug fixed on the
-       queen's crown and wizard's hat. A pointed horn flat-cut at its
-       tip reads as a crude block shape rather than a horn at all,
-       which is the real reason these looked like awkward "ears"
-       rather than dragon horns \u2014 not the shape itself, but that the
-       shape was never fully visible to begin with. */
-    /* Redrawn as a genuinely tapering shape \u2014 a wide base narrowing to
-       one true point at the tip, with a single mid-point on the outer
-       edge for a slight outward curve. The previous 6-point version's
-       "tip" was actually two separate nearby points, which is why it
-       kept reading as a flat, blocky end even once clipping was
-       fixed: the shape itself never truly came to a point. */
-    svg.appendChild(mk("polygon", { points: "17,15 12,16 6,9 9,3.3 15,11", fill: "#D8402E" }));
-    svg.appendChild(mk("polygon", { points: "23,15 28,16 34,9 31,3.3 25,11", fill: "#D8402E" }));
-    /* A circle read as exactly what the name says \u2014 perfectly round,
-       which is precisely why this looked more like a friendly red
-       ball than a dragon's head. An ellipse, narrower across than
-       tall (the opposite ratio from a chubby face), gives the head
-       a longer, more angular silhouette that actually suits a
-       dragon rather than a round mascot. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 20, rx: 12, ry: 13.5, fill: headFill }));
-    /* Small contact shadows at each horn's base, where it meets the
-       head \u2014 the same "actually resting against" cue used elsewhere,
-       so the horns read as growing out of the head rather than
-       floating shapes positioned near it. */
-    svg.appendChild(mk("path", { d: "M12 13.5c1.5 1 3.5 1.3 5.3.8", fill: "none", stroke: "rgba(0,0,0,.25)", "stroke-width": 1, "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M28 13.5c-1.5 1-3.5 1.3-5.3.8", fill: "none", stroke: "rgba(0,0,0,.25)", "stroke-width": 1, "stroke-linecap": "round" }));
-    /* Back-spikes along the top of the head. */
-    svg.appendChild(mk("polygon", { points: "16,8.5 18.5,8.5 17.25,4.5", fill: "#D8402E" }));
-    svg.appendChild(mk("polygon", { points: "19.5,7.5 22,7.5 20.75,3.5", fill: "#D8402E" }));
-    svg.appendChild(mk("polygon", { points: "23,8.5 25.5,8.5 24.25,4.5", fill: "#D8402E" }));
-    /* Scale texture, higher contrast than before: small diamond
-       shapes (polygons) instead of plain circles, on each cheek. */
-    svg.appendChild(mk("polygon", { points: "10.5,22.5 12,24 10.5,25.5 9,24", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "13.8,25 15.3,26.5 13.8,28 12.3,26.5", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "29.5,22.5 31,24 29.5,25.5 28,24", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "26.2,25 27.7,26.5 26.2,28 24.7,26.5", fill: "#A32A1C" }));
-    /* Narrower, more elongated snout than a wide flat disc, plus small
-       visible teeth. */
-    /* A more angular, wedge-shaped muzzle now, not a round ellipse —
-       a round snout is exactly what was reading as "pig-like" rather
-       than dragon-like. A polygon that narrows toward the front, with
-       angled slit nostrils instead of round dots, is a much more
-       reptilian silhouette. */
-    svg.appendChild(mk("polygon", { points: "13.5,24.5 26.5,24.5 25,30.5 20,33 15,30.5", fill: snoutFill }));
-    svg.appendChild(mk("ellipse", { cx: 15.5, cy: 20.5, rx: 2, ry: 2.6, fill: "#FFFFFF" }));
-    svg.appendChild(mk("ellipse", { cx: 24.5, cy: 20.5, rx: 2, ry: 2.6, fill: "#FFFFFF" }));
-    svg.appendChild(mk("ellipse", { cx: 15.5, cy: 20.8, rx: .6, ry: 2, fill: "#2C1210" }));
-    svg.appendChild(mk("ellipse", { cx: 24.5, cy: 20.8, rx: .6, ry: 2, fill: "#2C1210" }));
-    /* Angled brow ridges, pinched down toward the center \u2014 the round
-       wide eyes alone were reading as surprised rather than fierce;
-       a stern, lowered brow is what actually signals "intense"
-       rather than "startled." */
-    svg.appendChild(mk("polygon", { points: "12.5,17 18,18.5 17.5,19.8 12,18.3", fill: "#A32A1C" }));
-    svg.appendChild(mk("polygon", { points: "27.5,17 22,18.5 22.5,19.8 28,18.3", fill: "#A32A1C" }));
-    svg.appendChild(catchlight(15.75, 19.6, .3));
-    svg.appendChild(catchlight(24.75, 19.6, .3));
-    svg.appendChild(mk("polygon", { points: "16.8,26 17.9,26.3 17.6,27.6 16.5,27.3", fill: "#7A2418" }));
-    svg.appendChild(mk("polygon", { points: "23.2,26 22.1,26.3 22.4,27.6 23.5,27.3", fill: "#7A2418" }));
-    svg.appendChild(mk("path", { d: "M16.5 30.5c2 1.3 5 1.3 7 0", fill: "none", stroke: "#7A2418", "stroke-width": 1.1, "stroke-linecap": "round" }));
-    svg.appendChild(mk("polygon", { points: "17,30.8 17.8,30.8 17.4,32.3", fill: "#FFF6F0" }));
-    svg.appendChild(mk("polygon", { points: "22.2,30.8 23,30.8 22.6,32.3", fill: "#FFF6F0" }));
+    /* The head was already the right shape - narrower than tall, which
+       is what keeps it a dragon rather than a round red mascot - so this
+       is depth and a body rather than a redraw. A lit brow ridge, a
+       proper muzzle with nostrils, a jaw shadow, and scales that follow
+       the head instead of sitting on the cheeks as loose diamonds. */
+    const headFill = headGrad("#F47D6B", "#D8402E", "#96251A");
+    const snoutFill = headGrad("#FFAE99", "#F26B5B", "#B8412F");
+    const bodyFill = headGrad("#B8402E", "#8A2B1E", "#5C1B12");
+    svg.appendChild(mk("path", { d: "M6.4 40 Q7.2 32 14.4 30 L25.6 30 Q32.8 32 33.6 40 Z",
+                                 fill: bodyFill }));
+    /* Horns, behind the head so they grow out of it. */
+    svg.appendChild(mk("polygon", { points: "17,15 12,16 6,8.6 9,3 15,11", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "23,15 28,16 34,8.6 31,3 25,11", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "15.4,14.2 12.6,14.8 8.4,9.4 10.2,6.2 14.2,11.6",
+                                    fill: "#E85B48" }));
+    svg.appendChild(mk("polygon", { points: "24.6,14.2 27.4,14.8 31.6,9.4 29.8,6.2 25.8,11.6",
+                                    fill: "#E85B48" }));
+    /* Back spikes. */
+    svg.appendChild(mk("polygon", { points: "16,8.2 18.4,8.2 17.2,4", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "19.5,7.2 21.9,7.2 20.7,3", fill: "#C2352A" }));
+    svg.appendChild(mk("polygon", { points: "23,8.2 25.4,8.2 24.2,4", fill: "#C2352A" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 19.6, rx: 11.6, ry: 13.2, fill: headFill }));
+    /* Contact shadows where the horns meet the skull. */
+    svg.appendChild(mk("path", { d: "M12.4 13.4c1.6 1 3.6 1.3 5.4.8", fill: "none",
+                                 stroke: "rgba(0,0,0,.26)", "stroke-width": 1,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M27.6 13.4c-1.6 1-3.6 1.3-5.4.8", fill: "none",
+                                 stroke: "rgba(0,0,0,.26)", "stroke-width": 1,
+                                 "stroke-linecap": "round" }));
+    /* The brow ridge - the whole expression. */
+    svg.appendChild(mk("path", { d: "M11.8 16.8 Q15.4 14.4 18.6 16.6", fill: "none",
+                                 stroke: "rgba(88,20,12,.42)", "stroke-width": 2,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M21.4 16.6 Q24.6 14.4 28.2 16.8", fill: "none",
+                                 stroke: "rgba(88,20,12,.42)", "stroke-width": 2,
+                                 "stroke-linecap": "round" }));
+    /* The muzzle. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.6, rx: 7.2, ry: 5.4, fill: snoutFill }));
+    svg.appendChild(mk("ellipse", { cx: 17.7, cy: 24.2, rx: .82, ry: 1.05, fill: "#7A1C12" }));
+    svg.appendChild(mk("ellipse", { cx: 22.3, cy: 24.2, rx: .82, ry: 1.05, fill: "#7A1C12" }));
+    /* Eyes: slit pupils on a warm sclera, which is the one thing that
+       stops a dragon reading as a friendly animal. */
+    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 19.4, rx: 2.5, ry: 2.1, fill: "#FFE08A" }));
+    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 19.4, rx: 2.5, ry: 2.1, fill: "#FFE08A" }));
+    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 19.4, rx: .72, ry: 1.75, fill: "#20120C" }));
+    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 19.4, rx: .72, ry: 1.75, fill: "#20120C" }));
+    svg.appendChild(catchlight(14.3, 18.5, .48));
+    svg.appendChild(catchlight(23.9, 18.5, .48));
+    /* The mouth, with two small fangs at the corners. */
+    svg.appendChild(mk("path", { d: "M15.6 28.2 Q20 31 24.4 28.2", fill: "none",
+                                 stroke: "#7A1C12", "stroke-width": 1.1,
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("polygon", { points: "16.6,28.9 18,28.9 17.3,30.9", fill: "#FFFFFF" }));
+    svg.appendChild(mk("polygon", { points: "22,28.9 23.4,28.9 22.7,30.9", fill: "#FFFFFF" }));
+    /* Scales, following the skull rather than parked on the cheeks. */
+    [[11.6, 21.4], [12.6, 24.4], [28.4, 21.4], [27.4, 24.4]].forEach(([x, y]) => {
+      svg.appendChild(mk("path", { d: "M" + x + " " + y + " q1.1 -1.2 2.2 0 q-1.1 1.4 -2.2 0 z",
+                                   fill: "rgba(255,255,255,.14)" }));
+    });
     return svg;
   }
 
@@ -23372,6 +23811,32 @@ function classDaysRemaining(){
   const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
   return CALENDAR_DATA.filter(d => d.date >= todayStr && d.date <= GRADUATION_DATE && !d.holiday).length;
 }
+/* Today's local date as the plain ISO string CALENDAR_DATA is keyed by.
+   Built from the local parts rather than toISOString(), which converts to
+   UTC first and therefore reports tomorrow's date all evening in Texas -
+   the sort of thing that is invisible until somebody opens the app at
+   9pm and is told the wrong day. */
+function todayCalendarKey(){
+  const d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+/* The entry for today, if today is a class day at all. */
+function todaysClassEntry(){
+  const k = todayCalendarKey();
+  return CALENDAR_DATA.find(d => d.date === k) || null;
+}
+/* The next class day strictly after today, skipping holidays - a holiday
+   is on the calendar but it is not a day anybody turns up for. */
+function nextClassEntry(){
+  const k = todayCalendarKey();
+  return CALENDAR_DATA.find(d => d.date > k && !d.holiday) || null;
+}
+/* "Tue, Jun 15" - short, because these sit on one line inside a card. */
+function formatCalendarDate(iso){
+  const p = String(iso).split("-").map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
 
 
 function applySaved(){
@@ -24091,9 +24556,16 @@ const RANKING_BOARDS = [
   { key: "week",  tab: "This Week",  field: "weekPoints",
     unit: (n) => n.toLocaleString() + " XP this week",
     blurb: "Ranked by XP earned since Monday. It starts everyone at zero each week, so this is the one board that is about what you are doing now rather than everything you have ever done." },
-  { key: "badges", tab: "Badges", field: "badges",
-    unit: (n) => n + (n === 1 ? " badge" : " badges"),
-    blurb: "Ranked by badges. There is one for every unit in the course, and it is the mark that you have that unit cold. Sixteen of them is the whole syllabus \u2014 so this board is how much of the material each person has taken all the way." },
+  /* LEVEL, back, and BADGES gone - "I don't think badges is the move
+     either there either anymore. I think one for level and hundos is
+     all there needs to be", with This Week kept on a follow-up ("the
+     weekly xp is pretty cool, let's keep it"). Badges are still on
+     Profile, where they are a case of things you own rather than a
+     column to be beaten on, and the badge count is already what half
+     of the level number is made of. */
+  { key: "level", tab: "Level", field: "level",
+    unit: (n) => "Level " + n,
+    blurb: "Ranked by level, which is every point of XP you have ever earned rolled into one number \u2014 drills, exams, games, the Virtual Room and the daily question all count towards it." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
@@ -24147,6 +24619,19 @@ const ACCENT_SWATCH = {
   rookie:"#AEB7C2", ranger:"#D99458", veteran:"#D8E1EA", vanguard:"#F0C75A",
   adept:"#6E9CFF", elite:"#C084FC", titan:"#FF6B5E"
 };
+/* THE FLARES ON HOME HAVE THEIR OWN COLOURS, and they have to, because
+   ACCENT_SWATCH is also the dot in Settings - and the swatch has to keep
+   predicting what tapping it does (see the three-places rule in
+   CLAUDE.md). Spark and Comet were #AEB7C2 and #D8E1EA, two light greys
+   a few levels apart: "the flares look like two of them are the same
+   colors, make one of them a glowing black instead."
+   Spark is the one that changes, because Iron is the dead rock that
+   makes no light of its own - a flare that is a dark body with a rim of
+   light round it is the same idea the rank emblems already tell. Every
+   other flare falls through to its swatch. */
+const FLARE_SWATCH = { rookie:"#12151A" };
+const FLARE_NOIR = { rookie:true };
+function flareColorOf(tier){ return FLARE_SWATCH[tier] || ACCENT_SWATCH[tier]; }
 /* The full progression, escalating in real astronomical scale from a
    first tiny light to the biggest, most dramatic stellar event there
    is \u2014 Nova landing second-to-last ties directly back to the app's
@@ -24649,7 +25134,10 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
               reduceMotion: false, keepAwake: false, muteBanners: false,
               /* Off by default: silently rewriting someone's flag list is
                  not something to opt people into without them asking. */
-              autoFlagMissed: false };
+              autoFlagMissed: false,
+              /* On by default. Somebody who has never opened Settings should
+                 see the count - it is the thing the card is for. */
+              showClassDaysLeft: true };
 
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
@@ -24673,6 +25161,7 @@ function loadTheme(){
     if(typeof store.theme.keepAwake === "boolean") theme.keepAwake = store.theme.keepAwake;
     if(typeof store.theme.muteBanners === "boolean") theme.muteBanners = store.theme.muteBanners;
     if(typeof store.theme.autoFlagMissed === "boolean") theme.autoFlagMissed = store.theme.autoFlagMissed;
+    if(typeof store.theme.showClassDaysLeft === "boolean") theme.showClassDaysLeft = store.theme.showClassDaysLeft;
   }
 }
 
@@ -24840,7 +25329,8 @@ function saveTheme(){
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
                   reduceMotion: theme.reduceMotion,
                   keepAwake: theme.keepAwake, muteBanners: theme.muteBanners,
-                  autoFlagMissed: theme.autoFlagMissed };
+                  autoFlagMissed: theme.autoFlagMissed,
+                  showClassDaysLeft: theme.showClassDaysLeft };
   saveStore();
 }
 
@@ -27239,14 +27729,14 @@ const RELEASE_NOTES = [
         { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
         { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
       ]},
-      { label: "Rankings", items: [
+      { label: "Leaderboard", items: [
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Three Boards, Genuinely Live", body: "Level, Badges and Hundos ranked separately, updating in real time as anyone in 26E studies. Level is everything you have done; Badges is units you have mastered; Hundos is units finished at 100%." },
         { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Find Anyone, Including You", body: "Search the class by username, or tap Find me to jump straight to your own row and have it flash. Nothing to refresh \u2014 the numbers move on their own." },
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Sharing Is Yours to Choose", body: "Off by default. Nothing about you appears on the boards, and you cannot see them either, until you turn it on \u2014 and it shares your username, character, rank and those three numbers, nothing else." }
       ]},
       { label: "Profile", items: [
         { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Twelve to choose from \u2014 ninja, ghost, queen, wizard, bear, alien, samurai, dragon, and four more the top ranks hand over. Each one is drawn to read at every size, right down to the tab bar." },
-        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Ladder for the whole climb. Swipe between them or tap." },
+        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Rank for the whole climb. Swipe between them or tap." },
         { icon: buildArchiveIcon, color: "#4ADE80", title: "Every Past Test, Saved", body: "A full answer-by-answer breakdown the moment you finish, plus a running history you can revisit any time, right from Profile." },
         { icon: buildBarStatsIcon, color: "#C583FF", title: "Study Time & Testing Stats", body: "Questions answered, tests completed, time spent \u2014 tracked automatically and laid out clearly, not buried in a menu." }
       ]},
@@ -27283,14 +27773,14 @@ const RELEASE_NOTES = [
         { icon: buildDevicesIcon, title: "Link a Device", body: "One code links a second device with everything already on it, staying in sync from then on, live, everywhere you're signed in." }
       ]},
       { label: "Achievements & Rewards", items: [
-        { icon: buildTrophyIcon, title: "The Rank Ladder", body: "One unified path from Iron all the way to Supernova, across seven ranks, each taking both a level and a number of badges together \u2014 built with real room to grow as more units are added over time." },
-        { icon: buildCoinIcon, title: "Level and Badges, Together", body: "Your level and badge totals sit side by side, both feeding the same ladder \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
-        { icon: buildStarIcon, title: "Tap Any Rank to See What's Next", body: "Every orbiting flare on Home, and every rank on the ladder, is interactive \u2014 tap any one to see exactly how many badges and levels are left before it lights up." },
-        { icon: buildRocketIcon, title: "The Supernova Event", body: "Reach the very top of the ladder and Home changes for good: a full-screen event plays out, culminating in an actual supernova, leaving your orbit permanently brighter afterward." },
+        { icon: buildTrophyIcon, title: "One Path to Supernova", body: "One unified path from Iron all the way to Supernova, across seven ranks, each taking both a level and a number of badges together \u2014 built with real room to grow as more units are added over time." },
+        { icon: buildCoinIcon, title: "Level and Badges, Together", body: "Your level and badge totals sit side by side, both feeding the same climb \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
+        { icon: buildStarIcon, title: "Tap Any Rank to See What's Next", body: "Every orbiting flare on Home, and every rank on the Rank tab, is interactive \u2014 tap any one to see exactly how many badges and levels are left before it lights up." },
+        { icon: buildRocketIcon, title: "The Supernova Event", body: "Reach the very top of the ranks and Home changes for good: a full-screen event plays out, culminating in an actual supernova, leaving your orbit permanently brighter afterward." },
         { icon: buildGiftIcon, title: "Unlocks", body: "A new colour for every rank you reach, plus the Home screen's own orbit lighting up to match your progress." }
       ]},
       { label: "Interface & Navigation", items: [
-        { icon: buildPersonIcon, title: "Profile and Rewards, Separated", body: "Two distinct screens \u2014 Profile for your name, avatar, and stats; Rankings for the class boards." },
+        { icon: buildPersonIcon, title: "Profile and Leaderboard, Separated", body: "Two distinct screens \u2014 Profile for your name, character and stats; Leaderboard for the class boards." },
         { icon: buildSwipeIcon, title: "A Tab Bar You Can Drag", body: "Press and drag across the bottom bar and the glass bubble follows your finger instantly, snapping between tabs the way iOS's own bars do." },
         { icon: buildPaletteIcon, title: "Genuine Liquid Glass Throughout", body: "The active tab, tooltips, and popups all now share one real frosted-glass treatment \u2014 translucent and blurred, not a flat solid fill." },
         { icon: buildStarIcon, title: "Home, Reimagined", body: "The same cosmic sphere from Welcome now lives on Home too, its orbit lighting up one flare at a time as you climb the ranks." },
@@ -27954,7 +28444,16 @@ function buildCosmicHero(useTierIcons, forceAccent){
   const homePositions = TIER_ORDER_FULL.map((tier, i) => {
     const angleStep = 360 / TIER_ORDER_FULL.length;
     const angle = (i * angleStep) * (Math.PI / 180);
-    const r = (i % 2 === 0) ? 42 : 30;
+    /* 38, not 42. A badge is positioned by its TOP-LEFT corner, not its
+       centre, so an outer-ring badge on the right put its own 2.6rem
+       width past the coordinate: measured on a 17 Pro Max the Comet
+       flare's box ended 7px outside .cosmic-hero-wrap and its glow a
+       good deal further, which is the reported "the flare on the right
+       looks like it's cut off or something". Pulling the outer ring in
+       is the fix that does not move the other six: the inner ring is
+       untouched, and the top badge keeps its clearance from the notice
+       banner above it. */
+    const r = (i % 2 === 0) ? 38 : 30;
     const top = 44 - r * Math.cos(angle);
     const left = 50 + r * Math.sin(angle);
     return { icon: "book", top: top.toFixed(1) + "%", left: left.toFixed(1) + "%", tier };
@@ -27974,7 +28473,8 @@ function buildCosmicHero(useTierIcons, forceAccent){
     const isNewlyLit = useTierIcons && achieved && !seenUnlocked.includes(pos.tier);
     badge.className = "cosmic-icon-badge cosmic-icon-badge-" + (i % 3) + (achieved ? " cosmic-badge-lit" : "") + (isNewlyLit ? " cosmic-badge-newly-lit" : "");
     badge.style.top = pos.top; badge.style.left = pos.left;
-    if(achieved) badge.style.setProperty("--tier-glow", ACCENT_SWATCH[pos.tier]);
+    if(achieved) badge.style.setProperty("--tier-glow", flareColorOf(pos.tier));
+    if(achieved && FLARE_NOIR[pos.tier]) badge.classList.add("cosmic-badge-noir");
     if(achieved) newlySeenThisRender.push(pos.tier);
     /* The flare's own name, not the rank's. These two used to be the
        same word and that was the whole confusion: the ladder was named
@@ -28439,6 +28939,11 @@ function showWelcomeCharacterPrompt(){
     if(locked) return;
     opt.className = "avatarchar-option" + (selectedChar === charDef.id ? " selected" : "") +
       (locked ? " locked" : "");
+    /* Set on every option, not just the selected one, so the glow is
+       already the right colour the instant a tap adds .selected - a
+       value written at the same moment as the class would transition
+       from the previous character's colour. */
+    opt.style.setProperty("--char-glow", avatarGlowColor(charDef.id));
     opt.appendChild(buildAvatarCharSVG(charDef.id));
     if(locked){
       const lockMark = document.createElement("span");
@@ -29072,7 +29577,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, no matter where you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "Rankings is the class leaderboards \u2014 level, badges and hundos, updating live. Search for anyone, or tap Find me." },
+      text: "Leaderboard is the class boards \u2014 this week, badges and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: "Profile has your name, avatar and colours, your stats, and now your achievements and unlocks too." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
@@ -31039,7 +31544,9 @@ function showSetup(){
            mode -- not a second, separate gesture to learn. Only reachable
            with cfg.units already non-empty: the sheet itself can't be
            opened otherwise (startBtn.disabled), and nothing while it's
-           open can change unit selection out from under it. */
+           open can change unit selection out from under it: Start now
+           lands and explains itself rather than being `disabled`, but
+           it still refuses to open the sheet. */
         if(reviewAllMode){
           showAnswerReview(cfg.units.slice());
         }
@@ -31166,7 +31673,19 @@ function showSetup(){
     beginBtn.textContent = reviewAllMode ? "Review All" : "Begin";
 
     const lives = GAME_SPEEDS[cfg.gameSpeed].lives;
-    startBtn.disabled = cfg.units.length === 0 || pool.length === 0;
+    /* NOT `disabled`, on purpose. A disabled button swallows the tap and
+       says nothing, so pressing Start with no units picked did visibly
+       nothing at all - "if you try to hit the start button but don't
+       have any units selected, have something show 'select units to
+       start'". It still reads as unavailable (the same greyed styling,
+       and aria-disabled for anyone using a screen reader), but the tap
+       now lands and the handler says why. */
+    const inert = cfg.units.length === 0 || pool.length === 0;
+    startBtn.classList.toggle("is-inert", inert);
+    startBtn.setAttribute("aria-disabled", inert ? "true" : "false");
+    startBtn.dataset.inertReason = cfg.units.length === 0
+      ? "Select units to start."
+      : (pool.length === 0 ? "Nothing to draw from in those units." : "");
     const verb = cfg.mode === "exam" ? "Start exam, " : isGame ? "Start game, " : "Start drill, ";
     startBtn.textContent =
       cfg.units.length === 0 ? "Start" :
@@ -31224,7 +31743,10 @@ function showSetup(){
     refresh(); paint();
   });
   startBtn.addEventListener("click", () => {
-    if(startBtn.disabled) return;
+    if(startBtn.classList.contains("is-inert")){
+      showToast(startBtn.dataset.inertReason || "Select units to start.");
+      return;
+    }
     /* Opens the same Review & Start sheet Options used to, rather than
        starting immediately, per explicit request \u2014 the actual "go"
        action now lives inside that sheet itself (the beginBtn built
@@ -32251,7 +32773,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-86";
+const APP_BUILD = "2026-09-22-94";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -32731,6 +33253,100 @@ function celebrate(palette){
   setTimeout(() => layer.remove(), 2900);
 }
 
+/* THE LEVEL BAR AT THE END OF A TEST, on every mode - "let's make it so
+   at the end of each test on any mode, you get your level bar or
+   something so you can actually see it going up and stuff". The results
+   screen already itemised the XP; what it never showed was what that XP
+   DID, which is the only reason the number means anything.
+
+   Built from levelProgress() rather than from its own arithmetic, the
+   same as the Profile bar and the leaderboard - that function is the one
+   place the curve lives.
+
+   The fill starts where the run started and runs to where it ended, so
+   the movement IS the earning. A run that crossed a level fills to the
+   end, resets without a transition (so the reset itself is not
+   animated backwards), and fills again into the new level, with the
+   number changing at the moment the bar wraps. More than one level in a
+   single run does the hop once and lands on the final figure, which is
+   honest about where you ended up without pretending to replay each
+   one. */
+function buildResultsLevelBlock(earned, pointsAfter){
+  const gained = Math.max(0, Number(earned) || 0);
+  const after = levelProgress(pointsAfter);
+  const before = levelProgress(Math.max(0, pointsAfter - gained));
+
+  const wrap = document.createElement("div");
+  wrap.className = "results-level";
+
+  const head = document.createElement("div");
+  head.className = "results-level-head";
+  const lvl = document.createElement("span");
+  lvl.className = "results-level-num";
+  lvl.textContent = "Level " + before.level;
+  const gainEl = document.createElement("span");
+  gainEl.className = "results-level-gain";
+  gainEl.textContent = gained > 0 ? "+" + gained.toLocaleString() + " XP" : "No XP this run";
+  head.append(lvl, gainEl);
+
+  const track = document.createElement("div");
+  track.className = "xpbar-track results-level-track";
+  const fill = document.createElement("div");
+  fill.className = "xpbar-fill";
+  fill.style.width = (before.atCap ? 100 : Math.round(before.fraction * 1000) / 10) + "%";
+  track.appendChild(fill);
+
+  const line = document.createElement("p");
+  line.className = "results-level-line";
+  line.textContent = after.atCap
+    ? after.total.toLocaleString() + " XP \u00b7 level " + LEVEL_CAP + ", the cap"
+    : after.total.toLocaleString() + " XP \u00b7 " + after.toNext.toLocaleString() +
+      " to level " + (after.level + 1);
+
+  wrap.append(head, track, line);
+
+  /* Kicked off by the caller once the block is actually on screen, for
+     the same reason the Profile bar is: a width set in the same tick as
+     the element is created has nothing to transition from. */
+  wrap.runFill = function(){
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target = after.atCap ? 100 : Math.round(after.fraction * 1000) / 10;
+      if(after.level === before.level || before.atCap){
+        fill.style.width = target + "%";
+        return;
+      }
+      fill.style.width = "100%";
+      const wrapOver = () => {
+        lvl.textContent = "Level " + after.level;
+        wrap.classList.add("is-levelup");
+        const prev = fill.style.transition;
+        fill.style.transition = "none";
+        fill.style.width = "0%";
+        /* One committed frame at zero before the transition goes back
+           on, or the browser coalesces the two writes and the bar
+           simply jumps. */
+        requestAnimationFrame(() => {
+          fill.style.transition = prev || "";
+          requestAnimationFrame(() => { fill.style.width = target + "%"; });
+        });
+      };
+      fill.addEventListener("transitionend", wrapOver, { once: true });
+      /* Reduce motion switches every transition off, so transitionend
+         never fires and the bar would sit at 100% on the old level. */
+      setTimeout(() => {
+        if(lvl.textContent !== "Level " + after.level) wrapOver();
+      }, 1100);
+    }));
+  };
+  return wrap;
+}
+
+/* What the run just finished was worth, and what the lifetime total was
+   after it. Set by summarize(); read by the Virtual Room results screen,
+   which summarize() builds the side effects for and then replaces. */
+let lastRunXpEarned = 0;
+let lastRunPointsAfter = 0;
+
 function summarize(){
   testInProgress = false;
   stopTimer();
@@ -33089,6 +33705,24 @@ function summarize(){
     panel.appendChild(ptsWrap);
   }
 
+  /* The bar, under the itemised XP, on EVERY mode - drill, exam, game,
+     the daily question and the Virtual Room alike. It is built even for
+     a run that earned nothing (a retake of missed questions, a wrong
+     daily question), because "where am I" is worth seeing either way and
+     a block that appears on some results screens and not others is one
+     more thing to explain. runFill() is called after the panel is on
+     the stage, at the bottom of this function. */
+  const levelBlock = buildResultsLevelBlock(
+    isMissedRetake ? 0 : (pointsEarned + perfectBonusEarned + multiTestBonusEarned),
+    store.lifetime.points);
+  panel.appendChild(levelBlock);
+  /* Stashed for the Virtual Room, which runs this whole function for
+     its side effects and then replaces the screen with its own - so its
+     results screen can show the same block rather than compute the
+     numbers a second time and risk a second answer. */
+  lastRunXpEarned = isMissedRetake ? 0 : (pointsEarned + perfectBonusEarned + multiTestBonusEarned);
+  lastRunPointsAfter = store.lifetime.points;
+
   if(leveledUpTo && !theme.muteBanners){
     const lu = document.createElement("p");
     lu.className = "levelup lvl-" + leveledUpTo;
@@ -33361,6 +33995,9 @@ function summarize(){
   panel.appendChild(actions);
   stage.replaceChildren(panel);
   toTop();
+  /* On the stage now, so the bar has a committed starting width to
+     transition away from. */
+  if(levelBlock.runFill) levelBlock.runFill();
   actions.firstChild.focus({ preventScroll: true });
   const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
   if(totalEarned > 0){
@@ -33715,6 +34352,34 @@ function showAppearance(){
   bannerRow.append(bannerCb, bannerBox, bannerWrap);
   studyDetails.appendChild(bannerRow);
 
+  /* The countdown on Profile's class card. It is the one number in the
+     app that gets worse the closer it gets for some people and better for
+     others, so it is a switch rather than a decision. */
+  const classDaysRow = document.createElement("label");
+  classDaysRow.className = "opt";
+  const classDaysCb = document.createElement("input");
+  classDaysCb.type = "checkbox";
+  classDaysCb.checked = theme.showClassDaysLeft !== false;
+  classDaysCb.addEventListener("change", () => {
+    theme.showClassDaysLeft = classDaysCb.checked;
+    saveTheme();
+    showToast(theme.showClassDaysLeft
+      ? "Class days remaining is back on your profile."
+      : "Class days remaining hidden.");
+  });
+  const classDaysBox = document.createElement("span");
+  classDaysBox.className = "box"; classDaysBox.setAttribute("aria-hidden", "true");
+  classDaysBox.textContent = "\u2713";
+  const classDaysWrap = document.createElement("span");
+  classDaysWrap.className = "otext";
+  classDaysWrap.appendChild(document.createTextNode("Show class days remaining"));
+  const classDaysHint = document.createElement("span");
+  classDaysHint.className = "ohint";
+  classDaysHint.textContent = "The countdown to graduation on your profile\u2019s class card.";
+  classDaysWrap.appendChild(classDaysHint);
+  classDaysRow.append(classDaysCb, classDaysBox, classDaysWrap);
+  studyDetails.appendChild(classDaysRow);
+
   const autoFlagRow = document.createElement("label");
   autoFlagRow.className = "opt";
   const autoFlagCb = document.createElement("input");
@@ -33757,7 +34422,7 @@ function showAppearance(){
      shadow) Motion & interaction's own header already has above it,
      instead of the plain uppercase label every other section uses. */
   lbLab.className = "slab section-divider motion-summary"; lbLab.id = "settings-rankings";
-  lbLab.textContent = "Rankings";
+  lbLab.textContent = "Leaderboard";
   lbSect.appendChild(lbLab);
   const lbRow = document.createElement("label");
   lbRow.className = "opt";
@@ -34274,6 +34939,33 @@ function formatAgo(ts){
 /* A deliberately simple detail view for one past test \u2014 just the
    important facts, no icons or achievement-style treatment, since this is
    a quick look-back, not a celebration moment. */
+/* One place that opens and closes a .cal-month-body, because the cap
+   that makes the slide animate is also a clip: overflow:hidden plus a
+   max-height means content past that height is simply gone, with no
+   way to scroll to it. The cap is therefore temporary - it is dropped
+   (.is-settled) once the open transition has run, so an open section
+   has no height limit, and it is put back for the moment it takes to
+   animate closed. Reported against Answer Review, where one unit is
+   far more than the 2000px the cap allowed. */
+function openCollapsible(bodyEl, open){
+  if(!bodyEl) return;
+  if(open){
+    bodyEl.classList.remove("is-settled");
+    bodyEl.classList.add("cal-month-body-open");
+    const settle = () => bodyEl.classList.add("is-settled");
+    bodyEl.addEventListener("transitionend", settle, { once: true });
+    /* A belt for the case where no transition fires at all - reduced
+       motion switches them off globally, and a listener that never
+       runs would leave the section capped. */
+    setTimeout(settle, 420);
+  } else {
+    bodyEl.classList.remove("is-settled");
+    /* Give the browser a frame with the cap back on before removing
+       the open class, or it closes instantly from `none`. */
+    requestAnimationFrame(() => bodyEl.classList.remove("cal-month-body-open"));
+  }
+}
+
 function showTestReviewList(){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
@@ -34724,15 +35416,22 @@ function showVirtualRoomSetup(){
         " \u00b7 " + n + (n === 1 ? " question" : " questions");
     sheetSummaryTime.textContent = vroomTimeLimit ? vroomTimeLimit + " min limit" : "No time limit";
 
-    startBtn.disabled = picked.size === 0;
-    startBtn.textContent = picked.size === 0 ? "Pick units to continue" :
+    /* Same treatment as the ordinary unit picker: reads as unavailable,
+       still takes the tap, and says why rather than doing nothing. */
+    const inert = picked.size === 0;
+    startBtn.classList.toggle("is-inert", inert);
+    startBtn.setAttribute("aria-disabled", inert ? "true" : "false");
+    startBtn.textContent = inert ? "Pick units to continue" :
       "Set up lobby, " + n + (n === 1 ? " question" : " questions");
 
     selAll.textContent = picked.size === allUnits.length ? "Clear all" : "Select all";
   }
 
   startBtn.addEventListener("click", () => {
-    if(startBtn.disabled) return;
+    if(startBtn.classList.contains("is-inert")){
+      showToast("Select units to start.");
+      return;
+    }
     refresh();
     optionsModal.removeAttribute("hidden");
   });
@@ -34909,6 +35608,12 @@ function showVirtualRoomLobby(){
   const title = document.createElement("h1");
   title.className = "welcomeintro-title"; title.textContent = "Lobby";
   panel.appendChild(title);
+  /* Where the phone's Chat button lands - see buildVroomChatPanel. Empty
+     and invisible above 40rem, where the panel itself is already on
+     screen and a button to open it would do nothing. */
+  const chatSlot = document.createElement("div");
+  chatSlot.className = "vroom-chat-slot";
+  panel.appendChild(chatSlot);
 
   if(vroomIsHost){
     const codeBox = document.createElement("div");
@@ -35250,10 +35955,47 @@ let vroomRaceUnsubscribe = null;
    than a subcollection \u2014 simpler to reason about and to mock, and
    perfectly adequate for a short-lived, small-group study lobby. */
 function buildVroomChatPanel(container){
+  /* On a phone the chat is a sheet that slides up from the bottom, opened
+     by a button at the top of the lobby with a dot on it when there is
+     something unread - "on the phone there would probably need to be a
+     chat button at the top or something, and there could be a dot on it
+     when a message is there for the lobby you haven't seen". On a tablet
+     it stays exactly where it was, inline under the roster, because there
+     is room for it and hiding it behind a tap would be worse.
+     Both are the same panel; which one you get is CSS, so there is one
+     chat to keep working rather than two. */
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "vroom-chat-toggle";
+  const toggleLabel = document.createElement("span");
+  toggleLabel.textContent = "Chat";
+  const dot = document.createElement("span");
+  dot.className = "vroom-chat-dot";
+  dot.hidden = true;
+  toggle.append(toggleLabel, dot);
+  /* The button goes at the TOP of the screen, which is where it was asked
+     for - so a screen that wants it there puts an empty .vroom-chat-slot
+     where it should land, and anything that does not simply gets it
+     appended as before. One panel, two placements, no second builder. */
+  /* Appended to the panel itself rather than into the flow, because it
+     is positioned into the corner. .vroom-has-chat is what gives it a
+     containing block; without it the button would escape to the nearest
+     positioned ancestor, which is the page. */
+  container.classList.add("vroom-has-chat");
+  container.appendChild(toggle);
+
   const wrap = document.createElement("div");
   wrap.className = "vroom-chat";
+  const titleRow = document.createElement("div");
+  titleRow.className = "vroom-chat-titlerow";
   const title = document.createElement("p");
   title.className = "vroom-chat-title"; title.textContent = "Chat";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "vroom-chat-close";
+  closeBtn.setAttribute("aria-label", "Close chat");
+  closeBtn.textContent = "\u00d7";
+  titleRow.append(title, closeBtn);
   const list = document.createElement("div");
   list.className = "vroom-chat-list";
   const row = document.createElement("div");
@@ -35265,8 +36007,60 @@ function buildVroomChatPanel(container){
   sendBtn.type = "button"; sendBtn.className = "next vroom-chat-send";
   sendBtn.textContent = "Send";
   row.append(input, sendBtn);
-  wrap.append(title, list, row);
+  wrap.append(titleRow, list, row);
   container.appendChild(wrap);
+
+  /* Unread is measured against the newest message this device has
+     actually had on screen, not against a count - a count cannot tell
+     "three new" from "three deleted", and the array is trimmed. */
+  let lastSeenTs = 0;
+  let sheetOpen = false;
+  function openSheet(){
+    sheetOpen = true;
+    wrap.classList.add("is-open");
+    document.body.classList.add("vroom-chat-open");
+    dot.hidden = true;
+    list.scrollTop = list.scrollHeight;
+    /* Everything on screen counts as seen the moment it is on screen. */
+    lastSeenTs = Math.max(lastSeenTs, newestTs);
+  }
+  function closeSheet(){
+    sheetOpen = false;
+    wrap.classList.remove("is-open");
+    document.body.classList.remove("vroom-chat-open");
+  }
+  toggle.addEventListener("click", () => { sheetOpen ? closeSheet() : openSheet(); });
+  closeBtn.addEventListener("click", closeSheet);
+
+  /* Swipe down to close. Only from the sheet's own chrome, never from the
+     message list: a list you can scroll and a sheet you can drag share a
+     gesture, and letting the list start a drag means every attempt to
+     scroll back through the chat closes it instead. Starting the drag on
+     the handle, the title row or the input row is unambiguous. */
+  let dragFrom = null, dragDy = 0;
+  wrap.addEventListener("touchstart", (e) => {
+    if(!sheetOpen) return;
+    if(list.contains(e.target)) return;
+    dragFrom = e.touches[0].clientY; dragDy = 0;
+    wrap.classList.add("is-dragging");
+  }, { passive: true });
+  wrap.addEventListener("touchmove", (e) => {
+    if(dragFrom === null) return;
+    dragDy = Math.max(0, e.touches[0].clientY - dragFrom);
+    wrap.style.transform = "translateY(" + dragDy + "px)";
+  }, { passive: true });
+  function endDrag(){
+    if(dragFrom === null) return;
+    wrap.classList.remove("is-dragging");
+    wrap.style.transform = "";
+    /* A short flick and a long drag both close it; anything less springs
+       back, so a mis-touch on the title row does not dismiss the chat. */
+    if(dragDy > 70) closeSheet();
+    dragFrom = null; dragDy = 0;
+  }
+  wrap.addEventListener("touchend", endDrag);
+  wrap.addEventListener("touchcancel", endDrag);
+  let newestTs = 0;
 
   function renderMessages(messages){
     const wasAtBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 20;
@@ -35290,22 +36084,65 @@ function buildVroomChatPanel(container){
       });
     }
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
+
+    /* The dot. Only somebody else's message counts - your own showing up
+       as unread is the kind of thing that makes people stop trusting a
+       badge. On a tablet the panel is always on screen, so anything that
+       renders is seen; the dot is only ever meaningful on the phone
+       sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
+    const others = (messages || []).filter(m => m.key !== vroomMyKey);
+    newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
+    const panelVisible = sheetOpen || getComputedStyle(toggle).display === "none";
+    if(panelVisible){
+      lastSeenTs = Math.max(lastSeenTs, newestTs);
+      dot.hidden = true;
+    } else {
+      dot.hidden = !(newestTs > lastSeenTs);
+    }
   }
 
   function send(){
     const text = input.value.trim();
     if(!text || !vroomCode || !fbDb || !vroomMyKey) return;
     input.value = "";
-    fbDb.collection("vrooms").doc(vroomCode).get().then(docSnap => {
-      if(!docSnap.exists) return;
-      const data = docSnap.data();
-      const messages = (data.chatMessages || []).slice();
-      messages.push({ key: vroomMyKey, name: store.firstName || "Anonymous", text: text.slice(0, 200), ts: Date.now() });
-      /* Capped rather than growing forever \u2014 the last 100 messages is
-         comfortably more than a study session needs, without letting
-         the shared doc's chat history grow without bound. */
-      fbDb.collection("vrooms").doc(vroomCode).update({ chatMessages: messages.slice(-100) });
-    });
+    /* ATOMIC APPEND, not read-modify-write. This used to .get() the whole
+       document, push onto the array it found and .update() the result -
+       so two people typing at the same time each read the array BEFORE
+       the other's message existed, and whoever wrote second silently
+       erased the first. In a four-person lobby where the whole point is
+       agreeing on units before a race, that is the one bug that matters.
+       arrayUnion appends on the server, so concurrent sends cannot lose
+       each other. The `id` is there because arrayUnion de-duplicates by
+       deep equality: two people sending "ok" in the same millisecond
+       would otherwise collapse into one message. */
+    const msg = {
+      id: (vroomMyKey + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
+      key: vroomMyKey,
+      name: store.firstName || "Anonymous",
+      text: text.slice(0, 200),
+      ts: Date.now()
+    };
+    try{
+      fbDb.collection("vrooms").doc(vroomCode).update({
+        chatMessages: firebase.firestore.FieldValue.arrayUnion(msg)
+      }).catch(() => {});
+    } catch(e){
+      /* No FieldValue (an SDK that never loaded) - the message is lost
+         either way, so say so rather than failing silently. */
+      showToast("Message not sent \u2014 no connection.");
+    }
+  }
+  /* The cap, moved off the write path. Trimming used to be bundled into
+     every send, which is exactly what forced the read-modify-write above.
+     The host alone trims, and only once the history is well past the cap,
+     so an ordinary send never has to read the document at all. */
+  function trimIfHost(messages){
+    if(!vroomIsHost || !fbDb || !vroomCode) return;
+    if(!messages || messages.length <= 160) return;
+    try{
+      fbDb.collection("vrooms").doc(vroomCode)
+        .update({ chatMessages: messages.slice(-100) }).catch(() => {});
+    } catch(e){}
   }
   sendBtn.addEventListener("click", send);
   input.addEventListener("keydown", (e) => { if(e.key === "Enter") send(); });
@@ -35321,9 +36158,15 @@ function buildVroomChatPanel(container){
      one place in this same file that pattern was missing. */
   if(!fbDb || !vroomCode) return () => {};
   const unsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
-    if(docSnap.exists) renderMessages(docSnap.data().chatMessages);
+    if(!docSnap.exists) return;
+    const messages = docSnap.data().chatMessages;
+    renderMessages(messages);
+    trimIfHost(messages);
   });
-  return unsubscribe;
+  /* The sheet is appended to the screen, not to body, so a screen change
+     takes it with it - but body carries a class while it is open and
+     that has to come off either way. */
+  return () => { document.body.classList.remove("vroom-chat-open"); unsubscribe(); };
 }
 
 function startVroomRaceListener(){
@@ -35348,20 +36191,55 @@ function startVroomRaceListener(){
        the cost of a full rebuild is trivial, and it avoids having to
        separately track "did someone join/leave since last time". */
     raceMarkersEl.replaceChildren();
+    /* LANES. Two people on the same question used to be drawn on top of
+       each other, and a lobby has no size limit, so "crowded" was the
+       default rather than the edge case. Each marker keeps its exact
+       horizontal position - that is the thing the line is for - and only
+       moves vertically, into one of three lanes, when somebody is already
+       sitting within a marker's width of it. A marker in an outer lane
+       draws a hairline and a dot back to the line (CSS), so where it
+       actually is stays readable.
+       Laid out in progress order rather than join order so the lane hunt
+       only ever has to look at the markers immediately behind this one -
+       anything further back cannot overlap by construction. The DOM order
+       stays join order, which is what keeps the colours stable. */
+    const LANES = 3;
+    const NEAR = 7;            /* percent of the track a marker covers */
+    const placed = [];         /* {pct, lane}, in ascending pct */
+    const laneOf = {};
+    entries
+      .map(([key, p]) => [key, p.finished ? 100 : Math.min(100, p.progress || 0)])
+      .sort((a, b) => a[1] - b[1])
+      .forEach(([key, pct]) => {
+        const taken = new Set();
+        for(let j = placed.length - 1; j >= 0; j--){
+          if(pct - placed[j].pct > NEAR) break;
+          taken.add(placed[j].lane);
+        }
+        let lane = 1;                       /* the line itself, preferred */
+        if(taken.has(1)) lane = taken.has(0) ? (taken.has(2) ? 1 : 2) : 0;
+        laneOf[key] = lane;
+        placed.push({ pct: pct, lane: lane });
+      });
     entries.forEach(([key, p], i) => {
       const color = VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
       const marker = document.createElement("div");
-      marker.className = "vroom-race-marker" + (p.finished ? " is-finished" : "");
+      const lane = laneOf[key] != null ? laneOf[key] : 1;
+      marker.className = "vroom-race-marker lane-" + lane
+        + (p.finished ? " is-finished" : "")
+        + (key === vroomMyKey ? " is-me" : "");
+      marker.style.setProperty("--lane", String(lane));
       marker.style.borderColor = color;
       marker.style.color = color;
       const pct = p.finished ? 100 : Math.min(100, p.progress || 0);
       marker.style.left = pct + "%";
+      marker.title = p.name + " \u2014 " + pct + "%";
       const avatar = document.createElement("span");
       avatar.className = "vroom-race-marker-avatar";
       avatar.appendChild(buildAvatarCharSVG(p.avatarChar || "ninja"));
       const initials = document.createElement("span");
       initials.className = "vroom-race-marker-initials";
-      initials.textContent = vroomInitialsFor(p.name) + (key === vroomMyKey ? " (You)" : "");
+      initials.textContent = "You";
       marker.append(avatar, initials);
       raceMarkersEl.appendChild(marker);
     });
@@ -35383,8 +36261,12 @@ function pushVirtualRoomProgress(){
 
 function finishVirtualRoomTest(pct, elapsedMs){
   if(vroomProgressTimer){ clearInterval(vroomProgressTimer); vroomProgressTimer = null; }
-  stopVroomRaceListener();
-  raceBarEl.hidden = true;
+  /* The race STAYS UP and STAYS LIVE when you finish - "you'll still see
+     the race up top even when you finish". Being first used to mean the
+     race vanished the instant you were done, so the most interesting
+     part of somebody else's run was the part you could never watch. The
+     listener keeps running and the results screen hides the bar itself,
+     once everybody is actually in. */
   if(!vroomCode || !fbDb) return;
   const myKey = vroomMyKey;
   if(!myKey) return;
@@ -35416,6 +36298,7 @@ function finishVirtualRoomTest(pct, elapsedMs){
    celebrates a good result, not a bolted-on one-off animation. */
 function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   setActiveNav(null);
+  window.forceHideBottomTabs = true;   /* still inside the test */
   countEl.textContent = "Virtual Room";
   const panel = document.createElement("section");
   panel.className = "panel vroom-finale-panel";
@@ -35489,17 +36372,37 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
 
 function showVirtualRoomResults(){
   setActiveNav(null);
+  /* AFTER setActiveNav, which clears this flag on the way into every
+     screen. The bar had no business here - "not sure at all why the
+     bottom tab is visible on any of these results screen. That
+     shouldn't be possible when in a test at all." summarize() already
+     sets this for the ordinary results screen; the Virtual Room's own
+     two end screens never did, so they were the one place it came
+     back. Cleared again by the next setActiveNav, which is how the
+     ordinary one already behaves. */
+  window.forceHideBottomTabs = true;
   countEl.textContent = "Virtual Room";
   const panel = document.createElement("section");
-  panel.className = "panel";
+  panel.className = "panel vroom-results-panel";
 
   /* Can't leave until everyone's actually finished, per explicit
      request \u2014 a real gate (the button itself is hidden, not just
      discouraged), not a courtesy message someone could tap past.
      Reassigned live inside renderResults below, once actual data is
      in, rather than fixed at construction time. */
-  const backLink = buildBackLink("Back to Home", () => { detachVroomListener(); if(vroomChatUnsubscribe) vroomChatUnsubscribe(); vroomCode = null; showHome(); });
-  panel.appendChild(backLink);
+  /* The two exits are ONE row at the foot of the screen, matched in
+     size and centred - "the back to lobby button and back to home
+     button need to be centered and the same size.. also remove the
+     back arrow from back to home". buildBackLink draws the arrow, so
+     Back to Home is a plain button now rather than a back link, and
+     the pair is appended last so they read as the way out rather than
+     as a header. */
+  const exitRow = document.createElement("div");
+  exitRow.className = "vroom-exit-row";
+  const backLink = document.createElement("button");
+  backLink.type = "button"; backLink.className = "next ghost vroom-exit-btn";
+  backLink.textContent = "Back to Home";
+  backLink.addEventListener("click", () => { detachVroomListener(); if(vroomChatUnsubscribe) vroomChatUnsubscribe(); vroomCode = null; showHome(); });
 
   /* Returns to the SAME lobby (same code, same other participants),
      per explicit request \u2014 gated by the same everyoneDone check as
@@ -35511,8 +36414,7 @@ function showVirtualRoomResults(){
      can actually be started (ready-up and all), not just a lobby
      screen that looks right but is still stuck on "started". */
   const backToLobbyBtn = document.createElement("button");
-  backToLobbyBtn.type = "button"; backToLobbyBtn.className = "next ghost";
-  backToLobbyBtn.style.marginTop = ".6rem";
+  backToLobbyBtn.type = "button"; backToLobbyBtn.className = "next ghost vroom-exit-btn";
   backToLobbyBtn.textContent = "Back to lobby";
   backToLobbyBtn.addEventListener("click", () => {
     const resetFields = {
@@ -35528,7 +36430,7 @@ function showVirtualRoomResults(){
       showVirtualRoomLobby();
     });
   });
-  panel.appendChild(backToLobbyBtn);
+  exitRow.append(backToLobbyBtn, backLink);
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title"; title.textContent = "Results";
@@ -35538,6 +36440,74 @@ function showVirtualRoomResults(){
   sub.className = "cal-sub"; sub.style.textAlign = "center";
   sub.textContent = "Ranked by total score.";
   panel.appendChild(sub);
+
+  /* Nobody's placing is shown until everybody is in. Ranking people
+     live as they finish gives the result away to whoever finishes
+     first and takes it away from whoever finishes last, which is the
+     opposite of what a race ending should feel like - so while the
+     room is still working this is a roll call in join order, and the
+     standings arrive all at once when the last person lands. */
+  let revealed = false;
+
+  /* YOUR OWN card, and only yours. The total is the number people are
+     ranked by, so it has to show its working - "make sure your score you
+     get after the virtual room is broken down so you see how the score
+     came about". Everybody else's stays sealed until the board goes up,
+     which is the whole point of the wait. */
+  const mineCard = document.createElement("div");
+  mineCard.className = "vroom-mine";
+  mineCard.hidden = true;
+  panel.appendChild(mineCard);
+
+  function renderMine(p){
+    if(!p || !p.finished){ mineCard.hidden = true; return; }
+    mineCard.hidden = false;
+    mineCard.replaceChildren();
+    const head = document.createElement("p");
+    head.className = "vroom-mine-head"; head.textContent = "Your score";
+    const pct = p.score || 0;
+    const secs = Math.round((p.elapsedMs || 0) / 1000);
+    const fromScore = Math.round(pct * 100);
+    const total = p.totalScore != null ? p.totalScore : (fromScore - secs);
+    const rows = document.createElement("div");
+    rows.className = "vroom-mine-rows";
+    /* Each line says what it is, what it was, and what it contributed -
+       the middle column is the raw fact and the right column is the
+       arithmetic, so the total underneath is obviously the sum. */
+    [["Accuracy", pct + "%", "+" + fromScore.toLocaleString()],
+     ["Time", formatClock(p.elapsedMs || 0), "\u2212" + secs.toLocaleString()]
+    ].forEach(function(parts){
+      const r = document.createElement("div");
+      r.className = "vroom-mine-row";
+      const a = document.createElement("span"); a.className = "vroom-mine-label"; a.textContent = parts[0];
+      const b = document.createElement("span"); b.className = "vroom-mine-raw"; b.textContent = parts[1];
+      const c = document.createElement("span"); c.className = "vroom-mine-delta"; c.textContent = parts[2];
+      r.append(a, b, c); rows.appendChild(r);
+    });
+    const totalRow = document.createElement("div");
+    totalRow.className = "vroom-mine-row is-total";
+    const tl = document.createElement("span");
+    tl.className = "vroom-mine-label"; tl.textContent = "Total";
+    const tr = document.createElement("span");
+    tr.className = "vroom-mine-total"; tr.textContent = total.toLocaleString() + " pts";
+    totalRow.append(tl, tr);
+    rows.appendChild(totalRow);
+    const note = document.createElement("p");
+    note.className = "vroom-mine-note";
+    note.textContent = "Every point of accuracy is worth 100. Each second costs 1.";
+    mineCard.append(head, rows, note);
+  }
+
+  /* The same XP-and-level block every other mode's results screen
+     shows - "ensure the test screen ... has the xp screen like the
+     other tests have so you can see how much xp you get". A Virtual
+     Room run already goes through summarize() for its side effects
+     (points, hundos, badges) and then has its screen replaced by this
+     one, so the XP was genuinely awarded and simply never shown. The
+     numbers come from that run rather than being recomputed, so the
+     two screens cannot disagree. */
+  const vroomLevelBlock = buildResultsLevelBlock(lastRunXpEarned, lastRunPointsAfter);
+  panel.appendChild(vroomLevelBlock);
 
   const list = document.createElement("div");
   list.className = "cal-list";
@@ -35557,6 +36527,7 @@ function showVirtualRoomResults(){
        is what the leaderboard and lobby already correctly use
        elsewhere. */
     const entries = Object.entries(data.participants || {});
+    renderMine((data.participants || {})[vroomMyKey]);
     /* Ranked by totalScore now \u2014 the combined score+time number the
        finale reveal just showed everyone, per explicit request
        ("that's how you'd be ranked"), not the separate score-then-time
@@ -35564,17 +36535,56 @@ function showVirtualRoomResults(){
        the old comparison only for a participant somehow missing
        totalScore (shouldn't happen going forward, but harmless to
        guard against). */
-    entries.sort(([, a], [, b]) => {
-      const at = a.totalScore != null ? a.totalScore : Math.round((a.score || 0) * 100) - Math.round((a.elapsedMs || 0) / 1000);
-      const bt = b.totalScore != null ? b.totalScore : Math.round((b.score || 0) * 100) - Math.round((b.elapsedMs || 0) / 1000);
-      return bt - at;
-    });
+    const totalNow = entries.length;
+    const doneNow = entries.filter(([, p]) => p.finished).length;
+    const allIn = totalNow > 0 && doneNow === totalNow;
+    /* FIRST, before any early return below. This used to sit at the end
+       of this function, past a `return` that fires on every snapshot
+       after the reveal - so a results screen that was rebuilt or
+       re-entered with the standings already up kept the race line on
+       screen, reported as "I can see the race line on that screen for
+       some reason even though the results are out". While people are
+       still working the line stays, which is the other half of the same
+       report: you should be able to see them on it. */
+    raceBarEl.hidden = allIn;
+    if(allIn) stopVroomRaceListener();
+
+    if(allIn){
+      entries.sort(([, a], [, b]) => {
+        const at = a.totalScore != null ? a.totalScore : Math.round((a.score || 0) * 100) - Math.round((a.elapsedMs || 0) / 1000);
+        const bt = b.totalScore != null ? b.totalScore : Math.round((b.score || 0) * 100) - Math.round((b.elapsedMs || 0) / 1000);
+        return bt - at;
+      });
+    } else {
+      /* Join order while waiting, which is the one ordering that says
+         nothing about who is winning. */
+      entries.sort(([, a], [, b]) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    }
+
+    /* Only rebuild once the answer changes, so the rows are not being
+       torn down and rebuilt under somebody every time a progress tick
+       arrives - and so the reveal animation runs once rather than on
+       every snapshot after it. */
+    const alreadyRevealed = revealed;
+    if(allIn) revealed = true;
+    if(alreadyRevealed && allIn) return;
+
     list.replaceChildren();
     entries.forEach(([key, p], i) => {
       const row = document.createElement("div");
       row.className = "lb-row" + (key === vroomMyKey ? " lb-row-me" : "");
+      if(allIn){
+        /* Last place first, the winner last. The stagger is small - this
+           is a beat of suspense, not a cutscene - and it is index-based
+           rather than a chain of timers so a row cannot be left behind
+           if the screen changes mid-reveal. */
+        row.classList.add("vroom-result-reveal");
+        row.style.animationDelay = ((entries.length - 1 - i) * 260) + "ms";
+      }
       const rank = document.createElement("span");
-      rank.className = "lb-rank"; renderRankMarker(rank, i + 1);
+      rank.className = "lb-rank";
+      if(allIn){ renderRankMarker(rank, i + 1); }
+      else { rank.classList.add("is-pending"); rank.textContent = p.finished ? "\u2713" : "\u00b7"; }
       const avatarWrap = document.createElement("span");
       avatarWrap.className = "lb-avatar";
       avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
@@ -35585,21 +36595,25 @@ function showVirtualRoomResults(){
       name.className = "lb-name"; name.textContent = p.name;
       const stats = document.createElement("span");
       stats.className = "lb-stats";
-      stats.textContent = p.finished
-        ? (p.score || 0) + "% \u00b7 " + formatClock(p.elapsedMs || 0) + " \u00b7 " + (p.totalScore != null ? p.totalScore : "\u2014") + " pts"
-        : "Still working\u2026";
+      /* A finished person's SCORE is part of the answer, so it waits too.
+         "Finished" is all anybody needs to know until the last person is
+         in; otherwise the first three scores tell you the result before
+         the fourth person has put their phone down. */
+      stats.textContent = allIn
+        ? ((p.score || 0) + "% \u00b7 " + formatClock(p.elapsedMs || 0) + " \u00b7 " + (p.totalScore != null ? p.totalScore : "\u2014") + " pts")
+        : (p.finished ? "Finished" : "Still working\u2026");
       nameWrap.append(name, stats);
       row.append(rank, avatarWrap, nameWrap);
       list.appendChild(row);
     });
 
-    const totalN = entries.length;
-    const finishedN = entries.filter(([, p]) => p.finished).length;
-    const everyoneDone = totalN > 0 && finishedN === totalN;
+    const everyoneDone = allIn;
     backLink.hidden = !everyoneDone;
     backToLobbyBtn.hidden = !everyoneDone;
     waitNote.hidden = everyoneDone;
-    waitNote.textContent = "Waiting for everyone to finish (" + finishedN + " of " + totalN + ")\u2026";
+    waitNote.textContent = "Waiting for everyone to finish (" + doneNow + " of " + totalNow + ")\u2014 "
+      + "the standings go up when the last person is in.";
+    sub.textContent = everyoneDone ? "Ranked by total score." : "Nobody\u2019s place is final yet.";
   }
 
   fbDb.collection("vrooms").doc(vroomCode).get().then(docSnap => {
@@ -35631,32 +36645,49 @@ function showVirtualRoomResults(){
   const reviewList = document.createElement("div");
   reviewList.hidden = true;
   reviewList.style.marginTop = ".8rem";
-  if(missedHere.length > 0){
-    const ul = document.createElement("ul");
-    ul.className = "review";
-    missedHere.forEach(qi => {
-      const item = QUESTIONS[qi];
-      const li = document.createElement("li");
-      const box = document.createElement("div");
-      const q = document.createElement("div");
-      q.className = "rq"; writeText(q, item.q);
-      const a = document.createElement("div");
-      a.className = "ra";
-      const yours = picked[qi] !== undefined ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". " : "";
-      a.textContent = yours + "Correct answer: " + item.choices[item.answer] + (item.ref ? "  " + item.ref : "");
-      box.append(q, a);
-      li.appendChild(box);
-      ul.appendChild(li);
-    });
-    reviewList.appendChild(ul);
-  }
+  /* A PERFECT RUN USED TO OPEN AN EMPTY DIV. The list was built only
+     when something was missed, so "Review your answers - all correct"
+     was a button that expanded nothing at all: tap it and the screen
+     appears broken, which is exactly how it was reported. A run with
+     nothing missed still has questions worth reading back, so it lists
+     every question with its answer instead, and the heading above says
+     which of the two you are looking at. */
+  const reviewSource = missedHere.length > 0 ? missedHere : order.slice();
+  const reviewHead = document.createElement("p");
+  reviewHead.className = "info-note";
+  reviewHead.style.cssText = "margin:.8rem 0 .2rem; text-align:center;";
+  reviewHead.textContent = missedHere.length > 0
+    ? "The ones you missed."
+    : "Nothing missed \u2014 here is the whole run.";
+  reviewList.appendChild(reviewHead);
+  const ul = document.createElement("ul");
+  ul.className = "review";
+  reviewSource.forEach(qi => {
+    const item = QUESTIONS[qi];
+    const li = document.createElement("li");
+    const box = document.createElement("div");
+    const q = document.createElement("div");
+    q.className = "rq"; writeText(q, item.q);
+    const a = document.createElement("div");
+    a.className = "ra";
+    const yours = picked[qi] !== undefined ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". " : "";
+    a.textContent = yours + "Correct answer: " + item.choices[item.answer] + (item.ref ? "  " + item.ref : "");
+    box.append(q, a);
+    li.appendChild(box);
+    ul.appendChild(li);
+  });
+  reviewList.appendChild(ul);
   reviewToggle.addEventListener("click", () => { reviewList.hidden = !reviewList.hidden; });
   panel.append(reviewToggle, reviewList);
+
+  /* The way out goes last, under everything it is the way out OF. */
+  panel.appendChild(exitRow);
 
   vroomChatUnsubscribe = buildVroomChatPanel(panel);
 
   stage.replaceChildren(panel);
   toTop();
+  if(vroomLevelBlock.runFill) vroomLevelBlock.runFill();
 }
 
 /* Extracted as a reusable helper, not left inline inside
@@ -36025,6 +37056,7 @@ function showCustomize(){
     const locked = isLockedCharacter(charDef.id);
     opt.className = "avatarchar-option" + (store.avatarChar === charDef.id ? " selected" : "") +
       (locked ? " locked" : "");
+    opt.style.setProperty("--char-glow", avatarGlowColor(charDef.id));
     opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
     opt.setAttribute("aria-label", opt.title);
     opt.appendChild(buildAvatarCharSVG(charDef.id));
@@ -36221,14 +37253,14 @@ function showCalendar(){
           expandState[monthKey] = nowOpen;
           head.classList.toggle("cal-month-head-open", nowOpen);
           head.setAttribute("aria-expanded", nowOpen ? "true" : "false");
-          body.classList.toggle("cal-month-body-open", nowOpen);
+          openCollapsible(body, nowOpen);
         });
       }
       section.appendChild(head);
 
       const body = document.createElement("div");
       body.className = "cal-month-body";
-      body.className = "cal-month-body" + (isOpen ? " cal-month-body-open" : "");
+      body.className = "cal-month-body" + (isOpen ? " cal-month-body-open is-settled" : "");
       entries.forEach(entry => {
         const row = document.createElement("div");
         row.className = "cal-row" + (entry.holiday ? " cal-row-holiday" : "") + (entry.date === todayStr ? " cal-row-today" : "");
@@ -36389,7 +37421,7 @@ function showAnswerReview(units){
             expandState[unitKey] = nowOpen;
             head.classList.toggle("cal-month-head-open", nowOpen);
             head.setAttribute("aria-expanded", nowOpen ? "true" : "false");
-            body.classList.toggle("cal-month-body-open", nowOpen);
+            openCollapsible(body, nowOpen);
           });
         }
         section.appendChild(head);
@@ -36397,7 +37429,7 @@ function showAnswerReview(units){
 
       const body = document.createElement("div");
       body.className = "cal-month-body";
-      body.className = "cal-month-body" + (isOpen ? " cal-month-body-open" : "");
+      body.className = "cal-month-body" + (isOpen ? " cal-month-body-open is-settled" : "");
 
       qs.forEach(item => {
         const qWrap = document.createElement("div");
@@ -36535,16 +37567,18 @@ function showProfile(defaultTab){
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
-    /* "Ladder", not "Ranks". The bottom bar already says Rankings and
+    /* "Rank", not "Ranks". The bottom bar already says Rankings and
        having both was reported as confusing - "the ranks tab within
        profile should be renamed because the main bottom tab already has
-       something called rankings". Renaming the bottom tab was the other
-       option offered and is the worse one: "Rankings" there is a
-       measured WIDTH decision (see showRankings), and "Leaderboard" does
-       not fit a 320px phone's bar. The key stays "ranks" so nothing
-       stored or linked has to move, and "ladder" was already an accepted
+       something called rankings". BOTH ended up renamed in the end: the
+       bottom tab says Leaderboard and this one says Rank. The note here
+       used to say Leaderboard would not fit a 320px bar - measured after
+       the change, the bar is 296px wide inside a 320px screen and no
+       label clips, so that was a guess rather than a measurement. The key
+       stays "ranks" so nothing stored or linked has to move, and "ladder"
+       was already an accepted
        alias for this tab. */
-    { key: "ranks",   label: "Ladder",  node: ranksTab,   cls: "" }
+    { key: "ranks",   label: "Rank",  node: ranksTab,   cls: "" }
   ];
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
@@ -36675,48 +37709,122 @@ function showProfile(defaultTab){
      character on every board - and with the character grid and the
      colour swatches gone to their own screen this card had the room to
      say it. It also gives the card a reason to be the size it now is. */
+  /* The rank hangs off the CHARACTER, which is where it hangs everywhere
+     else in the app - decorateAvatar puts it on a dark coin at the top
+     left of every classmate's avatar on all three boards and in the
+     Virtual Room. A pill of its own beside the name was a second, louder
+     way of saying the same thing, and it was the thing on this card that
+     did not look like the rest of the app. One line under the name says
+     which rank the coin is, so it is still readable rather than a
+     symbol you have to learn. */
   const rankNow = rankOf(store);
-  const rankChip = document.createElement("button");
-  rankChip.type = "button";
-  rankChip.className = "profile-rankchip" + (rankNow ? "" : " is-unranked");
+  /* THE EMBLEM SITS BESIDE THE NAME OF THE RANK, in its own circle -
+     "I prefer the other way, where the rank icon was next to what rank
+     you are and it was circled or whatever". It was a coin on the
+     character with the words on a separate line underneath, which made
+     the mark and its label two different things in two different
+     places. One pill says both.
+     The coin therefore comes OFF this card's own avatar: two copies of
+     the same emblem on one card is the "two marks on one character"
+     problem in another form. decorateAvatar is untouched and still runs
+     on every board and in the Virtual Room, where the character is how
+     you tell classmates apart and there is no room for a pill. */
+  const rankLine = document.createElement("p");
+  rankLine.className = "profile-ranklineup";
   if(rankNow){
-    rankChip.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
-    const rankArt = document.createElement("span");
-    rankArt.className = "profile-rankchip-art";
-    rankArt.appendChild(buildRankEmblemSVG(rankNow));
-    const rankName = document.createElement("span");
-    rankName.className = "profile-rankchip-name";
-    rankName.textContent = RANK_DISPLAY_NAME[rankNow];
-    rankChip.append(rankArt, rankName);
+    rankLine.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+    const coin = document.createElement("span");
+    coin.className = "profile-rankcoin";
+    coin.appendChild(buildRankEmblemSVG(rankNow));
+    const word = document.createElement("span");
+    word.className = "profile-rankword";
+    word.textContent = RANK_DISPLAY_NAME[rankNow] + " rank";
+    rankLine.append(coin, word);
   } else {
-    /* No rank yet is a real state and gets its own words rather than a
-       greyed-out placeholder pretending to be one. */
-    const rankName = document.createElement("span");
-    rankName.className = "profile-rankchip-name";
-    rankName.textContent = "No rank yet";
-    rankChip.appendChild(rankName);
+    /* No rank yet is a real state; it gets words rather than a greyed
+       placeholder pretending to be one. */
+    rankLine.classList.add("is-unranked");
+    rankLine.textContent = "No rank yet";
   }
-  rankChip.addEventListener("click", () => selectProfileTab("ranks"));
 
-  heroId.append(nameDisplayRow, rankChip, nameInput, nameSaveBtn);
+  heroId.append(nameDisplayRow, rankLine, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
+  /* The class gets a box of its own below the card, not one line inside
+     it - "add a box below the top box and make it dedicated to the class
+     calendar and class days remaining, maybe you could show what's on the
+     schedule for today and the next class day". So it says what today is,
+     what the next class day is, how many are left, and carries the two
+     buttons. .profile-classline stays as a class name so the Profile
+     tour's step still has something to point at. */
+  const classSect = document.createElement("div");
+  classSect.className = "profile-classcard";
+
+  const classHead = document.createElement("div");
+  classHead.className = "profile-classcard-head";
+  const classTitle = document.createElement("p");
+  classTitle.className = "profile-classcard-title";
+  classTitle.textContent = "Class 26E";
+  const daysLeftNow = classDaysRemaining();
+  const classCount = document.createElement("span");
+  classCount.className = "profile-classcard-count";
+  classCount.textContent = daysLeftNow + (daysLeftNow === 1 ? " class day left" : " class days left");
+  /* Off by choice, not by accident: a countdown to graduation is either
+     the best thing on the screen or the worst, depending on the week. */
+  classCount.hidden = theme.showClassDaysLeft === false;
+  classHead.append(classTitle, classCount);
+  classSect.appendChild(classHead);
+
+  /* Today, then next. One builder, because the only thing that differs is
+     the label and which entry it reads. */
+  function classDayRow(label, entry, isToday){
+    const row = document.createElement("div");
+    row.className = "profile-classday" + (isToday ? " is-today" : "");
+    const lab = document.createElement("span");
+    lab.className = "profile-classday-label";
+    lab.textContent = label;
+    const body = document.createElement("span");
+    body.className = "profile-classday-body";
+    if(entry){
+      const when = document.createElement("span");
+      when.className = "profile-classday-when";
+      when.textContent = formatCalendarDate(entry.date);
+      const what = document.createElement("span");
+      what.className = "profile-classday-what" + (entry.holiday ? " is-holiday" : "");
+      what.textContent = entry.text;
+      body.append(when, what);
+    } else {
+      const what = document.createElement("span");
+      what.className = "profile-classday-what is-none";
+      /* Two genuinely different "nothing" cases: no class today is an
+         ordinary Saturday, no class ever again is the course being over. */
+      what.textContent = isToday ? "No class today" : "No class days left";
+      body.appendChild(what);
+    }
+    row.append(lab, body);
+    return row;
+  }
+  classSect.appendChild(classDayRow("Today", todaysClassEntry(), true));
+  classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
+
+  /* One button, full width. The Class days remaining button that used to
+     sit beside it said the same thing the count in this card's own header
+     already says, so it was a control whose only job was to repeat the
+     line above it. The count itself stays, and Settings can switch it off
+     for anybody who would rather not watch it tick down. */
+  const classBtns = document.createElement("div");
+  classBtns.className = "profile-classcard-btns";
+
   const classLine = document.createElement("button");
   classLine.type = "button";
-  classLine.className = "profile-classline";
-  /* Just the destination. The remaining-day count was reported as not
-     belonging on this row - a number that changes daily, sitting inside
-     what is otherwise a plain link, and the calendar it opens says the
-     same thing with the dates attached. */
-  const classLineText = document.createElement("span");
-  classLineText.textContent = "View class calendar";
-  const classLineArrow = document.createElement("span");
-  classLineArrow.className = "profile-classline-arrow";
-  classLineArrow.setAttribute("aria-hidden", "true");
-  classLineArrow.textContent = "›";
-  classLine.append(classLineText, classLineArrow);
+  /* ghost, which on this surface renders as the black pill rather than
+     the pale one - asked for as "make the button black". */
+  classLine.className = "next ghost profile-classcard-btn profile-classline";
+  classLine.textContent = "View class calendar";
   classLine.addEventListener("click", showCalendar);
+  classBtns.appendChild(classLine);
+  classSect.appendChild(classBtns);
 
   /* ---------- level and badges ----------------------------------------
      The level bar, per explicit request, and it is the reason this
@@ -36733,14 +37841,14 @@ function showProfile(defaultTab){
   const levelRow = document.createElement("div");
   levelRow.className = "profile-level-row";
   const levelNum = document.createElement("div");
-  levelNum.className = "profile-level-num shine-blue";
+  levelNum.className = "profile-level-num";
+  const levelNumValue = document.createElement("span");
+  levelNumValue.className = "profile-level-value shine-blue";
+  levelNumValue.textContent = String(prog.level);
   const levelNumWord = document.createElement("span");
   levelNumWord.className = "profile-level-word";
-  levelNumWord.textContent = "Level";
-  const levelNumValue = document.createElement("span");
-  levelNumValue.className = "profile-level-value";
-  levelNumValue.textContent = String(prog.level);
-  levelNum.append(levelNumWord, levelNumValue);
+  levelNumWord.textContent = "level";
+  levelNum.append(levelNumValue, levelNumWord);
 
   const badgeStat = document.createElement("button");
   badgeStat.type = "button";
@@ -36754,22 +37862,10 @@ function showProfile(defaultTab){
   badgeStat.append(badgeStatValue, badgeStatWord);
   badgeStat.addEventListener("click", () => selectProfileTab("badges"));
 
-  /* Hundos, beside the badge count. The two numbers the rankings sort
-     on, both on the card that is about you, and the third stat is what
-     balances a row that read as one big number and one small one. */
-  const hundoStat = document.createElement("button");
-  hundoStat.type = "button";
-  hundoStat.className = "profile-badgestat profile-hundostat";
-  const hundoValue = document.createElement("span");
-  hundoValue.className = "profile-badgestat-value shine-silver";
-  hundoValue.textContent = hundosOf(store).toLocaleString();
-  const hundoWord = document.createElement("span");
-  hundoWord.className = "profile-badgestat-word";
-  hundoWord.textContent = hundosOf(store) === 1 ? "hundo" : "hundos";
-  hundoStat.append(hundoValue, hundoWord);
-  hundoStat.addEventListener("click", () => showRankings("hundos"));
-
-  levelRow.append(levelNum, badgeStat, hundoStat);
+  /* Two stats, not three. The hundo count came off by request - it is a
+     leaderboard number rather than a fact about who you are, and it is
+     one tap away on the board that ranks it. */
+  levelRow.append(levelNum, badgeStat);
   levelSect.appendChild(levelRow);
 
   const xpTrack = document.createElement("div");
@@ -36798,13 +37894,13 @@ function showProfile(defaultTab){
      card it was the one tappable thing in a block of read-only text. */
   levelSect.classList.add("profile-level-joined");
   heroSect.appendChild(levelSect);
-  /* The calendar row is back INSIDE the card, where it was before this
-     batch - "the class calendar button looks better where it was before
-     I think". Below the card it read as a second, competing destination
-     beside the test review; inside it, it is one line at the foot of
-     who-you-are, which is what it always was. */
-  heroSect.appendChild(classLine);
+  /* The class no longer rides at the foot of the identity card. It was
+     one line there because it was one line of content; now that it is
+     today's schedule, the next class day and a count, it is its own box
+     directly below - which is also what gave the card above the room to
+     grow. */
   identityTab.appendChild(heroSect);
+  identityTab.appendChild(classSect);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden, and a bar
@@ -36989,7 +38085,7 @@ function showProfile(defaultTab){
          buttons and these two steps are counted against. */
       { target: ".profiletabs .iconbtn:nth-child(3)", align: "right", vplacement: "below",
         text: "Badges is your case \u2014 one for every unit, sixteen in all. Master a unit and its badge drops into its slot; the empty ones show you the shape of what is still to come." },
-      /* "Ladder", not "Ranks". The tab was renamed because the bottom
+      /* "Rank", not "Ranks". The tab was renamed because the bottom
          bar already says Rankings, and this line was left behind. */
       { target: ".profiletabs .iconbtn:nth-child(4)", align: "right", vplacement: "below",
         text: "Ladder is the whole climb \u2014 seven ranks, what each one costs, and what it hands you when you get there." }
@@ -37088,7 +38184,7 @@ let rankingsBoardKey = "week";
 
 function showRankings(defaultBoard){
   setActiveNav(null);
-  countEl.textContent = "Rankings";
+  countEl.textContent = "Leaderboard";
   if(defaultBoard) rankingsBoardKey = defaultBoard;
   /* "level" is still accepted as a name, so a link or a stored key from
      before the board was replaced lands on the first board rather than
@@ -37248,7 +38344,7 @@ function showRankings(defaultBoard){
     rows.replaceChildren();
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Rankings need a connection \u2014 they\u2019ll appear once you\u2019re back online.";
+    p.textContent = "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
     rows.appendChild(p);
   } else {
     /* Live, with no refresh button, which was the explicit ask.

@@ -59,16 +59,16 @@ addEventListener('DOMContentLoaded', function(){
 # falls back to the default for an id it does not know, so an invented
 # one does not fail loudly - it just puts four ninjas on the board.
 CLASSMATES = [
-    ("MADI-0001", "Madison", "ninja",   23, 4, 141, 0),
-    ("DEVO-0002", "Devonte", "ghost",   31, 6, 188, 0),
-    ("ALEX-0003", "Alex",    "grizzly", 47, 9, 262, 0),
-    ("KIMB-0004", "Kim",     "alien",   12, 2,  64, 0),
-    ("PATR-0005", "Pat",     "wizard",  58, 11, 310, 0),
-    ("LEEA-0006", "Lee",     "dragon",  72, 15, 402, 3),
-    ("RAYM-0007", "Ray",     "queen",    8, 1,  27, 0),
-    ("JOSE-0008", "Jose",    "samurai", 39, 7, 205, 0),
-    ("TARA-0009", "Tara",    "ghost",   19, 3,  96, 0),
-    ("BROO-0010", "Brooke",  "queen",   27, 5, 150, 0),
+    ("MADI-0001", "Madison", "ninja",   23, 4, 141, 0, 640),
+    ("DEVO-0002", "Devonte", "ghost",   31, 6, 188, 0, 1180),
+    ("ALEX-0003", "Alex",    "grizzly", 47, 9, 262, 0, 2310),
+    ("KIMB-0004", "Kim",     "alien",   12, 2,  64, 0, 275),
+    ("PATR-0005", "Pat",     "wizard",  58, 11, 310, 0, 1875),
+    ("LEEA-0006", "Lee",     "dragon",  72, 15, 402, 3, 3040),
+    ("RAYM-0007", "Ray",     "queen",    8, 1,  27, 0, 90),
+    ("JOSE-0008", "Jose",    "samurai", 39, 7, 205, 0, 1425),
+    ("TARA-0009", "Tara",    "ghost",   19, 3,  96, 0, 510),
+    ("BROO-0010", "Brooke",  "queen",   27, 5, 150, 0, 980),
 ]
 FAKE_FIREBASE = """
 (function(){
@@ -111,7 +111,11 @@ FAKE_FIREBASE = """
 # The account the post-onboarding screens are shot with. A fresh sign-up
 # renders every one of them as its EMPTY state, which is half the app
 # photographed as "nothing here yet".
+# __WEEK__ is substituted for this week's Monday when the seed is
+# written, so the This Week board has something on it. A hard-coded key
+# would age out and read 0 XP the following Monday.
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
+        '"weekKey":"__WEEK__","weekPoints":640,'
         '"leaderboardOptIn":true,"lastModified":1700000000000,'
         '"tourRev":99,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
         '"seenMainMenuTour":true,"seenRankingsTour":true,"seenAppearanceTour":true,'
@@ -147,12 +151,25 @@ def serve():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f"http://127.0.0.1:{port}/index.html"
 
+def week_key_now():
+    """The same key weekKeyNow() builds in the app: the Monday of this
+    week, as YYYY-MM-DD. A row whose week is anything else counts as 0
+    on the This Week board - which is correct behaviour and made every
+    fake classmate read "0 XP this week" in the screenshots until this
+    existed."""
+    import datetime
+    d = datetime.date.today()
+    d -= datetime.timedelta(days=d.weekday())
+    return d.isoformat()
+
 def rows_json():
     import json
+    wk = week_key_now()
     return json.dumps([
         {"code": c, "firstName": n, "avatarChar": a, "level": lv,
-         "badges": bd, "hundos": hu, "mystery": my, "correct": hu * 34}
-        for (c, n, a, lv, bd, hu, my) in CLASSMATES])
+         "badges": bd, "hundos": hu, "mystery": my, "correct": hu * 34,
+         "week": wk, "weekPoints": wp}
+        for (c, n, a, lv, bd, hu, my, wp) in CLASSMATES])
 
 
 def new_page(br, ins, installed, seeded):
@@ -168,7 +185,7 @@ def new_page(br, ins, installed, seeded):
             "localStorage.setItem('class26e.synccode','MADI-0001');"
             "localStorage.setItem('class26e.frame.ok','go-live-1');"
             "localStorage.setItem('class26e.daily.seen','x');}catch(e){}"
-            % ("'" + SEED + "'"))
+            % ("'" + SEED.replace("__WEEK__", week_key_now()) + "'"))
     page = ctx.new_page()
     body = patched(ins)
     page.route("**/index.html", lambda route, request, b=body: route.fulfill(
@@ -180,13 +197,23 @@ def new_page(br, ins, installed, seeded):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    only = sys.argv[1] if len(sys.argv) > 1 else None
+    # Madison asked for the two reference devices only, so that is the
+    # default: an iPhone 17 Pro Max and an iPad Pro 11". The other five
+    # are still here and still correct - "--all" runs the lot, and a
+    # substring runs one.
+    args = [a for a in sys.argv[1:]]
+    every = "--all" in args
+    args = [a for a in args if not a.startswith("--")]
+    only = args[0] if args else None
+    if not only and not every:
+        only = ("iphone-17-pro-max", "ipad-pro-11")
     srv, url = serve()
     try:
         with sync_playwright() as pw:
             br = pw.chromium.launch(executable_path=CHROME)
             for label, w, h, ins, installed in DEVICES:
-                if only and only not in label: continue
+                if only and (label not in only if isinstance(only, tuple)
+                             else only not in label): continue
                 new_page.w, new_page.h = w, h
                 errs = []
 
@@ -298,12 +325,16 @@ def main():
                 # the three boards
                 page.evaluate("()=>document.getElementById('bottomtab-rewards').click()")
                 page.wait_for_timeout(900)
-                for i, (key, name) in enumerate([("level", "level"), ("badges", "badges"),
+                # The bottom tab is Leaderboard now and its first board is
+                # This Week, not Level. The filenames say so - a screenshot
+                # named for a board that no longer exists is a screenshot
+                # nobody can match to the app.
+                for i, (key, name) in enumerate([("week", "week"), ("badges", "badges"),
                                                  ("hundos", "hundos")]):
                     page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(700)
-                    shot(page, 24 + i * 0.1, "rankings-" + name, bar_ok=True)
+                    shot(page, 24 + i * 0.1, "leaderboard-" + name, bar_ok=True)
 
                 # the four Profile tabs
                 page.evaluate("()=>document.getElementById('bottomtab-profile').click()")
@@ -312,12 +343,18 @@ def main():
                 # first version numbered them 25 + i/10 and added 0.05 for
                 # the scroll, which rounds two different screens to the same
                 # filename - one silently overwrote the other.
-                for i, name in enumerate(["profile", "badges", "stats", "ranks"]):
+                # THE ORDER IS THE BUTTONS' ORDER, and this list had it
+                # wrong: the tabs run Profile, Stats, Badges, Rank, so
+                # index 1 was being saved as "badges" while showing Stats
+                # and index 2 the other way round. A mislabelled
+                # screenshot is worse than a missing one - it gets
+                # reported as a bug on the screen it is not of.
+                for i, name in enumerate(["profile", "stats", "badges", "rank"]):
                     page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(800)
                     shot(page, 25 + i, "profile-" + name, bar_ok=True)
-                    if name in ("badges", "ranks"):
+                    if name in ("badges", "rank"):
                         page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
                         page.wait_for_timeout(450)
                         shot(page, 25 + i + 0.5, "profile-" + name + "-scrolled", bar_ok=True)
