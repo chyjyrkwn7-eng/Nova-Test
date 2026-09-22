@@ -148,7 +148,20 @@ with sync_playwright() as pw:
         pg.evaluate("()=>window.scrollTo({top:0,behavior:'instant'})")
         pg.wait_for_timeout(300)
         pg.screenshot(path=f"{OUT}/{label}-52.0-race-line-crowded.png",
-                      clip={"x":0,"y":0,"width":w,"height":min(h, top+170)})
+                      clip={"x":0,"y":0,"width":w,"height":min(h, top+195)})
+        # FOUR ABREAST: everybody on the same question, which is the
+        # case "it doesn't look like it can fit 4 players side by
+        # side" is about. The leader has to be the one on top.
+        pg.evaluate("""()=>{
+          const p=window.__room.participants;
+          p['ALEX-0003'].progress=58; p['MADI-0001'].progress=57;
+          p['DEVO-0002'].progress=56; p['KIMB-0004'].progress=55;
+          Object.values(p).forEach(x=>{ x.finished=false; });
+          startVroomRaceListener();
+        }""")
+        pg.wait_for_timeout(1200)
+        pg.screenshot(path=f"{OUT}/{label}-52.5-race-line-four-abreast.png",
+                      clip={"x":0,"y":0,"width":w,"height":min(h, top+195)})
         print(label, "done")
         ctx.close()
     br.close()
