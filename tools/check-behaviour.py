@@ -408,8 +408,26 @@ def check_ranks(br):
     check("only the rank you are climbing to carries a meter",
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
           [c["meter"] for c in cards])
-    check("every rank lists what it hands over",
-          all(c["rewards"] == 3 for c in cards), [c["rewards"] for c in cards])
+    # Three rewards on the bottom three, FOUR on the top four - those
+    # each hand over a character as well (Officer, Clown, Robot,
+    # Astronaut). The list is exactly what you get rather than a fixed
+    # shape with a gap in it, so this asserts the shape per rank rather
+    # than one number across all seven.
+    check("every rank lists what it hands over, top four include the character",
+          [c["rewards"] for c in cards] == [3, 3, 3, 4, 4, 4, 4],
+          [c["rewards"] for c in cards])
+    chars = pg.evaluate("""()=>({
+      count: AVATAR_CHARACTERS.length,
+      gated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>c.unlock),
+      lockedGated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>isLockedCharacter(c.id)),
+      lockedFree: AVATAR_CHARACTERS.filter(c=>!c.unlock).map(c=>isLockedCharacter(c.id))})""")
+    check("four characters, gated on the top four ranks",
+          chars["count"] == 12 and
+          chars["gated"] == ["vanguard", "adept", "elite", "titan"], chars)
+    # The seed holds Silver, so none of the four is reachable yet and
+    # none of the original eight is ever locked.
+    check("a rank you have not reached keeps its character locked",
+          all(chars["lockedGated"]) and not any(chars["lockedFree"]), chars)
 
     # A locked rank still shows its colour. Four of the seven used to be
     # redrawn in grey, so you could not see what you were heading for.
