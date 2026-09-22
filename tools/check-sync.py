@@ -173,6 +173,51 @@ with sync_playwright() as pw:
     check("stopping sync deletes the row and records the opt-out",
           "leaderboard/BBBB-2222" in res["del"] and res["off"] == "1", str(res))
     ctx.close()
+
+    # ---- 6. a cached snapshot is NOT a remote reset ----
+    # Reported from a device: "when signing up it randomly reset my account
+    # and showed the notification that the account was reset from another
+    # device." exists:false means two different things depending on where
+    # the snapshot came from - genuinely deleted (server) or just not known
+    # here yet (cache, while reconnecting or around a fresh signup). Acting
+    # on the cached one wipes a live account.
+    #
+    # This drives the app's own listener callback with the exact snapshots
+    # Firestore delivers, rather than waiting for a real network race. It
+    # fails on the build before this check existed: step 3 resets.
+    print("\n6. only a server-confirmed deletion counts as a remote reset")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    seq = [
+        {"label": "cache says missing, before the first push", "exists": False, "fromCache": True,  "reset": False},
+        {"label": "server confirms it exists",                 "exists": True,  "fromCache": False, "reset": False},
+        {"label": "cache replays missing after a drop",        "exists": False, "fromCache": True,  "reset": False},
+        {"label": "server confirms it again",                  "exists": True,  "fromCache": False, "reset": False},
+        {"label": "server says it is gone - a real reset",     "exists": False, "fromCache": False, "reset": True},
+    ]
+    got = pg.evaluate("""(seq)=>{
+      let cb=null, fired=0;
+      const ref={ onSnapshot:(next)=>{ cb=next; return ()=>{}; } };
+      const realReset = window.handleRemoteReset;
+      const origDb = fbDb;
+      window.handleRemoteReset = ()=>{ fired++; };
+      fbDb = { collection:()=>({ doc:()=>ref }) };
+      syncCode = 'NOVA-2601';
+      attachLiveListener('NOVA-2601');
+      const out=[];
+      seq.forEach(s=>{ const before=fired;
+        cb({ exists:s.exists, metadata:{ fromCache:s.fromCache },
+             data:()=>({ lastModified:1, firstName:'Madison' }) });
+        out.push(fired>before); });
+      window.handleRemoteReset = realReset; fbDb = origDb;
+      return out;}""", seq)
+    for i, s in enumerate(seq):
+        check("%s -> %s" % (s["label"], "reset" if s["reset"] else "no reset"),
+              got[i] == s["reset"], "fired=%s" % got[i])
+    ctx.close()
     br.close()
 
 srv.shutdown()

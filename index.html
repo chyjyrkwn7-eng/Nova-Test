@@ -2319,12 +2319,34 @@
   .picks .pick-progress, .picks .pick-stars{ grid-column:1 / -1; grid-row:4; }
   .picks .pick-starbar-track, .picks .pick-other{ grid-column:1 / -1; grid-row:5; }
 
+  /* 16px IS A HARD FLOOR, NOT A STYLE CHOICE.
+     iOS Safari zooms the whole page in when a text field it is focusing
+     computes to under 16px, and it does not reliably zoom back out - so
+     the page is left magnified with no way to pinch out of it. Reported
+     from a device: "when entering my username, it zooms in randomly and
+     doesn't let you zoom out and then you can't move out."
+
+     This was .95rem, which is 15.2px - measured, every text field in the
+     app was under the threshold and every one of them zoomed: the
+     username, the sign-in code, the rankings search and the Virtual Room
+     join box. Chromium has no such behaviour and cannot show this, which
+     is why it survived; the number is the test.
+
+     max() rather than a flat 16px so it still tracks a larger root font
+     size, and never falls under the floor if one is ever set smaller. */
   .searchbox{
-    display:block; width:100%; font:inherit; font-size:.95rem; color:var(--ink);
+    display:block; width:100%; font:inherit; font-size:max(16px, 1rem); color:var(--ink);
     background:#fff; border:1px solid var(--rule); border-radius:2px;
     padding:.7rem .9rem .7rem 2.5rem; margin:0; -webkit-appearance:none; appearance:none;
   }
   .searchbox[hidden]{ display:none; }
+  /* The net. Any text-entry control added later inherits the same floor
+     without whoever adds it having to know about iOS's rule. Deliberately
+     low specificity - it catches an un-classed field and never fights a
+     class that sets its own size at or above 16px. */
+  input[type="text"], input[type="search"], input[type="email"],
+  input[type="number"], input[type="tel"], input[type="password"],
+  textarea, select{ font-size:max(16px, 1rem); }
   /* .searchbox's own left padding (2.5rem) is sized for the magnifying
      icon that sits inside the actual unit-search field \u2014 every other
      text input in the app (username, sync codes, name changes) reuses
@@ -2809,7 +2831,10 @@
   .vroom-chat-row{ display:flex; gap:.5rem; }
   .vroom-chat-input{
     flex:1; min-width:0; padding:.55rem .8rem; border-radius:999px;
-    border:1px solid var(--rule); background:var(--panel); color:var(--ink); font:inherit; font-size:.85rem;
+    border:1px solid var(--rule); background:var(--panel); color:var(--ink); font:inherit;
+    /* Same 16px floor as .searchbox, and for the same reason - this one
+       was .85rem (13.6px), the worst offender in the app. */
+    font-size:max(16px, 1rem);
   }
   .vroom-chat-send{ flex:0 0 auto; padding:.55rem 1.1rem; font-size:.85rem; }
   /* Lobby layout rework, per explicit request — the share-code card
@@ -22570,10 +22595,39 @@ function attachLiveListener(code){
     liveUnsubscribe = onSnapshotResilient(fbDb.collection("progress").doc(code), docSnap => {
       if(code !== syncCode) return; // stale callback from a code we've since moved on from
       if(!docSnap.exists){
-        if(hasSeenExist) handleRemoteReset();
+        /* NEVER ACT ON A MISSING DOCUMENT THAT CAME FROM THE LOCAL CACHE.
+           `exists:false` means two completely different things depending
+           on where the snapshot came from. From the SERVER it means the
+           document is genuinely gone - a real reset on another device.
+           From the CACHE it usually just means this client has not been
+           told about it yet, which is exactly what happens while a
+           listener is re-attaching after a dropped connection, or in the
+           moments around a fresh signup when the first push is still in
+           flight. Firestore delivers the cached answer first and the
+           server's a beat later, so the old code could see a
+           cache-sourced `false`, believe the account had been reset
+           somewhere else, and wipe a brand-new account - with a
+           "reset from another device" notice on top of it. Reported
+           exactly that way: "when signing up it randomly reset my
+           account and showed the notification that the account was reset
+           from another device."
+
+           hasSeenExist was already here for the simpler version of this
+           race (a listener attaching before the very first write), and
+           it is still needed - but it cannot help once the document HAS
+           been seen, which is the case this adds. Both guards are
+           required: one covers before the first write, the other covers
+           every reconnect after it. */
+        if(hasSeenExist && docSnap.metadata && docSnap.metadata.fromCache === false){
+          handleRemoteReset();
+        }
         return;
       }
-      hasSeenExist = true;
+      /* Only a server-confirmed document arms the check above. A cached
+         `exists:true` is not proof this client has ever been in sync,
+         and arming on it would re-open the same hole from the other
+         side. */
+      if(docSnap.metadata && docSnap.metadata.fromCache === false) hasSeenExist = true;
       const cloud = docSnap.data();
       const cloudTime = (cloud && cloud.lastModified) || 0;
       const localTime = store.lastModified || 0;
@@ -31753,7 +31807,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-81";
+const APP_BUILD = "2026-09-22-82";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

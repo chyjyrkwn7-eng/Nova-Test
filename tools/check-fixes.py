@@ -66,6 +66,21 @@ CHECKS = """(() => {
 
   // 3. the points-fly destination must exist
   out.profileTab = !!document.getElementById("bottomtab-profile");
+
+  /* 4. NO TEXT FIELD UNDER 16px, ANYWHERE.
+     iOS Safari zooms the whole page in when it focuses a text field
+     computing to under 16px, and does not reliably zoom back out -
+     reported from a device as the username screen zooming in with no
+     way to zoom out or move. Every field in the app was 15.2px.
+     Chromium never does this, so the number is the only thing that
+     can catch a regression. Measured on whatever screen this run is
+     on, so the matrix as a whole covers every field. */
+  const typed = ["text","search","email","number","tel","password"];
+  out.smallFields = [...document.querySelectorAll("input, textarea, select")]
+    .filter(e => e.tagName !== "INPUT" || typed.includes(e.type))
+    .map(e => ({ cls: (e.className || e.tagName.toLowerCase()),
+                 px: Math.round(parseFloat(getComputedStyle(e).fontSize) * 10) / 10 }))
+    .filter(f => f.px < 16);
   return out;
 })()"""
 
@@ -164,6 +179,10 @@ def main():
                                 fails.append(f"{tag}: {k} is {c[k]}, not transparent")
                         if not c["profileTab"]:
                             fails.append(f"{tag}: #bottomtab-profile missing (points fly target)")
+                        for f in (c.get("smallFields") or []):
+                            fails.append(
+                                f"{tag}: text field {f['cls']} is {f['px']}px "
+                                f"- under 16px, iOS will zoom and not zoom back")
 
                         # 9. Home's bottom furniture must not collide. The
                         # daily-question circle and the version label are both
