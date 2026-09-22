@@ -8569,28 +8569,25 @@
     display:flex; align-items:center; justify-content:flex-start; gap:.7rem;
     flex-wrap:wrap;
   }
-  /* The rank chip on the profile card. A coin and a word, in the rank's
-     own colour, tappable through to the Ladder. */
-  .profile-rankchip{
-    display:inline-flex; align-items:center; gap:.45rem; margin-top:.45rem;
-    padding:.3rem .8rem .3rem .35rem; border-radius:999px; cursor:pointer;
-    background:color-mix(in srgb, var(--rank-color, #7A8694) 16%, rgba(255,255,255,.04));
-    border:1px solid color-mix(in srgb, var(--rank-color, #7A8694) 38%, transparent);
-    font:inherit; -webkit-tap-highlight-color:transparent;
+  /* One line under the name, in the rank's own colour. The emblem is on
+     the character where it sits everywhere else in the app, so this only
+     has to name it. */
+  .profile-ranklineup{
+    margin:.15rem 0 0; font-size:.78rem; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--rank-color, var(--soft));
   }
-  .profile-rankchip.is-unranked{ padding:.3rem .8rem; }
-  .profile-rankchip-art{
-    width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center;
-    border-radius:999px; background:rgba(8,10,14,.6); flex-shrink:0;
-  }
-  .profile-rankchip-art svg{ width:100%; height:100%; display:block; }
-  .profile-rankchip-name{
-    font-size:.82rem; font-weight:800; letter-spacing:.03em;
-    color:var(--rank-color, var(--soft));
-  }
+  .profile-ranklineup.is-unranked{ color:var(--soft); letter-spacing:.03em; }
+  /* The coin on the profile card's own character, bigger than the 42px
+     version on a leaderboard row because the character it sits on is. */
+  .profile-hero-avatar{ position:relative; }
+  /* Inset, not hanging off the corner: on a leaderboard row the avatar
+     sits in the middle of the row and the coin can overhang, but here the
+     avatar is against the card's own rounded corner and the coin was
+     being clipped by it. */
+  .profile-hero-avatar .lb-rankmark{ width:2rem; height:2rem; left:-.15rem; top:-.15rem; }
   @media (min-width:40rem){
-    .profile-rankchip-art{ width:1.9rem; height:1.9rem; }
-    .profile-rankchip-name{ font-size:.95rem; }
+    .profile-ranklineup{ font-size:.88rem; }
+    .profile-hero-avatar .lb-rankmark{ width:2.5rem; height:2.5rem; }
   }
   /* One line, not a section. It replaced a headed block with two
      buttons in it, which was reported as not belonging on this screen. */
@@ -8617,21 +8614,31 @@
      space-between wrapped the third onto its own line on a phone, which
      reads as a mistake rather than as a layout; three equal columns fit
      at every width down to 320 and keep the numbers on one line. */
-  /* auto / 1fr / auto, not three equal columns. Equal thirds squeezed the
-     widest item, which is the one that matters: "LEVEL 43" came out
-     clipped to "LEVEL 4". The two side columns size to their own content
-     and the middle one takes what is left. */
+  /* Two stats, built identically: number on top, caption under it, on a
+     shared baseline. They used to be two different shapes - the level had
+     its word beside the number and the badges had theirs below - so the
+     row could never look like a pair however it was aligned. */
   .profile-level-row{
-    display:grid; grid-template-columns:auto minmax(0, 1fr) auto;
-    align-items:flex-end; gap:.75rem; margin-bottom:.85rem;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:1rem; margin-bottom:.9rem;
   }
   .profile-level-row > *{ min-width:0; }
-  .profile-level-num{ justify-content:flex-start; }
-  .profile-badgestat{ text-align:center; }
-  .profile-hundostat{ text-align:right; }
+  .profile-level-num{
+    display:flex; flex-direction:column; align-items:flex-start; gap:.1rem;
+  }
+  .profile-badgestat{
+    display:flex; flex-direction:column; align-items:flex-end; gap:.1rem;
+    text-align:right;
+  }
   .profile-level-num{ display:flex; align-items:baseline; gap:.45rem; min-width:0; }
+  /* The two captions are the same size, weight and tracking, because they
+     are the same kind of thing. */
+  /* Byte for byte the same as .profile-badgestat-word. They are the same
+     kind of label on the same row, so one of them being uppercase and
+     letter-spaced while the other was not is the sort of mismatch that
+     reads as "not lined up" even when everything measures correctly. */
   .profile-level-word{
-    font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    font-size:.7rem; font-weight:700; letter-spacing:.06em; color:var(--soft);
   }
   .profile-level-value{ font-size:2.4rem; font-weight:900; line-height:.9; }
   @media (min-width:40rem){ .profile-level-value{ font-size:2.9rem; } }
@@ -9490,7 +9497,7 @@
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Rankings</span>
+        <span class="bottomtab-label">Leaderboard</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-settings" data-dest="settings">
         <span class="bottomtab-icon"></span>
@@ -27336,14 +27343,14 @@ const RELEASE_NOTES = [
         { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
         { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
       ]},
-      { label: "Rankings", items: [
+      { label: "Leaderboard", items: [
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Three Boards, Genuinely Live", body: "Level, Badges and Hundos ranked separately, updating in real time as anyone in 26E studies. Level is everything you have done; Badges is units you have mastered; Hundos is units finished at 100%." },
         { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Find Anyone, Including You", body: "Search the class by username, or tap Find me to jump straight to your own row and have it flash. Nothing to refresh \u2014 the numbers move on their own." },
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Sharing Is Yours to Choose", body: "Off by default. Nothing about you appears on the boards, and you cannot see them either, until you turn it on \u2014 and it shares your username, character, rank and those three numbers, nothing else." }
       ]},
       { label: "Profile", items: [
         { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Twelve to choose from \u2014 ninja, ghost, queen, wizard, bear, alien, samurai, dragon, and four more the top ranks hand over. Each one is drawn to read at every size, right down to the tab bar." },
-        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Ladder for the whole climb. Swipe between them or tap." },
+        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Rank for the whole climb. Swipe between them or tap." },
         { icon: buildArchiveIcon, color: "#4ADE80", title: "Every Past Test, Saved", body: "A full answer-by-answer breakdown the moment you finish, plus a running history you can revisit any time, right from Profile." },
         { icon: buildBarStatsIcon, color: "#C583FF", title: "Study Time & Testing Stats", body: "Questions answered, tests completed, time spent \u2014 tracked automatically and laid out clearly, not buried in a menu." }
       ]},
@@ -27380,14 +27387,14 @@ const RELEASE_NOTES = [
         { icon: buildDevicesIcon, title: "Link a Device", body: "One code links a second device with everything already on it, staying in sync from then on, live, everywhere you're signed in." }
       ]},
       { label: "Achievements & Rewards", items: [
-        { icon: buildTrophyIcon, title: "The Rank Ladder", body: "One unified path from Iron all the way to Supernova, across seven ranks, each taking both a level and a number of badges together \u2014 built with real room to grow as more units are added over time." },
-        { icon: buildCoinIcon, title: "Level and Badges, Together", body: "Your level and badge totals sit side by side, both feeding the same ladder \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
-        { icon: buildStarIcon, title: "Tap Any Rank to See What's Next", body: "Every orbiting flare on Home, and every rank on the ladder, is interactive \u2014 tap any one to see exactly how many badges and levels are left before it lights up." },
+        { icon: buildTrophyIcon, title: "One Path to Supernova", body: "One unified path from Iron all the way to Supernova, across seven ranks, each taking both a level and a number of badges together \u2014 built with real room to grow as more units are added over time." },
+        { icon: buildCoinIcon, title: "Level and Badges, Together", body: "Your level and badge totals sit side by side, both feeding the same climb \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
+        { icon: buildStarIcon, title: "Tap Any Rank to See What's Next", body: "Every orbiting flare on Home, and every rank on the Rank tab, is interactive \u2014 tap any one to see exactly how many badges and levels are left before it lights up." },
         { icon: buildRocketIcon, title: "The Supernova Event", body: "Reach the very top of the ladder and Home changes for good: a full-screen event plays out, culminating in an actual supernova, leaving your orbit permanently brighter afterward." },
         { icon: buildGiftIcon, title: "Unlocks", body: "A new colour for every rank you reach, plus the Home screen's own orbit lighting up to match your progress." }
       ]},
       { label: "Interface & Navigation", items: [
-        { icon: buildPersonIcon, title: "Profile and Rewards, Separated", body: "Two distinct screens \u2014 Profile for your name, avatar, and stats; Rankings for the class boards." },
+        { icon: buildPersonIcon, title: "Profile and Leaderboard, Separated", body: "Two distinct screens \u2014 Profile for your name, character and stats; Leaderboard for the class boards." },
         { icon: buildSwipeIcon, title: "A Tab Bar You Can Drag", body: "Press and drag across the bottom bar and the glass bubble follows your finger instantly, snapping between tabs the way iOS's own bars do." },
         { icon: buildPaletteIcon, title: "Genuine Liquid Glass Throughout", body: "The active tab, tooltips, and popups all now share one real frosted-glass treatment \u2014 translucent and blurred, not a flat solid fill." },
         { icon: buildStarIcon, title: "Home, Reimagined", body: "The same cosmic sphere from Welcome now lives on Home too, its orbit lighting up one flare at a time as you climb the ranks." },
@@ -29169,7 +29176,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, no matter where you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "Rankings is the class leaderboards \u2014 level, badges and hundos, updating live. Search for anyone, or tap Find me." },
+      text: "Leaderboard is the class boards \u2014 this week, badges and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: "Profile has your name, avatar and colours, your stats, and now your achievements and unlocks too." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
@@ -32348,7 +32355,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-87";
+const APP_BUILD = "2026-09-22-88";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33882,7 +33889,7 @@ function showAppearance(){
      shadow) Motion & interaction's own header already has above it,
      instead of the plain uppercase label every other section uses. */
   lbLab.className = "slab section-divider motion-summary"; lbLab.id = "settings-rankings";
-  lbLab.textContent = "Rankings";
+  lbLab.textContent = "Leaderboard";
   lbSect.appendChild(lbLab);
   const lbRow = document.createElement("label");
   lbRow.className = "opt";
@@ -36771,16 +36778,18 @@ function showProfile(defaultTab){
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
-    /* "Ladder", not "Ranks". The bottom bar already says Rankings and
+    /* "Rank", not "Ranks". The bottom bar already says Rankings and
        having both was reported as confusing - "the ranks tab within
        profile should be renamed because the main bottom tab already has
-       something called rankings". Renaming the bottom tab was the other
-       option offered and is the worse one: "Rankings" there is a
-       measured WIDTH decision (see showRankings), and "Leaderboard" does
-       not fit a 320px phone's bar. The key stays "ranks" so nothing
-       stored or linked has to move, and "ladder" was already an accepted
+       something called rankings". BOTH ended up renamed in the end: the
+       bottom tab says Leaderboard and this one says Rank. The note here
+       used to say Leaderboard would not fit a 320px bar - measured after
+       the change, the bar is 296px wide inside a 320px screen and no
+       label clips, so that was a guess rather than a measurement. The key
+       stays "ranks" so nothing stored or linked has to move, and "ladder"
+       was already an accepted
        alias for this tab. */
-    { key: "ranks",   label: "Ladder",  node: ranksTab,   cls: "" }
+    { key: "ranks",   label: "Rank",  node: ranksTab,   cls: "" }
   ];
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
@@ -36911,30 +36920,29 @@ function showProfile(defaultTab){
      character on every board - and with the character grid and the
      colour swatches gone to their own screen this card had the room to
      say it. It also gives the card a reason to be the size it now is. */
+  /* The rank hangs off the CHARACTER, which is where it hangs everywhere
+     else in the app - decorateAvatar puts it on a dark coin at the top
+     left of every classmate's avatar on all three boards and in the
+     Virtual Room. A pill of its own beside the name was a second, louder
+     way of saying the same thing, and it was the thing on this card that
+     did not look like the rest of the app. One line under the name says
+     which rank the coin is, so it is still readable rather than a
+     symbol you have to learn. */
   const rankNow = rankOf(store);
-  const rankChip = document.createElement("button");
-  rankChip.type = "button";
-  rankChip.className = "profile-rankchip" + (rankNow ? "" : " is-unranked");
+  decorateAvatar(heroAvatar, levelOf(store), badgeCountOf(store), 0);
+  const rankLine = document.createElement("p");
+  rankLine.className = "profile-ranklineup";
   if(rankNow){
-    rankChip.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
-    const rankArt = document.createElement("span");
-    rankArt.className = "profile-rankchip-art";
-    rankArt.appendChild(buildRankEmblemSVG(rankNow));
-    const rankName = document.createElement("span");
-    rankName.className = "profile-rankchip-name";
-    rankName.textContent = RANK_DISPLAY_NAME[rankNow];
-    rankChip.append(rankArt, rankName);
+    rankLine.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+    rankLine.textContent = RANK_DISPLAY_NAME[rankNow] + " rank";
   } else {
-    /* No rank yet is a real state and gets its own words rather than a
-       greyed-out placeholder pretending to be one. */
-    const rankName = document.createElement("span");
-    rankName.className = "profile-rankchip-name";
-    rankName.textContent = "No rank yet";
-    rankChip.appendChild(rankName);
+    /* No rank yet is a real state; it gets words rather than a greyed
+       placeholder pretending to be one. */
+    rankLine.classList.add("is-unranked");
+    rankLine.textContent = "No rank yet";
   }
-  rankChip.addEventListener("click", () => selectProfileTab("ranks"));
 
-  heroId.append(nameDisplayRow, rankChip, nameInput, nameSaveBtn);
+  heroId.append(nameDisplayRow, rankLine, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
@@ -37028,14 +37036,14 @@ function showProfile(defaultTab){
   const levelRow = document.createElement("div");
   levelRow.className = "profile-level-row";
   const levelNum = document.createElement("div");
-  levelNum.className = "profile-level-num shine-blue";
+  levelNum.className = "profile-level-num";
+  const levelNumValue = document.createElement("span");
+  levelNumValue.className = "profile-level-value shine-blue";
+  levelNumValue.textContent = String(prog.level);
   const levelNumWord = document.createElement("span");
   levelNumWord.className = "profile-level-word";
-  levelNumWord.textContent = "Level";
-  const levelNumValue = document.createElement("span");
-  levelNumValue.className = "profile-level-value";
-  levelNumValue.textContent = String(prog.level);
-  levelNum.append(levelNumWord, levelNumValue);
+  levelNumWord.textContent = "level";
+  levelNum.append(levelNumValue, levelNumWord);
 
   const badgeStat = document.createElement("button");
   badgeStat.type = "button";
@@ -37049,22 +37057,10 @@ function showProfile(defaultTab){
   badgeStat.append(badgeStatValue, badgeStatWord);
   badgeStat.addEventListener("click", () => selectProfileTab("badges"));
 
-  /* Hundos, beside the badge count. The two numbers the rankings sort
-     on, both on the card that is about you, and the third stat is what
-     balances a row that read as one big number and one small one. */
-  const hundoStat = document.createElement("button");
-  hundoStat.type = "button";
-  hundoStat.className = "profile-badgestat profile-hundostat";
-  const hundoValue = document.createElement("span");
-  hundoValue.className = "profile-badgestat-value shine-silver";
-  hundoValue.textContent = hundosOf(store).toLocaleString();
-  const hundoWord = document.createElement("span");
-  hundoWord.className = "profile-badgestat-word";
-  hundoWord.textContent = hundosOf(store) === 1 ? "hundo" : "hundos";
-  hundoStat.append(hundoValue, hundoWord);
-  hundoStat.addEventListener("click", () => showRankings("hundos"));
-
-  levelRow.append(levelNum, badgeStat, hundoStat);
+  /* Two stats, not three. The hundo count came off by request - it is a
+     leaderboard number rather than a fact about who you are, and it is
+     one tap away on the board that ranks it. */
+  levelRow.append(levelNum, badgeStat);
   levelSect.appendChild(levelRow);
 
   const xpTrack = document.createElement("div");
@@ -37284,7 +37280,7 @@ function showProfile(defaultTab){
          buttons and these two steps are counted against. */
       { target: ".profiletabs .iconbtn:nth-child(3)", align: "right", vplacement: "below",
         text: "Badges is your case \u2014 one for every unit, sixteen in all. Master a unit and its badge drops into its slot; the empty ones show you the shape of what is still to come." },
-      /* "Ladder", not "Ranks". The tab was renamed because the bottom
+      /* "Rank", not "Ranks". The tab was renamed because the bottom
          bar already says Rankings, and this line was left behind. */
       { target: ".profiletabs .iconbtn:nth-child(4)", align: "right", vplacement: "below",
         text: "Ladder is the whole climb \u2014 seven ranks, what each one costs, and what it hands you when you get there." }
@@ -37383,7 +37379,7 @@ let rankingsBoardKey = "week";
 
 function showRankings(defaultBoard){
   setActiveNav(null);
-  countEl.textContent = "Rankings";
+  countEl.textContent = "Leaderboard";
   if(defaultBoard) rankingsBoardKey = defaultBoard;
   /* "level" is still accepted as a name, so a link or a stored key from
      before the board was replaced lands on the first board rather than
@@ -37543,7 +37539,7 @@ function showRankings(defaultBoard){
     rows.replaceChildren();
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Rankings need a connection \u2014 they\u2019ll appear once you\u2019re back online.";
+    p.textContent = "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
     rows.appendChild(p);
   } else {
     /* Live, with no refresh button, which was the explicit ask.

@@ -1183,13 +1183,14 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   scrollable screen, that's a great idea"*), so a wide screen gets the
   same thing with more room rather than a second design: only sizes
   change at 46rem and 62rem, no grid areas move.
-- **The tab is called "Ladder", not "Ranks".** The bottom bar already
-  says Rankings and two things with the same name was reported as
-  confusing. Renaming the bottom tab was the other option and is the
-  worse one — "Rankings" there is a measured WIDTH decision (see
-  `showRankings`) and "Leaderboard" does not fit a 320px phone's bar.
-  The tab KEY is still `"ranks"`, and `"ladder"` was already an accepted
-  alias, so nothing stored or linked had to move.
+- **The bottom tab is "Leaderboard" and the Profile tab is "Rank".**
+  Both were renamed in the end. This note used to say Leaderboard would
+  not fit a 320px phone's bar and that renaming the bottom tab was the
+  worse option — **measured after the change, the bar is 296px wide
+  inside a 320px screen and no label clips**, so that was a guess wearing
+  the clothes of a measurement. The Profile tab KEY is still `"ranks"`,
+  and `"ladder"` was already an accepted alias, so nothing stored or
+  linked had to move. `showRankings()` is still the function name.
 - **There is no Secret Flares box on this tab, and there is no hunt
   behind it either.** The box came off first, as the one thing on the
   screen that was not a rank (*"this rank screen needs to be very simple
