@@ -2374,10 +2374,20 @@
      and typed text noticeably right of center. This normalizes the
      padding back to symmetric for any input that isn't the search box. */
   .searchbox-plain{ padding-left:.9rem; }
-  .namedisplay-row{ display:flex; align-items:center; justify-content:space-between; gap:.8rem; padding:.7rem 0; }
+  /* WRAPS, and the name is allowed to shrink. A name and a button that
+     now says "Customize" rather than "Edit" is a wider row than it was,
+     and with neither of those two things true it ran 386px wide inside
+     a 360px phone - caught by the sweep as horizontal page scroll on
+     every narrow device, which is exactly the class of thing a
+     screenshot at 440px never shows. */
+  .namedisplay-row{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:.8rem; padding:.7rem 0; flex-wrap:wrap; min-width:0;
+  }
   .profile-name-display{
     font-family:var(--serif); font-size:1.5rem; font-weight:800;
     color:var(--ink);
+    min-width:0; overflow-wrap:break-word; word-break:normal;
   }
   .namedisplay-row[hidden]{ display:none; }
   [data-theme="dark"] .searchbox{ background:#20272F; }
@@ -8484,10 +8494,14 @@
   }
   .profile-classline-arrow{ font-size:1.2rem; line-height:1; opacity:.7; }
 
+  /* Three stats now, not two - level, badges and hundos - so the row
+     has to survive a 320px screen. It wraps and each item can shrink;
+     the gap comes down to match. */
   .profile-level-row{
     display:flex; align-items:flex-end; justify-content:space-between;
-    gap:1rem; margin-bottom:.85rem;
+    gap:.5rem 1rem; margin-bottom:.85rem; flex-wrap:wrap; min-width:0;
   }
+  .profile-level-row > *{ min-width:0; }
   .profile-level-num{ display:flex; align-items:baseline; gap:.45rem; min-width:0; }
   .profile-level-word{
     font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
