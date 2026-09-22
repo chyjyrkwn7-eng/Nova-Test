@@ -564,6 +564,53 @@ def check_ranks(br):
     ctx.close()
 
 
+def check_review_reach(br):
+    """Every question is REACHABLE, not merely present.
+
+    .cal-month-body is overflow:hidden with a max-height, because that
+    pair is what animates the slide open. On the calendar the cap was
+    never near; on Answer Review one unit is 14,000px of questions
+    against a 2,000px cap, so six sevenths of the screen was clipped -
+    and a page cannot scroll to what a box has already clipped away.
+    Reported as "it's not scrollable, it doesn't let you scroll down to
+    look at all the questions and stuff."
+
+    Counting the questions in the DOM would have passed on the broken
+    build: all 29 were there, and 24 of them were invisible. So this
+    scrolls to the bottom and asks whether the LAST one is on screen.
+    """
+    print("\n7. the answer review can be scrolled to its last question")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        # One unit, which renders expanded with no toggle at all.
+        pg.evaluate("()=>{ showAnswerReview([topicsIn(QUESTIONS)[0]]); }")
+        pg.wait_for_timeout(1100)
+        box = pg.evaluate("""()=>{
+          const b = document.querySelector('.cal-month-body');
+          const qs = document.querySelectorAll('.review-question');
+          return b ? { n: qs.length, h: Math.round(b.getBoundingClientRect().height),
+                       cap: getComputedStyle(b).maxHeight,
+                       clip: getComputedStyle(b).overflow } : null;}""")
+        # behavior:"instant" deliberately: smooth scrolling is on by
+        # default and a 14,000px smooth scroll is still travelling when
+        # the next line measures, which reads exactly like a page that
+        # will not scroll. A harness must not invent the bug it checks.
+        pg.evaluate("()=>window.scrollTo({top: document.documentElement.scrollHeight,"
+                    " behavior: 'instant'})")
+        pg.wait_for_timeout(450)
+        last = pg.evaluate("""()=>{
+          const qs = document.querySelectorAll('.review-question');
+          const el = qs[qs.length - 1];
+          if(!el) return null;
+          const r = el.getBoundingClientRect();
+          return { on: r.top < innerHeight && r.bottom > 0, top: Math.round(r.top) };}""")
+        check("%s the section is not capped" % label,
+              bool(box) and box["cap"] == "none", box)
+        check("%s the last question can be scrolled to" % label,
+              bool(last) and last["on"], last)
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -574,6 +621,7 @@ def main():
             check_badges(br)
             check_cutscene(br)
             check_ranks(br)
+            check_review_reach(br)
         finally:
             br.close()
     SERVER.shutdown()
