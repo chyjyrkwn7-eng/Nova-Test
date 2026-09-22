@@ -1668,11 +1668,11 @@ check a change against, not to trust forever. Measured installed, portrait.
 | | iPhone SE 2/3 | 13 mini | 14/15/16 | **17 Pro Max** | iPad mini | **iPad Pro 11"** | iPad Pro 12.9" | Dell Latitude | MBP 14" |
 |---|---|---|---|---|---|---|---|---|---|
 | viewport | 375×667 | 375×812 | 393×852 | **440×956** | 744×1133 | **834×1194** | 1024×1366 | 1366×638 | 1512×852 |
-| onboarding Continue, y | 527 | 672 | 712 | **816** | 993 | **1055** | 1227 | 502 | 716 |
-| …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 0 | **1** | 1 | 1 | 0 |
-| Home: tagline→button / button→furniture | 50/21 | 33/19 | 40/26 | **68/54** | 82/83 | **93/94** | 128/128 | 45/60 | 34/49 |
-| Welcome: hint off the bottom edge | 42 | 62 | 62 | **62** | 50 | **49** | 50 | 46 | 46 |
-| intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 29/38 | **29/38** | 29/38 | 6/8 | 8/11 |
+| onboarding Continue, y | 527 | 672 | 712 | **816** | 993 | **1055** | 1227 | 502 | 717 |
+| …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 1 | **1** | 0 | 0 | 1 |
+| Home: tagline→button / button→furniture | 50/27 | 25/19 | 32/26 | **60/54** | 65/59 | **67/61** | 73/66 | 43/60 | 31/48 |
+| Welcome: hint off the bottom edge | 33 | 46 | 46 | **46** | 33 | **33** | 33 | 29 | 29 |
+| intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 20/24 | **20/24** | 20/24 | 6/8 | 8/11 |
 | daily question button | 54px | 54 | 54 | **54** | 74 | **74** | 74 | 74 | 74 |
 
 ¹ The one deliberate exception: on an SE the intro screen's four cards fill
@@ -1682,13 +1682,16 @@ An **SE 1st gen (320×568)** is the one device that does not fit this screen at
 all and is not expected to.
 
 Rules those numbers encode, worth keeping: the gap **between** intro cards
-always beats the padding **inside** them; Home's button sits within a few px
-of the midpoint between the tagline and the furniture below it — the
+always beats the padding **inside** them; **every onboarding Continue lands
+on one line per device, and a change anywhere near these screens has to
+leave that column alone** — it is the single most load-bearing row in the
+table; the Welcome hint clears the bottom edge by ~29px in a browser
+window, ~33px on a tablet and ~46px where there is a home indicator inside
+that; and Home's button sits a short, roughly constant hop above the
+furniture below it rather than centred between that and the tagline — the
 daily-question circle on a phone, the tab bar on a tablet, where the circle
-and the version label sit in the corners beside the bar instead; every
-onboarding
-Continue lands on one line per device; and the Welcome hint clears the bottom
-edge by ~50px, or ~62px where there is a home indicator inside that.
+and the version label sit on the bar's own centre line in the corners
+beside it.
 
 ---
 
