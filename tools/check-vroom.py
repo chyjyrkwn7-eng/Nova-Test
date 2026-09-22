@@ -414,6 +414,98 @@ def main():
         check("the two lobbies are two different documents",
               codes[0] != codes[1], codes)
 
+        # ---- 7. the results screen -----------------------------------
+        # THE ONE SCREEN WITH NO OTHER COVERAGE. It needs run state, so it
+        # cannot be mounted cold and is therefore not in sweep-layout's
+        # SCREENS - which is exactly why five separate things were wrong
+        # on it at once: the tab bar was showing inside a test, the race
+        # line stayed up with the results out, the two exits were
+        # different sizes with an arrow on one, "Review your answers"
+        # opened an empty box on a clean run, and there was no sign of
+        # the XP the run had earned.
+        #
+        # Driven here rather than mounted: both tabs finish for real, so
+        # the screen is reached the way a person reaches it.
+        print("\n7. the results screen, reached by finishing")
+        for pg in (host, guest):
+            pg.evaluate("""()=>{
+              /* EVERY ANSWER RIGHT, on purpose. The bug in "Review your
+                 answers" was only ever on the clean-run path: the list
+                 was built when something had been missed, so the one
+                 case where the button said "all correct" was the case
+                 where it expanded nothing. A run with misses in it takes
+                 the other branch and cannot see that at all. */
+              order.forEach(qi => {
+                const oo = optionOrder(qi);
+                picked[qi] = oo.indexOf(QUESTIONS[qi].answer);
+              });
+              /* A real finish writes the score and hands over to the
+                 finale, which hands over to the results screen. */
+              summarize();
+            }""")
+        host.wait_for_timeout(600)
+        # Both are finished as far as the room document is concerned, so
+        # the results screen can be asked for directly - what is under
+        # test is the screen, not the route to it.
+        for pg in (host, guest):
+            pg.evaluate("()=>{ showVirtualRoomResults(); }")
+        host.wait_for_timeout(900 + args.latency * 4)
+
+        # THE RACE LINE, on the path that was actually broken. Hiding it
+        # on the FIRST render always worked; what did not was every
+        # render after it, because the hide sat past an early return that
+        # fires once the standings are up. So: put the bar back, poke the
+        # room document to force another snapshot, and see whether the
+        # screen takes it down again.
+        host.evaluate("()=>{ document.getElementById('vroomracebar').hidden = false; }")
+        host.evaluate("()=>{ fbDb.collection('vrooms').doc(vroomCode)"
+                      "  .update({ nudge: Date.now() }); }")
+        host.wait_for_timeout(700 + args.latency * 4)
+        race_again = host.evaluate("()=>document.getElementById('vroomracebar').hidden")
+
+        got = host.evaluate("""()=>{
+          const R = e => e ? e.getBoundingClientRect() : null;
+          const btns = [...document.querySelectorAll('.vroom-exit-row .vroom-exit-btn')];
+          const bar = document.querySelector('.bottomtabs');
+          const race = document.getElementById('vroomracebar');
+          const lvl = document.querySelector('.results-level');
+          const toggle = [...document.querySelectorAll('button')]
+            .find(b => /Review your answers/.test(b.textContent));
+          if(toggle) toggle.click();
+          const list = toggle ? toggle.nextElementSibling : null;
+          const chat = document.querySelector('.vroom-chat-toggle');
+          const panel = document.querySelector('#stage .panel');
+          return {
+            exits: btns.map(b => Math.round(R(b).width)),
+            exitLabels: btns.map(b => b.textContent),
+            arrow: btns.some(b => b.classList.contains('back-link')),
+            tabbar: !bar || bar.hidden,
+            forced: !!window.forceHideBottomTabs,
+            raceHidden: !race || race.hidden,
+            levelBlock: !!lvl,
+            levelGain: lvl ? (lvl.querySelector('.results-level-gain') || {}).textContent : null,
+            reviewItems: list ? list.querySelectorAll('li').length : -1,
+            chatCorner: chat ? (R(chat).right > R(panel).right - 4) : null
+          };}""")
+        check("no bottom tab bar on the results screen",
+              got["tabbar"] and got["forced"], {k: got[k] for k in ("tabbar", "forced")})
+        check("the race line is down once the results are out",
+              got["raceHidden"], got["raceHidden"])
+        check("and stays down on every snapshot after, not just the first",
+              race_again, race_again)
+        check("both exits are the same width",
+              len(got["exits"]) == 2 and got["exits"][0] == got["exits"][1], got["exits"])
+        check("and neither is a back link, so neither carries an arrow",
+              not got["arrow"] and "Back to Home" in got["exitLabels"], got["exitLabels"])
+        check("the XP and level block is on the screen",
+              got["levelBlock"], got["levelGain"])
+        # -1 means the toggle was not found at all; 0 means it was found
+        # and opened nothing, which is the bug this is written against.
+        check("Review your answers opens a real list, even on a clean run",
+              got["reviewItems"] > 0, got["reviewItems"])
+        if got["chatCorner"] is not None:
+            check("the chat button is in the top right", got["chatCorner"], got["chatCorner"])
+
         ctx.close()
         br.close()
     srv.shutdown()
