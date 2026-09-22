@@ -232,44 +232,47 @@
   [data-theme="dark"][data-accent="indigo"]{  --accent:#7B68EE; --accent-ink:#F5F3FF; }
   [data-accent="legend"]{ --accent:#B8860B; --accent-ink:#1A1500; }
   [data-theme="dark"][data-accent="legend"]{ --accent:#FFD84D; --accent-ink:#1A1500; }
-  /* THE NAME IS THE COLOUR, here too. Ember was green, Comet was blue,
-     Star was purple, Giant was magenta and Nova was orange - seven
-     astronomical names over seven colours that had nothing to do with
-     them, which is the same problem the ranks had before they were
-     renamed. Only Supernova was already right.
+  /* THE THEME IS THE RANK'S OWN COLOUR. A rank hands over a flare, a
+     colour and an emblem, and until now the colour was a seventh set of
+     values with no relationship to the rank granting it - so reaching
+     Sapphire unlocked a rose-pink app. Per explicit request the two are
+     one: every --theme-c2 below is the RANK_COLOR of the rank that hands
+     it over, exactly, and the swatch shows that colour. Change one and
+     change the other, in both files' sense - RANK_COLOR in the script is
+     the source, these are the same seven values.
+     (Iron is where everybody starts, so its grey being the quietest of
+     the seven is the point rather than a gap.)
 
-     And each one is a TRIAD, not one colour three times. Every accent
-     used to derive its three glow stops from itself - white+accent,
-     accent, black+accent - so the whole backdrop came out as a single
-     hue at three brightnesses, against a default that runs gold to
-     orange to magenta across three genuinely different hues. Reported
-     as exactly that: "the default background is like orange and purple,
-     the themes are a single colored background". Each triad below is a
-     light edge, the accent, and a deeper hue rotated away from it, the
-     same shape the default has.
+     Each is still a TRIAD, not one hue at three brightnesses. Every
+     accent used to derive its three glow stops from itself - white+it,
+     it, black+it - so the whole backdrop came out flat against a default
+     that runs gold to orange to magenta across three genuinely different
+     hues: "the default background is like orange and purple, the themes
+     are a single colored background". So c1 is a light edge and c3 is a
+     deeper anchor rotated away from the rank colour, with the rank
+     colour itself in the middle where it reads.
 
-     The DARK --accent is the one that shows - the app is dark-only - so
-     that is the value ACCENT_SWATCH carries, and the two have to be
-     changed together or the swatch stops matching what picking it
-     paints. */
-  [data-accent="rookie"]{ --accent:#C07E12; --accent-ink:#2A1B00; --theme-c1:#FFE6AE; --theme-c2:#F0A93C; --theme-c3:#B7503C; }
-  [data-theme="dark"][data-accent="rookie"]{ --accent:#F6C25A; --accent-ink:#2A1B00; }
-  [data-accent="ranger"]{ --accent:#C2440F; --accent-ink:#FFF3ED; --theme-c1:#FFCB92; --theme-c2:#E2571E; --theme-c3:#8E2F5C; }
-  [data-theme="dark"][data-accent="ranger"]{ --accent:#F4713C; --accent-ink:#2A0C00; }
-  [data-accent="veteran"]{ --accent:#1189AD; --accent-ink:#EFFBFF; --theme-c1:#C6F2FF; --theme-c2:#35C4E8; --theme-c3:#2F55AE; }
-  [data-theme="dark"][data-accent="veteran"]{ --accent:#5AD4F2; --accent-ink:#04222C; }
-  [data-accent="vanguard"]{ --accent:#5B84C4; --accent-ink:#F4F9FF; --theme-c1:#EDF5FF; --theme-c2:#9FC2F5; --theme-c3:#5B4BC4; }
-  [data-theme="dark"][data-accent="vanguard"]{ --accent:#BBD4FA; --accent-ink:#0B1730; }
+     The DARK --accent is the one that shows - the app is dark-only - and
+     it is the rank colour lifted just far enough to sit on a dark panel
+     and carry dark ink. */
+  [data-accent="rookie"]{ --accent:#6F7884; --accent-ink:#F7F8F9; --theme-c1:#E2E8EF; --theme-c2:#8B939E; --theme-c3:#3A4757; }
+  [data-theme="dark"][data-accent="rookie"]{ --accent:#AEB7C2; --accent-ink:#14181D; }
+  [data-accent="ranger"]{ --accent:#A4602A; --accent-ink:#FFF6EE; --theme-c1:#FFD9A8; --theme-c2:#C07A3E; --theme-c3:#6E3A2A; }
+  [data-theme="dark"][data-accent="ranger"]{ --accent:#D99458; --accent-ink:#221208; }
+  [data-accent="veteran"]{ --accent:#7A8C9E; --accent-ink:#F7FAFD; --theme-c1:#F2F7FC; --theme-c2:#CAD3DC; --theme-c3:#5C7189; }
+  [data-theme="dark"][data-accent="veteran"]{ --accent:#D8E1EA; --accent-ink:#141A21; }
+  [data-accent="vanguard"]{ --accent:#B08A1E; --accent-ink:#FFFAEC; --theme-c1:#FFE9AE; --theme-c2:#E5B63F; --theme-c3:#8A5A22; }
+  [data-theme="dark"][data-accent="vanguard"]{ --accent:#F0C75A; --accent-ink:#241A03; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
      colour visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --accent:#B53551; --accent-ink:#FFF2F5; --theme-c1:#FFC6D1; --theme-c2:#D8546E; --theme-c3:#7C2A6E; }
-  [data-theme="dark"][data-accent="adept"]{ --accent:#EE7A90; --accent-ink:#2E0711; }
-  [data-accent="elite"]{ --accent:#5A3BD0; --accent-ink:#F5F2FF; --theme-c1:#D2C2FF; --theme-c2:#7E5BF5; --theme-c3:#2E3FA0; }
-  [data-theme="dark"][data-accent="elite"]{ --accent:#9C7DFF; --accent-ink:#160A33; }
-  [data-accent="titan"]{ --accent:#C4241A; --accent-ink:#FFF2F1; --theme-c1:#FFD08A; --theme-c2:#EE3A2F; --theme-c3:#8C1E63; }
-  [data-theme="dark"][data-accent="titan"]{ --accent:#FF5B4E; --accent-ink:#2A0705; }
+  [data-accent="adept"]{ --accent:#2A55BE; --accent-ink:#F1F5FF; --theme-c1:#BCD4FF; --theme-c2:#3D74E8; --theme-c3:#22317E; }
+  [data-theme="dark"][data-accent="adept"]{ --accent:#6E9CFF; --accent-ink:#081231; }
+  [data-accent="elite"]{ --accent:#7E30C9; --accent-ink:#F9F2FF; --theme-c1:#E4CCFF; --theme-c2:#A855F7; --theme-c3:#4A2483; }
+  [data-theme="dark"][data-accent="elite"]{ --accent:#C084FC; --accent-ink:#1C0A32; }
+  [data-accent="titan"]{ --accent:#B82525; --accent-ink:#FFF2F2; --theme-c1:#FFD08A; --theme-c2:#E23B3B; --theme-c3:#7A1338; }
+  [data-theme="dark"][data-accent="titan"]{ --accent:#FF6B5E; --accent-ink:#2A0707; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
   [data-accent="scholar"]{ --accent:#5B6B7A; --accent-ink:#F5F7F8; }
@@ -315,21 +318,28 @@
      slow shimmer from Vanguard up, and a soft glow at the top two ranks
      (Titan, Luminary), building anticipation toward Legend/Mystery's full
      treatment rather than everything looking the same until the very end. */
-  .dot.tier-rookie{ background:#6B7280; }
-  .dot.tier-ranger{ background-image:linear-gradient(135deg, #4ADE80, #16A34A); }
-  .dot.tier-veteran{ background-image:linear-gradient(135deg, #7CA6FF, #2563EB); }
-  .dot.tier-vanguard{ background-image:linear-gradient(135deg, #D19CFF, #9333EA, #D19CFF); background-size:220% 220%; }
+  /* A THIRD PLACE the seven colours are written down, and the one that
+     was still showing the old ones. The swatch builder hands a tier dot
+     its colour through a CSS class rather than inline, so changing
+     ACCENT_SWATCH and the accent block left the dots themselves green,
+     blue, purple and orange on a screen whose whole job is previewing
+     what you are about to pick.
+     These are RANK_COLOR's seven values, lifted the same way the dark
+     accents are. If a rank's colour ever moves, it moves in three
+     places: RANK_COLOR, the [data-accent] block, and here. */
+  .dot.tier-rookie{ background-image:linear-gradient(135deg, #C3CBD5, #8B939E); }
+  .dot.tier-ranger{ background-image:linear-gradient(135deg, #E0A068, #C07A3E); }
+  .dot.tier-veteran{ background-image:linear-gradient(135deg, #F0F5FA, #CAD3DC); }
+  .dot.tier-vanguard{ background-image:linear-gradient(135deg, #F6D579, #E5B63F, #F6D579); background-size:220% 220%; }
   /* Was simply absent, while every other tier from rookie to titan had
      one. The swatch builder relies on CSS to supply a tier-* dot's colour
      and has no inline fallback, so a missing rule rendered a genuinely
-     colourless circle rather than a subtly wrong one. These are adept's
-     own existing accent shades, the same ones it uses on the Mastery
-     Ladder - not a new colour. */
-  .dot.tier-adept{ background-image:linear-gradient(135deg, #F0ABFC, #D946EF, #F0ABFC); background-size:220% 220%; }
-  .dot.tier-elite{ background-image:linear-gradient(135deg, #FF9457, #EA580C, #FF9457); background-size:220% 220%; }
+     colourless circle rather than a subtly wrong one. */
+  .dot.tier-adept{ background-image:linear-gradient(135deg, #7FA8FF, #3D74E8, #7FA8FF); background-size:220% 220%; }
+  .dot.tier-elite{ background-image:linear-gradient(135deg, #C88BFF, #A855F7, #C88BFF); background-size:220% 220%; }
   .dot.tier-titan{
-    background-image:linear-gradient(135deg, #FF6B6B, #DC2626, #FF6B6B); background-size:220% 220%;
-    box-shadow:0 0 7px rgba(220,38,38,.5);
+    background-image:linear-gradient(135deg, #FF7A6E, #E23B3B, #FF7A6E); background-size:220% 220%;
+    box-shadow:0 0 7px rgba(226,59,59,.5);
   }
   .dot.tier-grinder{
     background-image:linear-gradient(135deg, #FFA552, #E8590C, #FFA552); background-size:220% 220%;
@@ -23458,14 +23468,14 @@ function tierColorUnlocked(name){
   const mysteryOk = typeof rule.mysteryStars !== "number" || mysteryColorsFoundCount() >= rule.mysteryStars;
   return starsOk && pointsOk && mysteryOk;
 }
-/* These are the DARK --accent values from the CSS above, because dark is
-   the only mode the app has - a swatch that shows the light-mode value is
-   a swatch that does not match what picking it does. Change one and change
-   the other. */
+/* Each one is its RANK's colour, lifted for a dark panel - see the note
+   on the accent block in the stylesheet. RANK_COLOR is the source of
+   truth; these are the same seven hues and the two move together, so a
+   swatch always previews the colour the rank that grants it is drawn in. */
 const ACCENT_SWATCH = {
   ink:"#5C6E78", teal:"#0A7A8C", indigo:"#4438A8",
-  rookie:"#F6C25A", ranger:"#F4713C", veteran:"#5AD4F2", vanguard:"#BBD4FA",
-  adept:"#EE7A90", elite:"#9C7DFF", titan:"#FF5B4E"
+  rookie:"#AEB7C2", ranger:"#D99458", veteran:"#D8E1EA", vanguard:"#F0C75A",
+  adept:"#6E9CFF", elite:"#C084FC", titan:"#FF6B5E"
 };
 /* The full progression, escalating in real astronomical scale from a
    first tiny light to the biggest, most dramatic stellar event there
