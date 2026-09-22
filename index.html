@@ -6885,7 +6885,17 @@
          at 432px/27rem wide, so its right edge always sits at
          50% + 13.5rem; 50% - 19rem puts this FAB's own right edge
          about 1.5rem past that, i.e. a deliberate small gap to its
-         right, not touching it. bottom:2rem centers this vertically
+         right, not touching it.
+         THAT MEASUREMENT HAS SINCE MOVED AND TOOK THE GAP WITH IT.
+         Renaming the bottom tab from Rankings to Leaderboard widened
+         the bar from 432px to 480px/30rem - it is centred and sized to
+         its own labels - so its right edge went to 50% + 15rem and this
+         circle ended up 10px INSIDE it on every tablet and laptop in
+         the matrix, an iPad Pro 11" included. 21rem restores the gap at
+         22px. The number to keep in step is the bar's own measured
+         width: a label change anywhere in .bottomtabs moves it, and
+         check-fixes is what catches that (it names the device and the
+         overlap; it went red on exactly this). bottom:2rem centers this vertically
          against the tab bar's own measured mid-height (was 1.3rem,
          sitting a bit low relative to it). The small max() floor is
          just a safety net at the narrow end of this breakpoint (a
@@ -6898,7 +6908,7 @@
          measured across the matrix 1.83rem puts the two centre lines at
          exactly 0px apart. */
       bottom:calc(1.83rem + env(safe-area-inset-bottom, 0px));
-      right:max(calc(50% - 19rem), 1rem);
+      right:max(calc(50% - 21rem), 1rem);
     }
   }
   @media (hover:hover){ .homeversion-btn:hover{ opacity:.85; } }
@@ -32507,7 +32517,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-91";
+const APP_BUILD = "2026-09-22-92";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

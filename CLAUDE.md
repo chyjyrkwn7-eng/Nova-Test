@@ -530,6 +530,22 @@ iPad in landscape. `min(36rem, 48vh)` serves both. The same applies to the
 margins around it: fixed `rem` gaps that look right at 1194 are what tip a
 1024-tall iPad over, so they are `min(2.4rem, 3vh)` and so on.
 
+**The sign-up picker is FOUR across, and that is a different screen
+from the one the six-column rule was written for.** Six was right while
+it showed all twelve characters — two even rows. The locked four came
+off it (they are hidden at sign-up now), and eight items in six columns
+is a row of six and a ragged row of two, reported as uneven. Four is two
+even rows again. **The room that frees went into the rows, not into the
+characters**: `max-width` stays at `3.7rem` on a phone and `6rem` from
+tablet up, because both numbers were arrived at from device reports —
+`7rem` came back as "absolutely massive" and the phone size was signed
+off as it stands. The grid is a flex child of an `align-items:center`
+panel, so it sizes to its own content and that `max-width` is what
+decides how wide it sits; raising it is safe for overflow (fit-content
+clamps to the panel, which is why a 320px phone already renders 54.6px
+tracks against a 59.2px ceiling) but it is a LOOK change, not a bug fix,
+so it wants asking about rather than assuming.
+
 **A GRID'S COLUMN COUNT IS A HEIGHT DECISION.** The character picker was
 four across, which is two even rows of eight. Adding the four rank
 characters made it twelve — three rows — and that added ~75px to a
