@@ -2817,6 +2817,29 @@
     font-size:.62rem; font-weight:800; white-space:nowrap; color:var(--soft);
   }
   .vroom-race-marker.is-finished{ box-shadow:0 0 10px 1px currentColor; }
+  /* The standings landing, one row at a time from last place up. A beat
+     of suspense rather than a cutscene - the whole reveal is under a
+     second and a half for four people, and a row that is still waiting
+     its turn is invisible rather than half-drawn. */
+  .vroom-result-reveal{
+    opacity:0;
+    animation:vroom-result-in .42s cubic-bezier(.2,.8,.25,1.1) forwards;
+  }
+  @keyframes vroom-result-in{
+    from{ opacity:0; transform:translateY(14px) scale(.97); }
+    to{ opacity:1; transform:none; }
+  }
+  /* reduce-motion strips the keyframes, which would leave every row at
+     opacity 0 - the animation is what makes them visible. The global
+     rule cannot know that, so this hands the rows back. */
+  [data-reduce-motion="true"] .vroom-result-reveal{ opacity:1; animation:none; }
+  @media (prefers-reduced-motion:reduce){
+    .vroom-result-reveal{ opacity:1; animation:none; }
+  }
+  /* The placeholder marker while nobody has a place yet. */
+  .lb-rank.is-pending{
+    color:var(--soft); font-weight:700; opacity:.7;
+  }
   /* The finale reveal screen \u2014 each line fades/slides in together
      once the wait is over (vroom-finale-in added right as the reveal
      becomes visible), then the total count-up runs after a short
@@ -32355,7 +32378,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-88";
+const APP_BUILD = "2026-09-22-89";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35626,8 +35649,12 @@ function pushVirtualRoomProgress(){
 
 function finishVirtualRoomTest(pct, elapsedMs){
   if(vroomProgressTimer){ clearInterval(vroomProgressTimer); vroomProgressTimer = null; }
-  stopVroomRaceListener();
-  raceBarEl.hidden = true;
+  /* The race STAYS UP and STAYS LIVE when you finish - "you'll still see
+     the race up top even when you finish". Being first used to mean the
+     race vanished the instant you were done, so the most interesting
+     part of somebody else's run was the part you could never watch. The
+     listener keeps running and the results screen hides the bar itself,
+     once everybody is actually in. */
   if(!vroomCode || !fbDb) return;
   const myKey = vroomMyKey;
   if(!myKey) return;
@@ -35782,6 +35809,14 @@ function showVirtualRoomResults(){
   sub.textContent = "Ranked by total score.";
   panel.appendChild(sub);
 
+  /* Nobody's placing is shown until everybody is in. Ranking people
+     live as they finish gives the result away to whoever finishes
+     first and takes it away from whoever finishes last, which is the
+     opposite of what a race ending should feel like - so while the
+     room is still working this is a roll call in join order, and the
+     standings arrive all at once when the last person lands. */
+  let revealed = false;
+
   const list = document.createElement("div");
   list.className = "cal-list";
   panel.appendChild(list);
@@ -35807,17 +35842,46 @@ function showVirtualRoomResults(){
        the old comparison only for a participant somehow missing
        totalScore (shouldn't happen going forward, but harmless to
        guard against). */
-    entries.sort(([, a], [, b]) => {
-      const at = a.totalScore != null ? a.totalScore : Math.round((a.score || 0) * 100) - Math.round((a.elapsedMs || 0) / 1000);
-      const bt = b.totalScore != null ? b.totalScore : Math.round((b.score || 0) * 100) - Math.round((b.elapsedMs || 0) / 1000);
-      return bt - at;
-    });
+    const totalNow = entries.length;
+    const doneNow = entries.filter(([, p]) => p.finished).length;
+    const allIn = totalNow > 0 && doneNow === totalNow;
+
+    if(allIn){
+      entries.sort(([, a], [, b]) => {
+        const at = a.totalScore != null ? a.totalScore : Math.round((a.score || 0) * 100) - Math.round((a.elapsedMs || 0) / 1000);
+        const bt = b.totalScore != null ? b.totalScore : Math.round((b.score || 0) * 100) - Math.round((b.elapsedMs || 0) / 1000);
+        return bt - at;
+      });
+    } else {
+      /* Join order while waiting, which is the one ordering that says
+         nothing about who is winning. */
+      entries.sort(([, a], [, b]) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    }
+
+    /* Only rebuild once the answer changes, so the rows are not being
+       torn down and rebuilt under somebody every time a progress tick
+       arrives - and so the reveal animation runs once rather than on
+       every snapshot after it. */
+    const alreadyRevealed = revealed;
+    if(allIn) revealed = true;
+    if(alreadyRevealed && allIn) return;
+
     list.replaceChildren();
     entries.forEach(([key, p], i) => {
       const row = document.createElement("div");
       row.className = "lb-row" + (key === vroomMyKey ? " lb-row-me" : "");
+      if(allIn){
+        /* Last place first, the winner last. The stagger is small - this
+           is a beat of suspense, not a cutscene - and it is index-based
+           rather than a chain of timers so a row cannot be left behind
+           if the screen changes mid-reveal. */
+        row.classList.add("vroom-result-reveal");
+        row.style.animationDelay = ((entries.length - 1 - i) * 260) + "ms";
+      }
       const rank = document.createElement("span");
-      rank.className = "lb-rank"; renderRankMarker(rank, i + 1);
+      rank.className = "lb-rank";
+      if(allIn){ renderRankMarker(rank, i + 1); }
+      else { rank.classList.add("is-pending"); rank.textContent = p.finished ? "\u2713" : "\u00b7"; }
       const avatarWrap = document.createElement("span");
       avatarWrap.className = "lb-avatar";
       avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
@@ -35828,21 +35892,28 @@ function showVirtualRoomResults(){
       name.className = "lb-name"; name.textContent = p.name;
       const stats = document.createElement("span");
       stats.className = "lb-stats";
-      stats.textContent = p.finished
-        ? (p.score || 0) + "% \u00b7 " + formatClock(p.elapsedMs || 0) + " \u00b7 " + (p.totalScore != null ? p.totalScore : "\u2014") + " pts"
-        : "Still working\u2026";
+      /* A finished person's SCORE is part of the answer, so it waits too.
+         "Finished" is all anybody needs to know until the last person is
+         in; otherwise the first three scores tell you the result before
+         the fourth person has put their phone down. */
+      stats.textContent = allIn
+        ? ((p.score || 0) + "% \u00b7 " + formatClock(p.elapsedMs || 0) + " \u00b7 " + (p.totalScore != null ? p.totalScore : "\u2014") + " pts")
+        : (p.finished ? "Finished" : "Still working\u2026");
       nameWrap.append(name, stats);
       row.append(rank, avatarWrap, nameWrap);
       list.appendChild(row);
     });
 
-    const totalN = entries.length;
-    const finishedN = entries.filter(([, p]) => p.finished).length;
-    const everyoneDone = totalN > 0 && finishedN === totalN;
+    const everyoneDone = allIn;
     backLink.hidden = !everyoneDone;
     backToLobbyBtn.hidden = !everyoneDone;
     waitNote.hidden = everyoneDone;
-    waitNote.textContent = "Waiting for everyone to finish (" + finishedN + " of " + totalN + ")\u2026";
+    waitNote.textContent = "Waiting for everyone to finish (" + doneNow + " of " + totalNow + ")\u2014 "
+      + "the standings go up when the last person is in.";
+    sub.textContent = everyoneDone ? "Ranked by total score." : "Nobody\u2019s place is final yet.";
+    /* The race bar comes down only when the race is actually over. */
+    raceBarEl.hidden = everyoneDone;
+    if(everyoneDone) stopVroomRaceListener();
   }
 
   fbDb.collection("vrooms").doc(vroomCode).get().then(docSnap => {
