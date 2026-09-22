@@ -136,7 +136,8 @@ def booted(br, w, h, seed=None, init=None, touch=False):
     if init:
         ctx.add_init_script(init)
     if seed:
-        ctx.add_init_script("try{localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % seed)
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');"
+                            "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % seed)
     pg = open_page(ctx)
     pg.goto(URL)
     pg.wait_for_timeout(2600)

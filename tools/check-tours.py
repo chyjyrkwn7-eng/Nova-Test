@@ -204,7 +204,7 @@ def main(argv):
                 pg.add_init_script(
                     "Object.defineProperty(navigator,'standalone',{get:()=>true});")
                 pg.add_init_script(
-                    "try{localStorage.setItem('class26e.drill.v1',%s)}catch(e){}"
+                    "try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.drill.v1',%s)}catch(e){}"
                     % json.dumps(json.dumps(seed)))
                 pg.goto("http://127.0.0.1:%d/index.html" % port)
                 pg.wait_for_timeout(2000)

@@ -65,6 +65,7 @@ SEED = """try{
  var hist = []; for(var j=0;j<9;j++){ hist.push({ date: day(j*2), mode: ['drill','exam','game'][j%3],
    score: 12 + j, total: 20, pct: Math.round((12+j)/20*100), seconds: 300 + j*20,
    units: ['Texas Penal Code'] }); }
+ localStorage.setItem('class26e.freshstart','1');
  localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',firstName:'Madison',avatarChar:'a',
    stats:{},testStats:{},studyLog:log,testHistory:hist,onboardingComplete:true,
    lifetime:{answered:840,correct:712,drillPlays:22,examPlays:9,gamePlays:6,perfectTests:3,
