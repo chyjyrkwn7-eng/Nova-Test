@@ -32806,7 +32806,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-96";
+const APP_BUILD = "2026-09-22-97";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33600,6 +33600,19 @@ function summarize(){
     render();
     const existingPanel = stage.querySelector(".panel");
     if(existingPanel){
+      /* THE SAME BAR AS EVERY OTHER MODE - "ensure that's the same for
+         each test". This branch returns before the normal results panel
+         is built (it deliberately stays on the question screen: quick,
+         in and out, asked for in those words), so the block further
+         down never ran here and the daily question was the one mode
+         without it. Appended in place instead of building a second
+         screen, which keeps both requests true at once.
+         Same builder, so it cannot drift from the others. */
+      const dailyLevel = buildResultsLevelBlock(
+        pointsEarned + perfectBonusEarned + multiTestBonusEarned,
+        store.lifetime.points);
+      existingPanel.appendChild(dailyLevel);
+      if(dailyLevel.runFill) dailyLevel.runFill();
       const exitBar = document.createElement("div");
       exitBar.className = "startbar settings-done-bar";
       const exitBtn = document.createElement("button");
