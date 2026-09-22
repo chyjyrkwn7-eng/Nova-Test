@@ -22559,12 +22559,39 @@ function pushToCloud(){
    local or cloud \u2014 rather than blindly trusting one side, so opening the
    app offline right after a sync elsewhere doesn't stomp on newer local
    progress, and vice versa. */
+/* THE FRESH START'S SECOND HALF, AND IT HAS TO LIVE IN THE APP.
+   The intent is that after the reset nobody can sign back in with a code
+   they wrote down. The obvious way to do that is to delete the progress
+   documents - and it is not available: this project's Firestore rules
+   allow reading ONE document by its exact id and refuse to list the
+   collection (a plain `list` on `progress` comes back 403). Nothing can
+   enumerate those documents, so nothing can delete them all, including
+   tools/firestore-admin.py, whose purge can only reach `leaderboard`
+   and `vrooms`.
+
+   So the cutoff does the job from this side instead: a progress document
+   last written before the reset is treated as if it were not there at
+   all. The document may survive; the code stops working, which is the
+   part that actually matters. Anything created afterwards writes a
+   newer lastModified and is unaffected.
+
+   Set to 0 to disable. Raise it to draw a new line another time. */
+const FRESH_START_CUTOFF = 1790035200000;   /* 2026-09-22T00:00:00Z */
+
 function pullFromCloud(code, onDone){
   if(!fbDb){ onDone && onDone(false, "no-connection"); return; }
   try {
     fbDb.collection("progress").doc(code).get().then(docSnap => {
       if(!docSnap.exists){ onDone && onDone(false, "not-found"); return; }
       const cloud = docSnap.data();
+      /* Reported to the caller as "not-found" rather than as its own
+         reason on purpose: to the person typing it in, a code from
+         before the reset simply is not a code any more, and the screen
+         already has the right words for that. */
+      if(FRESH_START_CUTOFF && ((cloud && cloud.lastModified) || 0) < FRESH_START_CUTOFF){
+        onDone && onDone(false, "not-found");
+        return;
+      }
       const cloudTime = (cloud && cloud.lastModified) || 0;
       const localTime = store.lastModified || 0;
       if(cloudTime > localTime){
@@ -31814,7 +31841,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-83";
+const APP_BUILD = "2026-09-22-84";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
