@@ -113,7 +113,7 @@ FAKE_FIREBASE = """
 # photographed as "nothing here yet".
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
         '"leaderboardOptIn":true,"lastModified":1700000000000,'
-        '"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
+        '"tourRev":99,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
         '"seenMainMenuTour":true,"seenRankingsTour":true,"seenAppearanceTour":true,'
         '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
         '"TCOLE Rules":35,"Penal Code":35,"Racial Profiling":22,"Victims of Crime":14,'

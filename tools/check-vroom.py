@@ -132,7 +132,7 @@ FAKE_FIRESTORE = """
 # devices have two codes; the harness has to arrange that itself.
 SEED = ('{"firstName":"Anonymous","avatarChar":"ninja","onboardingComplete":true,'
         '"leaderboardOptIn":true,"lastModified":1700000000000,'
-        '"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
+        '"tourRev":99,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
         '"lifetime":{"points":1000,"answered":400,"correct":380,"perfectTests":9}}')
 
 FAILURES = []

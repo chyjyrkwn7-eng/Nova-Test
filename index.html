@@ -1586,7 +1586,14 @@
      each column instead of centered in it, which combined with the
      small fixed size below is what actually read as "doesn't enlarge,
      looks broken" on an iPad. */
-  .avatarchar-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:.5rem; justify-items:center; }
+  /* Six across, for the same reason the Profile picker is: twelve
+     characters at four across is THREE rows, and the extra row tipped
+     the onboarding character screen into scrolling on a short laptop
+     (a Dell Latitude at 638px), which also pulled its Continue 9px off
+     the line every other onboarding screen shares - the single most
+     load-bearing row in the whole position table. Two rows of six
+     costs nothing anywhere else. */
+  .avatarchar-grid{ display:grid; grid-template-columns:repeat(6, 1fr); gap:.5rem .35rem; justify-items:center; }
   /* No circular frame or background \u2014 just the character itself,
      sized generously since there's no longer a small circle
      constraining it. Selection shows as a gentle lift and glow

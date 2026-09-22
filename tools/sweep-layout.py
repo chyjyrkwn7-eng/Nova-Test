@@ -147,7 +147,7 @@ SEED = """try{
    lifetime:{answered:840,correct:712,drillPlays:22,examPlays:9,gamePlays:6,perfectTests:3,
              currentStreak:11,longestStreak:17,points:6400},
    leaderboardOptIn:true,
-   seenProfileTour:true,seenSettingsTour:true,
+   tourRev:99,seenProfileTour:true,seenSettingsTour:true,
    seenRewardsTour:true,seenHomeTour:true,seenLadderTour:true,
    theme:{mode:'dark',accent:'ink',layout:'modern'}}));}catch(e){}"""
 
