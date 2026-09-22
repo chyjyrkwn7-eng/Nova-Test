@@ -40,6 +40,14 @@ disagreed, the repo won and the difference is called out.
   of one arbitrary frame; picking that frame by hand is how a 20-second
   cutscene gets reported as "nothing happens". See **Recording an
   animation**.
+- `tools/shoot-results.py` — the three screens `shoot-flow.py` cannot
+  reach, because each needs a real run behind it: an end-of-test
+  results screen, the Virtual Room results screen, and the race line
+  with several people on nearly the same question. It runs a drill for
+  real, answers every question correctly, then swaps in a finished
+  four-person room. **That "needs run state" is also why none of them
+  was in `SCREENS`, and therefore why five things were wrong on the
+  Virtual Room results screen at once with every gate green.**
 - `tools/check-fixes.py` — the third question, after "is anything
   broken" (the sweep) and "did it land where I meant it to"
   (check-positions): **is this specific fix actually in effect here**,
@@ -423,6 +431,38 @@ nothing on its own (`showGeneratingProfile`). **Anything else new belongs
 in `SCREENS`** — a green sweep is only worth what it looked at, and the
 way to check is to diff the app's `^function show` list against `SCREENS`
 rather than to trust this paragraph.
+
+**A GATE THAT NAMES A LABEL GOES STALE, AND THEN IT FAILS THE APP FOR
+BEING RIGHT.** Three separate checks did this inside two days:
+`check-behaviour` asserted the Profile tabs read `["Profile", "Stats",
+"Badges", "Ladder"]`, its swipe test asserted the second leaderboard
+board is literally `"Badges"`, and `shoot-flow.py` saved that board's
+screenshot under the name `badges`. All three went red or wrong the
+moment the labels changed — which they did, on request. A check that
+encodes a DECISION has to be re-read whenever the decision changes;
+better, it should not encode one at all. All three now read the labels
+off the page and assert the SHAPE (four tabs in this order, exactly one
+step not two, whatever they are called). Keep doing that: the thing
+worth asserting is almost never the string.
+
+**A CHECK THAT CANNOT FAIL IS WORSE THAN NO CHECK, because it reads as
+coverage.** Two of `check-vroom`'s new results-screen assertions passed
+against the broken build on their first draft. "Review your answers
+opens a real list" passed because the harness run had missed questions
+in it, and that path always built a list — the bug only ever existed on
+the CLEAN run, so the fixture now answers every question correctly.
+"The race line is down" passed because hiding it on the FIRST render
+always worked; what did not was every render after, the hide sitting
+past an early return, so the check now puts the bar back and pokes the
+document to force another snapshot. **Run every new check against the
+build it was written for (`--against`) and make sure it fails.** Green
+on both builds means it is measuring nothing.
+
+**And a harness must not invent the bug it is checking for.** The first
+version of the answer-review scroll check reported that the page would
+not scroll, because it called `window.scrollTo` and measured 450ms
+later — and smooth scrolling is on by default, so a 14,000px scroll was
+still travelling. `behavior:"instant"` is deliberate there.
 
 **The sweep is an AUDIT, not a look.** It answers "is anything broken on
 this device" — overflow, collisions, insets, JS errors. It does not answer
@@ -1263,6 +1303,55 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   `check-behaviour` asserts against a real `.rank-row` now, built by the
   app, rather than against `decorateAvatar()` in isolation.
 
+### The race line and the end of a run
+
+- **THE RACE LINE POSITIONS BY THE LEFT EDGE, NOT THE CENTRE, and its
+  markers used to have nowhere to go.** Everybody at the same progress
+  was drawn at the same coordinate, one on top of the other, and a
+  lobby has no size limit — so crowded was the default rather than the
+  edge case. Each marker keeps its EXACT horizontal position (that is
+  the whole point of a line) and moves VERTICALLY into one of three
+  lanes when somebody is already within a marker's width of it. Lanes
+  are assigned in progress order so the hunt only has to look at the
+  markers immediately behind; the DOM order stays join order, which is
+  what keeps each person's colour stable.
+- **Lane spacing has to beat the marker's own diameter or they touch.**
+  1.28rem against a 1.7rem marker overlapped by 7px, and the hairline
+  pointer drawn between them was invisible behind the next marker — so
+  the pointer came out rather than being left in as decoration nobody
+  can see. 1.62rem against 1.5rem clears them.
+- **No labels on the markers.** At this size a label under one lane
+  lands on the one below it. The characters ARE the identification —
+  a classmate's avatar is the one they carry on the boards — and your
+  own marker, the one thing an avatar cannot tell you, gets a white
+  ring.
+- **`buildResultsLevelBlock()` is the XP-and-level card at the end of
+  EVERY mode**, drill, exam, game, daily question and Virtual Room
+  alike. It is built from `levelProgress()` like every other bar in the
+  app, fills from where the run started to where it ended, and wraps
+  into the next level if the run crossed one (fill to 100%, reset with
+  the transition off for one committed frame, fill again). `runFill()`
+  is called by the caller AFTER the panel is on the stage, for the same
+  reason the Profile bar's is: a width set in the same tick as the
+  element has nothing to transition from.
+- **The Virtual Room reuses that run's numbers rather than recomputing
+  them.** A Virtual Room run goes through `summarize()` for all its side
+  effects and then has its screen replaced, so the XP is genuinely
+  awarded and was simply never shown. `lastRunXpEarned` /
+  `lastRunPointsAfter` carry it across, so the two screens cannot
+  disagree.
+- **The race bar is hidden at the TOP of `renderResults`, before any
+  early return.** It used to be the last thing that function did, past
+  a `return` that fires on every snapshot once the standings are up —
+  so a results screen rebuilt or re-entered with the results already
+  out kept the line on screen. While people are still working it stays,
+  which is the other half of the same request.
+- **Both Virtual Room end screens set `forceHideBottomTabs`**, and they
+  have to set it AFTER `setActiveNav()`, which clears the flag on the
+  way into every screen. `summarize()` already did this for the ordinary
+  results screen; these two were the one place the bar came back inside
+  a test.
+
 ### Badges
 
 - **Badge detection diffs the real list either side of the recording
@@ -1640,6 +1729,27 @@ re-evaluated on the next check.
   picker still move, and that is not a contradiction: the picker is
   previewing what there is to unlock, which was asked for in the same
   breath. Keep the two apart.
+- **THE FLARES ON HOME HAVE THEIR OWN COLOUR TABLE, and they have to.**
+  `ACCENT_SWATCH` is also the dot in Settings, and that dot has to keep
+  predicting what tapping it does (the three-places rule below). Spark
+  and Comet were `#AEB7C2` and `#D8E1EA`, two light greys a few levels
+  apart — reported as two flares reading as the same colour. So
+  `FLARE_SWATCH` overrides Spark to a near-black and `FLARE_NOIR` marks
+  it for the `.cosmic-badge-noir` treatment: a genuinely dark body with
+  all the light in the rim and the halo, because mixing 55% of a
+  near-black with white only produces another grey, and a black disc
+  with no halo reads as a hole in the screen. Everything else falls
+  through to its swatch. **Change a flare's colour here, never in
+  `ACCENT_SWATCH`.**
+- **The orbit's outer radius is 38, not 42, and that is a clipping
+  fix.** A badge is positioned by its top-left corner, so an outer-ring
+  badge on the right put its own 2.6rem width past the coordinate:
+  measured on a 17 Pro Max the Comet flare's box ended 7px outside
+  `.cosmic-hero-wrap` and its glow a good deal further — reported as
+  the right-hand flare looking cut off. Pulling the outer ring in is
+  the fix that does not move the other six; the inner ring is
+  untouched, and the top badge keeps its clearance from the notice
+  banner above it.
 - **A rank's theme is that rank's colour, and it is declared in three
   places that must agree**: `ACCENT_SWATCH` (the dot in Settings),
   `--accent` inside the `[data-accent="X"]` block (the app's accent) and
@@ -1647,6 +1757,17 @@ re-evaluated on the next check.
   `RANK_COLOR`, lifted for legibility on a dark screen. Change one and
   the swatch stops predicting what tapping it does, which is exactly
   what *"align the swatches"* was about.
+- **A SELECTED CHARACTER GLOWS IN ITS OWN COLOUR**, from `AVATAR_GLOW`
+  via `avatarGlowColor()`, set as `--char-glow` on EVERY option rather
+  than only the selected one — a value written in the same moment as
+  the class would transition from the previous character's colour.
+  Two layers, like every other glow here: a pool behind the artwork on
+  `::before` (so it cannot affect layout) and a `filter:drop-shadow` on
+  the drawing itself, which is what makes the light come OFF the
+  character rather than sit behind a square. Never an SVG filter —
+  those are the one thing that has bitten this app on real iOS
+  hardware. A locked character gives off nothing: it is a preview, not
+  something you hold.
 - **Tablet styling is `@media (min-width:40rem)`**, added *after* the phone
   rule as an override — never a rewrite of the base rule.
 - **Settings' behaviour toggles are two sections, not one.** "Motion &
@@ -1811,6 +1932,20 @@ re-evaluated on the next check.
   instead, so it re-themes with every accent rather than going grey.
 - **Fixed-position elements render oddly in Playwright `fullPage` screenshots.**
   Verify their layout with `getBoundingClientRect()`, not by eyeballing.
+- **A `max-height` cap alongside `overflow:hidden` is a CLIP, not a
+  cap, and the content past it cannot be scrolled to.** `.cal-month-body`
+  had `max-height:2000px` so the open/close slide could animate.
+  On the calendar the cap was never near; on Answer Review one unit is
+  **14,231px** of questions, so six sevenths of the screen was cut off
+  with no way to reach it — reported as *"it's not scrollable, it
+  doesn't let you scroll down to look at all the questions"*. Counting
+  the questions in the DOM would have said everything was fine: all 29
+  were there and 24 of them were invisible. `openCollapsible()` is the
+  fix — the cap exists only for the duration of the animation and is
+  dropped (`.is-settled`) once the transition ends, with a timeout
+  behind it because reduce-motion switches transitions off and
+  `transitionend` then never fires. **Use it rather than toggling the
+  class by hand**, and never give a scrollable region a pixel cap.
 - **Adjacent vertical margins collapse to the larger, they don't add.** A gap
   "smaller than the two margins suggest" is collapse, not specificity.
 - **Don't copy the corner-positioning formula from `.daily-question-fab` /
@@ -1893,9 +2028,9 @@ check a change against, not to trust forever. Measured installed, portrait.
 | | iPhone SE 2/3 | 13 mini | 14/15/16 | **17 Pro Max** | iPad mini | **iPad Pro 11"** | iPad Pro 12.9" | Dell Latitude | MBP 14" |
 |---|---|---|---|---|---|---|---|---|---|
 | viewport | 375×667 | 375×812 | 393×852 | **440×956** | 744×1133 | **834×1194** | 1024×1366 | 1366×638 | 1512×852 |
-| onboarding Continue, y | 527 | 672 | 712 | **816** | 993 | **1055** | 1227 | 502 | 717 |
+| onboarding Continue, y | 527 | 672 | 713 | **816** | 993 | **1054** | 1227 | 503 | 717 |
 | …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 1 | **1** | 0 | 0 | 1 |
-| Home: tagline→button / button→furniture | 50/27 | 25/19 | 32/26 | **60/54** | 65/59 | **67/61** | 73/66 | 43/60 | 31/48 |
+| Home: tagline→button / button→furniture | 50/27 | 45/18 | 45/18 | **45/18** | 81/59 | **84/61** | 92/66 | 43/60 | 31/48 |
 | Welcome: hint off the bottom edge | 33 | 46 | 46 | **46** | 33 | **33** | 33 | 29 | 29 |
 | intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 20/24 | **20/24** | 20/24 | 6/8 | 8/11 |
 | daily question button | 54px | 54 | 54 | **54** | 74 | **74** | 74 | 74 | 74 |
@@ -1917,6 +2052,19 @@ furniture below it rather than centred between that and the tagline — the
 daily-question circle on a phone, the tab bar on a tablet, where the circle
 and the version label sit on the bar's own centre line in the corners
 beside it.
+
+**The tagline→button figures went UP in build 94 and the button did not
+move**, which is the property that made the change safe: reported as
+*"the text above the start studying button is now too close to the
+button. Move it slightly back up."* The greeting's `margin-top:auto` is
+the only auto margin in that column, so every pixel added to
+`.hometitle-wrap`'s bottom margin comes out of that auto — the text
+group rises by exactly that much and the button stays put. A 17 Pro Max
+went 27→45 above with 18 below unchanged and Continue moving one pixel;
+an iPad Pro 11" went 67→84 with 61 below unchanged. An SE 2nd/3rd gen
+is deliberately untouched (50/27): it is below the `46rem` height floor,
+because a device with no leftover height has nothing for an auto margin
+to hand over.
 
 ---
 
@@ -1959,6 +2107,16 @@ missed real bugs that a thirty-second check caught.
    grep** — `grep -n "^function name("` or nothing.
 7. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
    Madison, per **Showing the work**.
+8. `python3 tools/shoot-results.py <outdir>` — the three screens that
+   walk cannot reach: a drill result, the Virtual Room result, and a
+   crowded race line. Required on anything touching the end of a run;
+   see **The race line and the end of a run**. Looking at these found
+   three spacing faults that every measurement had passed.
+
+`check-vroom` section 7 and `check-behaviour` section 7 are the gates
+for those screens, and both were written against the build they failed
+on — `--against` an older `index.html` is the only thing that makes a
+green run mean anything.
 
 Serve over HTTP for anything touching `version.json` — `fetch` fails on a
 `file://` path, and the update check swallows that silently by design.
