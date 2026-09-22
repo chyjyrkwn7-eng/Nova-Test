@@ -905,15 +905,23 @@ names now (`RANK_DISPLAY_NAME`) and the flare is one of the things a rank
 Ember colour; the rank is not called Ember. Keep that distinction in any
 copy you write: `ACCENT_DISPLAY_NAME` is the flare/colour,
 `RANK_DISPLAY_NAME` is the rank, and they have separate swatches
-(`ACCENT_SWATCH` vs `RANK_COLOR`) for the same reason — a rank the same
-colour as its own reward has nothing left to be.
+(`ACCENT_SWATCH` vs `RANK_COLOR`). **They now carry the same colour
+on purpose**, asked for directly: *"ensure the theme colors match the
+colors of the rank you are getting (you start off as iron so that's
+already the default color)."* `ACCENT_SWATCH` is `RANK_COLOR` lifted a
+few levels so it holds up as an accent on a dark screen, not a separate
+palette. The names stay apart; the colours deliberately do not. The
+older note here said a rank the same colour as its reward has nothing
+left to be — that reasoning is superseded, and the stale version of it
+survives as a comment above `RANK_COLOR`.
 
 **THE RANK NAME IS ITS COLOUR: Iron, Bronze, Silver, Gold, Sapphire,
-Amethyst, Crimson.** That is the thing the reference does that makes it
-read at a glance, and it took two passes to see it. Role names — Rookie,
-Ranger, Veteran, Vanguard, Sentinel, Elite, Titan — carry no colour, so
-seven coloured cards were seven arbitrary colours you had to learn. The
-**keys are still those role words** and must stay: `TIER_UNLOCKS`,
+Amethyst — and Supernova, the one exception, below.** That is the thing
+the reference does that makes it read at a glance, and it took two
+passes to see it. The role words — rookie, ranger, veteran, vanguard,
+adept, elite, titan — carry no colour, so seven coloured cards were
+seven arbitrary colours you had to learn. The **keys are still those
+role words** and must stay: `TIER_UNLOCKS`,
 `ACCENTS`, `ACCENT_SWATCH` and a theme somebody already has selected are
 all keyed by them, so renaming a key is a migration for a cosmetic gain.
 
@@ -921,62 +929,91 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   the same level-and-badges pairs; the keys are the same too, which is
   what kept this a rename rather than a migration — `ACCENTS`,
   `ACCENT_SWATCH` and a theme somebody already has selected are all keyed
-  by them. **`adept` displays as "Sentinel"** and that is the one place a
-  display name does not match its key: `adept` reads as a beginner's word
-  sitting between Vanguard and Elite, and renaming the key would have
-  touched a stored preference for a cosmetic gain.
-- **`rankOfStats(level, badges, mystery)` is the single definition of who
-  holds what**, and it takes the numbers rather than a store, because the
+  by them. The keys no longer resemble the names at all — **`adept`
+  displays as "Sapphire"** — and that is fine: a key is a storage
+  identifier, and renaming one to match a display name is a migration
+  for a cosmetic gain.
+- **`rankOfStats(level, badges, mysteryFound)` is the single definition
+  of who holds what**, and it takes the numbers rather than a store, because the
   rankings and the Virtual Room ask it about *other people* from a
   published document. `rankOf(store)` is the wrapper for yourself.
-- **`mystery` is published to the leaderboard and to the room.** Titan
-  needs all three Secret Flares, so without it every remote person is
-  capped at Elite however far they have actually got. An older document
-  lacking the field reads as 0 and self-heals on that person's next push.
-- **SEVEN DIFFERENT MARKS, not one mark at seven sizes.** Three sets
-  came before. The app's V inside a frame that gained wings and horns
-  escalated but had nothing to do with the app. The one after that was a
-  star inside a corona ring with rays coming off it, and it **read as a
-  wheel** — which is what a ring plus evenly spaced radial lines always
-  reads as. The third was generated from a single table (same star, more
-  points, bigger radius) and came back as *"I dont like how they are all
-  nearly identical just different in size, that's not the idea i had in
-  mind."*
-  **The escalation is a change of KIND, not of size.** Iron, Bronze and
-  Silver are service insignia — one, two and three chevrons, flat,
-  struck from metal, centred on the frame whatever the count. Gold is
-  the turn: the chevrons collapse to a single base and a star takes the
-  emblem. Sapphire drops the base entirely for a cut stone held between
-  two crescents. Amethyst crowns it, doubles its points and throws
-  sparks. **Supernova** is the app going off — a white-hot core rather
-  than a coloured one, a blast shell drawn as broken arcs, flares longer
-  than the frame and debris past the shell.
-  `check-behaviour` asserts this structurally rather than by eye: the
-  bottom three contain a straight-segment path with no curve in it, only
-  the top one contains an arc command, and no two ranks produce the same
-  shape signature.
+- **The third argument to `rankOfStats` is vestigial, and it is left in
+  on purpose.** It was the Secret Flare count, which Supernova used to
+  require; the flares are scrapped (see below) and no rule in
+  `TIER_UNLOCKS` carries a `mysteryStars` field any more, so the
+  `typeof rule.mysteryStars === "number"` guard is simply never true.
+  The parameter and the guard stay because the leaderboard and the
+  Virtual Room publish a `mystery` field on every document and older
+  documents still carry it — a signature change here is a wire-format
+  change, for nothing.
+- **The Secret Flares are gone entirely**, asked for in one line: *"the
+  'mystery flares' should be scrapped."* The requirement came off
+  Supernova (`titan` is now plain "Reach level 70 and 14 badges"),
+  `"mystery"` came off `ACCENTS` and `ACCENT_DISPLAY_NAME`, the hidden
+  star button and its banner are deleted, `maybeStartMysteryForRun()` is
+  a no-op, and Home's orbit dots are decorative again. **The `store`
+  fields stay defaulted** (`mysteryColorsFound`, `testsUntilMystery`) —
+  an account that found one is not worth a migration, and dropping a
+  field from `applyLoadedData()` is how a cloud document starts losing
+  keys on every round trip. Nothing reads them.
+- **SEVEN CELESTIAL BODIES, not seven stars.** Three sets came before
+  and each failed the same way. The app's V inside a frame that gained
+  wings and horns escalated but had nothing to do with the app. A star
+  inside a corona ring with rays coming off it **read as a wheel** —
+  which is what a ring plus evenly spaced radial lines always reads as.
+  The third was generated from one table (same star, more points, bigger
+  radius): *"I dont like how they are all nearly identical just
+  different in size."* The fourth put service chevrons on the bottom
+  three and was rejected outright: *"I'm not a fan of the iron bronze
+  silver icons after all."*
+  **The drama has to come from what the object IS.** These are the life
+  of a star told as seven things you can name at a glance: Iron a dead
+  rock that makes no light of its own, Bronze a ringed world, Silver a
+  crescent with a star in its cradle, Gold a sun that finally makes its
+  own light, Sapphire a comet, Amethyst a galaxy, and Supernova the app
+  going off. Every silhouette is different, every one is legible at
+  26px on a rankings row, and the order escalates by kind rather than by
+  size. `check-behaviour` asserts it structurally: no two ranks produce
+  the same shape signature.
+- **A circle reads as a world only if it has a terminator.** `litBody()`
+  draws the whole disc in shadow and then the lit side as an offset
+  circle clipped back to it. Without that step every one of the bottom
+  four is a coloured dot.
+- **The ring on Bronze is a tilted ellipse drawn in two passes**, with
+  the body between the far side and the near side, and **nothing radial
+  anywhere near it** — that is the only thing keeping it a ringed world
+  rather than the wheel this set has read as twice before. A single pass
+  would redraw the far side over the body and flatten it.
+- **The crescent is a real cut, not a shape drawn to look like one**: a
+  disc minus an offset disc, one path, two subpaths, `fill-rule:evenodd`.
+  The bite then lands in the same place at every size.
+- **Sapphire is the only asymmetric emblem in the set, deliberately.**
+  Direction is the whole idea of a comet, and a symmetric comet is a
+  star with fuzz on it. Its tail is drawn twice — one wide and soft, one
+  narrower and brighter inside it — because two separate tails at
+  different angles read as two blue shards rather than as one thing
+  streaming off a head.
 - **The glow is a CIRCLE filled with the falloff gradient, not a burst
   shape filled with it.** A twelve-point burst at a wide waist is a
-  bulging rounded square, and filled with a soft gradient that is exactly
-  what it looked like — a coloured tile behind the emblem rather than
-  light coming off it.
+  bulging rounded square, and filled with a soft gradient that is
+  exactly what it looked like — a coloured tile behind the emblem rather
+  than light coming off it.
+- **Three rules carry over from the burst set, because each was learned
+  the hard way.** Nothing is a circle with spokes on it — rings here are
+  broken arcs, never closed. An arm's sides are quadratic curves pulled
+  in towards the centre, so the tips are sharp and the shape is a light
+  source rather than a cog; Gold's corona alternates long and short
+  tongues for the same reason. And a sparkle sits in the GAP between two
+  arms, never on an arm's axis, where it is only that arm made longer.
+  **Lens streaks are always at different lengths** horizontally and
+  vertically, because equal ones make a cross and a cross is a plus
+  sign, not a flare.
 - **Reflecting an angle is `PI - th`, and the offset from straight up is
   not the angle.** Every "mirrored pair" of sparks in two successive
   versions landed both copies on the SAME side, because `[a, PI - a]`
   was being applied to the offset from `UP` rather than to the absolute
-  angle. Visible as a star with all its sparks on the right.
-  **Nothing in the current one is a circle or a spoke.** The arms are
-  concave-sided: each side is a quadratic curve whose control point sits
-  on the bisector at `waist`, so the tips are sharp and the sides are
-  drawn in. That is the shape a light source makes and it cannot be
-  mistaken for a rim. The small sparkles sit **in the gaps between the
-  arms**, never on their axes, because a sparkle on an arm's axis is
-  that arm made longer, which is a spoke again.
-  **Lens streaks are always at different lengths** horizontally and
-  vertically, because equal ones make a cross and a cross is a plus
-  sign, not a flare. **Scattered sparks go in mirrored pairs at varying
-  radii** — evenly spaced ones at one radius are a ring of dots, and a
-  ring of dots round a star is a wheel again.
+  angle. Visible as a star with all its sparks on the right. `pair()`
+  does it correctly; use it rather than writing the reflection again.
 - **The top rank is called Supernova**, and that is the one place a rank
   is not named after its colour. Asked for by name: *"the very last one
   needs to be called supernova and it needs to be very cool."* Its key
@@ -1009,7 +1046,7 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   what the hero already animates.
 - **The meter belongs to the rank you are climbing to, and nothing
   else.** Every unreached rank carried one, which put a half-full bar on
-  Crimson while you were working on Gold — progress towards something
+  Supernova while you were working on Gold — progress towards something
   you are not working towards. A locked rank says what it costs and
   stops there.
 - **The emblem is lit or it is not.** It was two stacked copies with the
@@ -1042,14 +1079,13 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   `showRankings`) and "Leaderboard" does not fit a 320px phone's bar.
   The tab KEY is still `"ranks"`, and `"ladder"` was already an accepted
   alias, so nothing stored or linked had to move.
-- **There is no Secret Flares box on this tab.** It was the one thing on
-  the screen that was not a rank, with its own header, its own progress
-  bar and its own vocabulary, and it came off per explicit request
-  (*"this rank screen needs to be very simple to understand ... very
-  clean"*). The hunt is untouched: the flares are still hidden in the
-  app, finding all three still unlocks the Eclipse colour, and the top
-  rank still needs them — which its own card says, because its
-  requirement line lists them like any other requirement.
+- **There is no Secret Flares box on this tab, and there is no hunt
+  behind it either.** The box came off first, as the one thing on the
+  screen that was not a rank (*"this rank screen needs to be very simple
+  to understand ... very clean"*); the feature came off next
+  (*"the 'mystery flares' should be scrapped"*). Supernova's requirement
+  line is now just its level and badge counts. Don't reintroduce either
+  half.
 
 - **Only list rewards that exist.** Each card names three: the flare on
   Home, the theme colour, and the rank's emblem beside your name. The
@@ -1109,83 +1145,106 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   note rather than the spin, because the global
   `[data-reduce-motion="true"] *{animation:none}` would otherwise strip
   the keyframes and leave a badge sitting motionless behind a dim.
-- **These are STAINED GLASS IN A BLUE-SILVER SETTING.** They were
-  enamel in a neutral silver setting for one round and came back as
-  *"it almost looks like the colored stuff is colored stained glass,
-  within the nice blue/silver looking metal and its all shiny."* Two
-  things make that true rather than described: every pane carries its
-  own light (bright where the light falls, deep where it does not,
-  which is what a translucent material does and a painted one does
-  not), and the divisions between panes are **leading** — one thin line
-  of the same metal — rather than each pane being a separately rimmed
-  object stacked on the one below.
-- **No metal on metal.** The stacking above is exactly what came back as
-  *"some badges have details or pieces where it looks like metal is
-  sitting on metal"*: the old drawing gave every inner field a dark
-  stroke AND a silver stroke, then laid a metal motif on a dark underlay
-  on top of that — three rings of metal and an ornament, on a badge 60px
-  wide. The motif is leading now: drawn once, in the metal, no underlay.
-  Leading does not need separating from the thing it divides.
-- **No pane may be near-black or near-white**, and `glassTint()` is the
-  floor and the ceiling. Glass works because light gets through it, so a
-  black pane in a silver setting is a hole; and the setting is blue-
-  silver now, so a pale pane has nothing to be. Both ends are clamped
-  where the colour is USED rather than where it is declared, so the
-  families themselves stay as they are.
-- **`badgeHexRgb` takes `rgb(r,g,b)` as well as `#RRGGBB`, and that is
-  load-bearing.** The secondary pane colour IS a `badgeShade()` result
-  for half the sixteen units, so anything that shades it a second time
-  parsed `"rgb(..."` as hex, got NaN for all three channels and painted
-  the pane BLACK. It worked for as long as that colour was only ever a
-  flat fill; the moment it became the input to a gradient ramp, four
-  badges lost their inner colour outright.
+- **SIXTEEN HAND-BUILT BADGES — generation was the mistake, not the
+  settings.** Every version before this one grew the silhouette from a
+  hash of the unit name (even angles, jittered radii, a pattern of near
+  and far points), and each round came back worse than the last, ending
+  at *"the badges look worse and worse by the turn. Let's do this. Start
+  fresh with the actual badges themselves and redo them."* A hash can
+  make sixteen DIFFERENT polygons; it cannot make sixteen DESIGNED ones,
+  and the reference is sixteen designed ones — a ringed heptagon, a
+  diamond, a trefoil of spheres, a run of peaks, a keystone. Those were
+  drawn, so `BADGE_SHAPE` is drawn too: sixteen hand-authored paths,
+  each with its own centre and its own list of channel cuts.
+- **The recipe, read off the reference rather than invented.** A dark
+  keyline round the outside, and it IS the dominant edge; a broad silver
+  band of even width following the silhouette inside it; the colour as
+  flat PLATES inset within that band, each with its own thin dark edge;
+  and silver CHANNELS between the plates. That is the whole
+  construction, and it is what makes the inside of a gym badge read as
+  assembled rather than printed. An earlier pass here concluded "black
+  is not a material" and led with the silver; looked at properly the
+  reference leads with the dark line, which is why that set dissolved
+  into the case.
+- **The channels are the band showing through, not lines drawn on the
+  colour**, so each one is clipped to the PLATE and never to the whole
+  token. Unclipped they cut the silver band as well and the badge falls
+  to pieces. They are a flat `#9FACBA` rather than a ramp — see the
+  zero-width bounding box below.
+- **A linear gradient resolves against its path's bounding box, and a
+  straight line's box is zero-wide in one axis**, so the ramp
+  degenerates and the path paints as its first stop, which is usually
+  black. This has now bitten three times in this file: the old badge
+  leading, the rank glows, and these channels. Anything that is a line
+  gets a flat colour; anything that needs a ramp gets a shape with area.
+- **The plate is the silhouette scaled about ITS OWN centre**, which is
+  what `c:` in each `BADGE_SHAPE` entry is for —
+  `translate(cx cy) scale(.8) translate(-cx -cy)`. Scaling about the
+  128-unit frame's centre instead leaves the inset thick on one side and
+  thin on the other for every shape not centred in its own box; the
+  crescent and the trefoil showed it at a glance.
+- **A lobed silhouette must be ONE outline, not stacked circles.** The
+  trefoil and the quatrefoil were three and four overlapping discs, and
+  stroking that strokes every internal seam: what should be a single
+  smooth outline came out with lines running through it. Both are one
+  arc path through the computed intersections now.
+- **Two subpaths winding opposite ways render HOLLOW** under the default
+  nonzero fill. A medal drawn as a body plus a ribbon came out as an
+  empty ring; it is a rounded triangle now.
 - **Corners are rounded, on the badge AND on its slot.** A hard-cornered
   polygon cut into a lining reads as a vector path, which is what *"the
   empty cut outs look bad and inconsistent and not very smooth"* was
-  pointing at. The radius is clamped to under half the shorter edge at
-  each vertex so a star's point stays a point. Round one and not the
-  other and they stop fitting each other — it is one outline.
-- **The recess is not black.** It is the lining seen in shadow, so a
-  desaturated blue-grey in the same family as the metal, with wide
-  low-opacity strokes for the lip. A hairline reads as a drawn outline;
-  material giving way is soft.
-- The older note, still true about the SETTING: it is not gems and not
-  flat tokens. One pass cut every badge like a stone — a pavilion of shaded
-  faces around a bright table — and it read as sixteen jewels. The next
-  led with a heavy black keyline and put a thin pale line outside it,
-  which is backwards: the black was the dominant edge, so what the
-  sixteen had in common was a black line, and **black is not a
-  material**. What the reference actually shares is a broad pale-silver
-  rim following each badge's own outline, the colour filled inside it,
-  and the devices inside outlined in that same silver.
-- **The setting is two strokes on one path**: a dark one at 11.4, the
-  silver a little narrower at 8.2 on top. What shows of the dark is a
-  hairline on either side of the metal — outside it against the case,
-  inside it against the colour — which is what stops the silver
-  dissolving into either. **The inner fields get the same treatment at a
-  smaller scale**, and that repetition at two scales is most of why
-  sixteen different silhouettes read as one set.
-- **The device is metal too, on a dark underlay**, and the underlay is
-  the motif scaled up about its own centre rather than a widened stroke:
-  these motifs mix fills and strokes, and a widened stroke would only
-  outline half of them.
-- **Flat is not the same as dull, and the shine is three separate
-  things.** The silver is a GRADIENT, not a flat grey: a white
-  highlight, through shadow, to a bright bottom edge, because a flat
-  grey rim is a drawn line and a ramp is a piece of metal catching
-  light. The gloss is a broad wash over the upper-left plus a **narrow
-  bright streak** across it — the streak is what reads as shine; the
-  wash on its own just made the top half paler. And a four-point glint
-  sits proud of the rim at the badge's top-left vertex, drawn
-  **outside** the token group so it can overlap the silhouette: a
-  sparkle that stops at the outline is one painted on the badge rather
-  than one coming off it. A dome highlight is what made the gem set read
-  as glass — everything here is hard-edged and clipped to the token.
+  pointing at. Every vertex in `BADGE_SHAPE` is a `Q` rather than an
+  `L`, and the slot is the same path, so the two cannot stop fitting
+  each other — it is one outline.
+- **No gloss streak, no sparkle, no glass, and no motif.** All four were
+  tried across three rounds and each came back: *"too shiny"*, and a
+  mark *"stuck on top of them ... a lot of upside down v's"*. The
+  channels ARE the interior design; there is nothing laid on the colour.
+- **Look at the rendered shape before believing its name.** Hand-drawing
+  does not exempt anything from this — the medal rendered hollow, the
+  lobed pair rendered seamed, and the inset rendered lopsided, all of
+  which were invisible in the path data and obvious the moment sixteen
+  were rendered side by side. That render is a thirty-second check and
+  it is the only reason any of the three got fixed.
+- **`badgeHexRgb` takes `rgb(r,g,b)` as well as `#RRGGBB`, and that is
+  load-bearing.** The secondary colour IS a `badgeShade()` result for
+  half the sixteen units, so anything that shades it a second time
+  parsed `"rgb(..."` as hex, got NaN for all three channels and painted
+  the plate BLACK. Both helpers sit above `badgeThemeFor`, and **the
+  rank emblems depend on them too** — removing them along with a badge
+  rewrite threw a ReferenceError on the whole Ladder tab.
+- **The colour NODS at the unit; the shape does not.** `UNIT_BADGE_THEME`
+  hand-assigns one of the twenty-one `BADGE_FAMILY` colours per unit —
+  gold for Ethics, police blue for Professional Policing, gunmetal for
+  Arrest/Search/Seizure, amber for Missing and Exploited Children. That
+  is the whole of the relevance, and it is deliberate: a badge that
+  *draws* its subject was rejected twice, but a set where the colour
+  means nothing at all is what made an earlier set read as sixteen
+  arbitrary objects. The reference works the same way — the red gym
+  badges are fire and none of them is a picture of a flame.
+  **Sixteen DISTINCT families, and that is checkable rather than
+  assumed.** A hash into a sixteen-entry table is sixteen independent
+  draws from sixteen slots, which lands about six of them on a colour
+  another badge already has — reported as "a lot of repeating colours",
+  and it was. The families are named rather than evenly spaced round the
+  hue wheel: even steps is the obvious answer and it produces four
+  greens out of sixteen, because green occupies about a sixth of the
+  wheel and reads as one colour whatever the spacing says.
+- **`UNIT_BADGE_SHAPE` is a pairing, not a lottery**, for that same
+  reason: a hash into the shape table doubles some up and skips others,
+  which is "they all have the same common" in another form. A unit the
+  table does not know falls back to the hash rather than to null — the
+  leaderboard once lost three classmates to a builder returning null for
+  an id it did not know.
 - **No enamel colour may be close to the setting.** Arrest, Search and
   Seizure was gunmetal, for steel, and inside a silver rim it came out
   as a blank piece of metal with no badge in it. It is a much darker
   steel-blue now: the relevance survives, the collision does not. Check
   any new family against the silver before adding it.
+- **Never one colour field.** A plate and its channels are two tones,
+  never one. A flat disc of a single colour with a mark on it is
+  precisely the thing the reference never does.
 - **Every badge has a slot, and the slot is drawn whether the badge is
   earned or not.** That is the other half of the reference: each badge
   sits in a recess cut to its own outline, which is why an empty slot
@@ -1198,61 +1257,10 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   feature that has bitten this app on real iOS hardware.
   The token is scaled to `.945` inside its slot: exactly the size of the
   hole and it looks printed on.
-- **Never one colour field.** `bands` is two or three, never one. One is
-  a flat disc of a single colour with a mark on it, which is precisely
-  the "the entire badge is not a solid colour" the reference never does.
-  The inner field is a darker sibling on some and a lighter one on
-  others, decided by the unit's own hash — all-darker was one reason
-  these read as repeated, because sixteen tokens with the same tonal
-  move in them look like sixteen printings of one design.
-- **The colour NODS at the unit; the shape does not.** `UNIT_BADGE_THEME`
-  hand-assigns one of the twenty-one `BADGE_FAMILY` colours per unit —
-  gold for Ethics, police blue for Professional Policing, gunmetal for
-  Arrest/Search/Seizure, amber for Missing and Exploited Children. That
-  is the whole of the relevance, and it is deliberate: a badge that
-  *draws* its subject was rejected twice, but a set where the colour
-  means nothing at all is what made these read as sixteen arbitrary
-  objects. The reference works the same way — the red gym badges are
-  fire and none of them is a picture of a flame.
-  **Sixteen DISTINCT families, and that is checkable rather than
-  assumed.** A hash into a sixteen-entry table is sixteen independent
-  draws from sixteen slots, which lands about six of them on a colour
-  another badge already has — reported as "a lot of repeating colours",
-  and it was. The families are named rather than evenly spaced round the
-  hue wheel: even steps is the obvious answer and it produces four
-  greens out of sixteen, because green occupies about a sixth of the
-  wheel and reads as one colour whatever the spacing says.
-- **Badges are GROWN from the unit name, and the shape is mirror-symmetric
-  by construction.** Vertices sit at even angles starting straight up, and
-  that angle set is already closed under a reflection in the vertical axis
-  (reflecting `-90 + i*360/n` gives `-90 + (n-i)*360/n`, another vertex of
-  the same set) — so the only thing that can break the mirror is unequal
-  radii, and the half is generated and copied across, jitter included.
-  **The free rotation the first version applied is gone**: it is exactly
-  what stopped the shapes reading as designed rather than found. The
-  inner field's four shapes keep the mirror too — a concentric copy and
-  a circle obviously do, and a 180-degree turn does as well, because
-  reflect-then-turn is a reflection in the other axis.
-- **Every pattern carries at least one near radius.** The all-far pattern
-  draws a regular polygon, which is the one shape a seed can land on that
-  looks like nothing was designed — it produced three plain pentagons out
-  of sixteen. **A wide near/far ratio is most of the shape variety there
-  is**; at 0.54–0.82 every badge came out a pentagon-ish blob with a dent
-  in it.
-- **Twelve marks and four inner shapes, not eight marks.** Eight put the
-  same device on two badges in a set of sixteen often enough to be
-  reported as "repeated in a lot of ways". Twelve marks by four inner
-  shapes by two band counts is ninety-six combinations before the
-  silhouette is counted. They are all symmetric about the badge's own
-  vertical axis so they cannot break the mirror, and all sized against
-  the innermost field rather than at a fixed radius — a mark that reads
-  as a device on the widest token is a speck on the narrowest.
-  **None of them is a picture of anything**, no crowns, no eyes, no
-  shields: the shapes were already asked not to represent the unit they
-  belong to, and a motif that did it instead would only move the problem
-  inside the badge. The first set was a bar and a double rule and they
-  read as a capital I and an equals sign, which is a meaning where there
-  is supposed to be none.
+- **The recess is not black.** It is the lining seen in shadow, so a
+  desaturated blue-grey in the same family as the metal, with wide
+  low-opacity strokes for the lip. A hairline reads as a drawn outline;
+  material giving way is soft.
 - **An unearned badge is its empty slot.** Not an outline, not a solid
   silhouette on the tray, not an empty setting — all three were tried
   and the second reference photo (a partly-filled case) settled it: you
@@ -1263,12 +1271,6 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   shared definition and fifteen wrong fills; `badgeSvgSeq` exists for
   that, `rankEmblemSeq` does the same job for the rank emblems, and the
   same applies to every `clipPath` id.
-- **Look at a generated shape before believing its name.** Four of the
-  sixteen hand-written silhouettes did not draw what they were called —
-  the wings rendered as an arrow, the crescent as a hairline, the bloom
-  as a shield, and the scroll was indistinguishable from the speech
-  bubble. Rendering all sixteen at once is a thirty-second check and it
-  is the only reason any of this got fixed.
 - **Two columns on a narrow phone, three from 27rem, four from 40rem.**
   Three across a 375px screen leaves each name 72px and
   "Professionalism" alone is 89px, so `overflow-wrap:anywhere` was
@@ -1469,6 +1471,23 @@ re-evaluated on the next check.
   on `<html>`. Write the rule once, then override with a
   `[data-theme=...]`/`[data-accent=...]` prefixed version. Never a one-off
   hardcoded colour.
+- **A theme is THREE colours, not one, because the default is three.**
+  Reported as *"the default color has more colors, whereas the theme one
+  just looks like one color"* — and it was true: only the default
+  declared the `--theme-c1/2/3` triad the ambient glow is built from, so
+  every other accent repainted one glow and left the other two on the
+  default's values. Every `[data-accent="X"]` block now carries all
+  three: the accent itself as `--theme-c2`, with a warmer c1 and a
+  cooler c3 either side of it. See **Three things move together when
+  the ambient glow changes** — a new accent has to set the triad or it
+  will look like one flat colour, however right its swatch is.
+- **A rank's theme is that rank's colour, and it is declared in three
+  places that must agree**: `ACCENT_SWATCH` (the dot in Settings),
+  `--accent` inside the `[data-accent="X"]` block (the app's accent) and
+  `--theme-c2` in the same block (the glow). All three derive from
+  `RANK_COLOR`, lifted for legibility on a dark screen. Change one and
+  the swatch stops predicting what tapping it does, which is exactly
+  what *"align the swatches"* was about.
 - **Tablet styling is `@media (min-width:40rem)`**, added *after* the phone
   rule as an override — never a rewrite of the base rule.
 - **Settings' behaviour toggles are two sections, not one.** "Motion &
@@ -1582,11 +1601,15 @@ re-evaluated on the next check.
   the interaction — judged not worth the regression risk on the most-used
   screen for a nicety, and explicitly declined. Don't quietly retry it; a
   visual shake is the feedback that cannot fail.
-- **"Flares" ≠ "Secret Flares" ≠ badges.** Flares are the orbiting marks
-  on Home, one per Mastery Ladder tier. Badges are the sixteen unit
-  awards on Profile. The three are separate and the words are not
-  interchangeable in copy. Secret Flares are titan tier's separate mystery-colour hunt
-  (`mysteryStars`, `store.mysteryColorsFound`, keys `red`/`orange`/`yellow`).
+- **"Flares" ≠ badges, and "Secret Flares" are gone.** Flares are the
+  orbiting marks on Home, one per rank — the thing a rank hands over.
+  Badges are the sixteen unit awards on Profile. The two are separate
+  and the words are not interchangeable in copy. Secret Flares were a
+  third thing, a hidden three-colour hunt gating the top rank; they were
+  scrapped outright. `store.mysteryColorsFound`, `testsUntilMystery` and
+  the `mysteryStars` guard survive as defaulted, unread remnants — see
+  **Ranks**. The version-history copy in `index.html` still advertises
+  them, and is deferred rather than correct.
 - **A solid-coloured child inside a `backdrop-filter` surface can tear on
   iOS** — reported as glitched lines running through the update banner's
   button. The parent needs `will-change:backdrop-filter` (`.toast` has always
