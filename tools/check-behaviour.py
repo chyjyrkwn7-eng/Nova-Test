@@ -362,7 +362,7 @@ def check_ranks(br):
       exact: rankOfStats(20, 4, 0), levelShort: rankOfStats(19, 4, 0),
       badgeShort: rankOfStats(20, 3, 0), nothing: rankOfStats(1, 0, 0),
       titanNoFlares: rankOfStats(70, 14, 0), titan: rankOfStats(70, 14, 3)})""")
-    check("a rank needs BOTH halves, and Crimson needs the flares too",
+    check("a rank needs BOTH halves, and Supernova needs the flares too",
           edges["exact"] == "veteran" and edges["levelShort"] == "ranger" and
           edges["badgeShort"] == "ranger" and edges["nothing"] is None and
           edges["titanNoFlares"] == "elite" and edges["titan"] == "titan", edges)
@@ -371,8 +371,11 @@ def check_ranks(br):
     pg.wait_for_timeout(1500)
     tabs = pg.evaluate("""()=>[...document.querySelectorAll('.profiletabs .iconbtn')]
                               .map(b=>b.textContent)""")
-    check("Ladder and Unlocks are one tab now",
-          tabs == ["Profile", "Badges", "Stats", "Ranks"], tabs)
+    # Stats before Badges, and the last one is "Ladder" - the bottom bar
+    # already says Rankings and two things called the same was reported
+    # as confusing. The key is still "ranks"; only the label moved.
+    check("four tabs, in the order asked for, and no second Rankings",
+          tabs == ["Profile", "Stats", "Badges", "Ladder"], tabs)
 
     cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
       name:c.querySelector('.rankcard-name').textContent,
@@ -382,7 +385,7 @@ def check_ranks(br):
       rewards:c.querySelectorAll('.rankcard-rewards li').length}))""")
     check("seven ranks, named as ranks and not as flares",
           [c["name"] for c in cards] ==
-          ["Iron", "Bronze", "Silver", "Gold", "Sapphire", "Amethyst", "Crimson"],
+          ["Iron", "Bronze", "Silver", "Gold", "Sapphire", "Amethyst", "Supernova"],
           [c["name"] for c in cards])
     # The states are the whole point of the rewrite: "what you are, what
     # you have, and what is to come" has to read without decoding a
@@ -397,7 +400,7 @@ def check_ranks(br):
     # A reached rank is not a progress bar. It was, for one build, and
     # that was the thing explicitly asked against.
     # ONLY the next one up. Every unreached rank carried a meter, which
-    # put a half-full bar on Crimson while you were working on Gold -
+    # put a half-full bar on Supernova while you were working on Gold -
     # progress towards something you are not working towards.
     check("only the rank you are climbing to carries a meter",
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
@@ -412,18 +415,63 @@ def check_ranks(br):
     check("every rank carries its own colour, reached or not",
           len(set(hues)) == 7 and all(h.startswith("#") for h in hues), hues)
 
-    # One column on a phone and the card on its side there; upright and
-    # four across from 46rem. Two short cards per row was the phone
-    # layout and it was reported as atrocious. The card is a GRID, so
-    # what turns is the area map, not a flex direction: the name sits
-    # BESIDE the emblem on a phone and ABOVE it on a tablet, which no
-    # flex direction can express with one piece of markup.
-    lay = pg.evaluate("""()=>{const c=document.querySelector('.rankcard');
+    # ONE ROW PER RANK ON EVERY DEVICE. The upright four-across card is
+    # gone: seven of them wrapped four-then-three on a tablet, so the
+    # climb read left-to-right and then left-to-right again. The phone
+    # arrangement was already the simple one and was already liked, so a
+    # wide screen gets the same thing with more room - which means the
+    # emblem stays BESIDE the name at every width, and a rank's card
+    # spans the track whatever the screen is.
+    lay = pg.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankcard')];
+      const t=document.querySelector('.ranktrack').getBoundingClientRect();
+      const c=cs[0];
       const r=s=>c.querySelector(s).getBoundingClientRect();
-      return {areas:getComputedStyle(c).gridTemplateAreas,
-              nameAbove: r('.rankcard-head').bottom <= r('.rankcard-art').top + 1};}""")
-    check("the name sits above the emblem on a tablet",
-          lay["nameAbove"] and "art" in lay["areas"], lay)
+      return {beside: r('.rankcard-head').left >= r('.rankcard-art').right - 1,
+              perRow:cs.filter(x=>Math.abs(x.getBoundingClientRect().top -
+                                           c.getBoundingClientRect().top) < 2).length,
+              full:Math.round(c.getBoundingClientRect().width) >= Math.round(t.width) - 2};}""")
+    check("one full-width row per rank on a tablet too",
+          lay["beside"] and lay["perRow"] == 1 and lay["full"], lay)
+
+    # SEVEN DIFFERENT MARKS, not one mark at seven sizes. The set this
+    # replaced was generated from a single table and was reported as
+    # "all nearly identical just different in size", so the check is
+    # structural rather than a look: the three lowest are chevrons (a
+    # path of straight segments with no curve in it), the top rank is the
+    # only one carrying an arc command, and no two ranks produce the same
+    # shape signature.
+    shapes = pg.evaluate("""()=>{
+      const out={};
+      TIER_ORDER_FULL.forEach(k=>{
+        const svg=buildRankEmblemSVG(k);
+        const ds=[...svg.querySelectorAll('path')].map(p=>p.getAttribute('d')||'');
+        out[k]={n:ds.length,
+                chevron:ds.some(d=>(d.match(/L/g)||[]).length===5 && d.indexOf('Q')===-1),
+                arc:ds.some(d=>d.indexOf('A')!==-1),
+                sig:ds.join('|').length};
+      });
+      return out;}""")
+    order = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]
+    check("the three lowest ranks are chevrons and the top three are not",
+          all(shapes[k]["chevron"] for k in order[:3]) and
+          not any(shapes[k]["chevron"] for k in order[4:]),
+          {k: shapes[k]["chevron"] for k in order})
+    check("only the top rank carries a blast shell",
+          shapes["titan"]["arc"] and not any(shapes[k]["arc"] for k in order[:6]),
+          {k: shapes[k]["arc"] for k in order})
+    check("no two ranks draw the same thing",
+          len({shapes[k]["sig"] for k in order}) == 7,
+          {k: shapes[k]["sig"] for k in order})
+
+    # The Secret Flares unlock box came off this tab: it was the one
+    # thing on it that was not a rank, with its own header and its own
+    # vocabulary. The requirement itself is untouched - the top rank's
+    # own card still lists the three flares like any other requirement.
+    secret = pg.evaluate("""()=>({box:!!document.querySelector('.ranks-tab .unlock-row'),
+      onTopCard:[...document.querySelectorAll('.rankcard-req')]
+        .some(p=>/Secret Flares/.test(p.textContent))})""")
+    check("no separate unlock box, and the flares still show as a requirement",
+          not secret["box"] and secret["onTopCard"], secret)
     ctx.close()
     ctx2, pg2 = booted(br, 393, 852, seed=seed)
     pg2.evaluate("()=>showProfile('ranks')")

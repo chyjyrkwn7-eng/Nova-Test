@@ -1420,6 +1420,21 @@
      edge, not scrolling content), so they're excluded outright rather
      than worked around. */
   #stage > *:not(.floatbtn):not(:has(.floatbtn)){ animation:screen-fade-in .3s ease-out; }
+  /* The question screen is the one place this animation runs back to
+     back, dozens of times in a row, on a panel full of backdrop-filter
+     surfaces - every one of which is re-sampled on every frame the
+     transform is live. Reported as "the next question transition is very
+     buggy and slow and looks laggy", and 300ms of that per question is
+     most of it. The same gesture at 140ms and 3px still reads as a
+     transition between two screens of the same shape; it just stops
+     being something you wait through. Between one question and the next
+     the layout barely moves, so there is nothing for a longer travel to
+     describe. */
+  #stage > .qpanel{ animation:question-slide-in .14s ease-out; }
+  @keyframes question-slide-in{
+    from{ transform:translateY(3px); }
+    to{ transform:translateY(0); }
+  }
   @media (prefers-reduced-motion:reduce){
     #stage > *{ animation:none; }
   }
@@ -5073,6 +5088,7 @@
   .stat-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:.75rem; margin-bottom:1.5rem; }
   @media (max-width:26rem){ .stat-grid{ grid-template-columns:1fr 1fr; } }
   @media (min-width:40rem){ .stat-grid{ grid-template-columns:repeat(3, 1fr); } }
+  @media (min-width:40rem){ .stat-grid-four{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
   .stat-card{
     background:#fff; border:1px solid var(--rule); border-radius:2px; padding:.9rem 1rem;
   }
@@ -6882,11 +6898,12 @@
   /* Flex and not grid, for one reason: SEVEN is prime. A grid leaves
      the last row ragged at every column count that is not seven - 4+3
      on an iPad - with the orphans jammed against the left edge and a
-     hole beside them. Wrapped flex with justify-content:center puts the
-     short row in the middle. min-width:0 on the card does the job
-     minmax(0,1fr) does in a grid; without it a rank name sets the
-     floor, which is the trap .pick and the badge grid already
-     document. */
+     hole beside them. There is no wrapping left to fix: the cards are
+     one per row at every width now (see the 46rem block further down),
+     which is the only arrangement in which seven ranks read as an
+     order. min-width:0 on the card stays - it does the job minmax(0,1fr)
+     does in a grid, and without it a rank name sets the floor, which is
+     the trap .pick and the badge grid already document. */
   .ranktrack{
     display:flex; flex-wrap:wrap; justify-content:center;
     --rank-gap:.6rem; gap:var(--rank-gap); margin:0 0 1.6rem;
@@ -6902,11 +6919,7 @@
      without squashing. */
   .ranktrack > .rankcard{ flex:0 1 100%; min-width:0; }
   @media (min-width:46rem){
-    .ranktrack{ --rank-gap:.8rem; }
-    .ranktrack > .rankcard{ flex-basis:calc((100% - 3 * var(--rank-gap)) / 4); }
-  }
-  @media (min-width:62rem){
-    .ranktrack > .rankcard{ flex-basis:calc((100% - 6 * var(--rank-gap)) / 7); }
+    .ranktrack{ --rank-gap:.75rem; }
   }
 
   /* The card. GRID, not flex, and that is what lets one piece of markup
@@ -7043,37 +7056,35 @@
   .rankcard.is-locked .rankcard-rewardhead{ opacity:.55; }
   .rankcard.is-next .rankcard-art{ opacity:.9; }
 
-  /* Upright from 46rem, which is where four of them fit across without
-     a rank name having to wrap. Same markup, different grid. */
+  /* ONE ROW PER RANK ON EVERY DEVICE, and the upright card is gone.
+     Seven cards across a tablet wrapped four-then-three, which put the
+     climb on two lines reading left to right and then left to right
+     again - reported as "I'm also not a fan of how the layout of this
+     screen is on larger devices either", next to "this rank screen
+     needs to be very simple to understand ... very clean".
+     The phone layout was already the simple one and was already liked
+     ("I also like how you have it shown on the iPhone, you are making it
+     a scrollable screen, that's a great idea"), so a wide screen gets
+     the same thing with room to breathe rather than a second design:
+     the seven read top to bottom, in order, which is what a ladder is.
+     Only the sizes change here - no grid areas move, because there is
+     only one arrangement now. */
   @media (min-width:46rem){
     .rankcard{
-      grid-template-columns:minmax(0, 1fr);
-      grid-template-areas:"head" "art" "body";
-      justify-items:center; text-align:center;
-      row-gap:.3rem; padding:0 .6rem .9rem;
-      border-left-width:1px; border-top:3px solid var(--rule);
+      column-gap:1.3rem; padding:1rem 1.25rem; border-radius:1.15rem;
     }
-    /* The header strip runs edge to edge and carries a rule under it,
-       the way the reference's tier name does. It has to pull back out
-       through the card's own padding to do that. */
-    .rankcard-head{
-      width:calc(100% + 1.2rem); margin:0 -.6rem .2rem; padding:.5rem .5rem .42rem;
-      background:rgba(0,0,0,.28);
-      border-bottom:1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 30%, transparent);
-      text-align:center;
-    }
-    .rankcard.is-held{ border-top-color:var(--rank-color, var(--accent));
-      border-left-color:color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent); }
-    .rankcard.is-next{ border-left-style:solid; border-top-style:dashed;
-      border-top-color:color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent); }
-    .rankcard.is-locked{ border-top-color:color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent); }
-    .rankcard-bg svg{ right:auto; left:50%; top:54%; width:168%;
-      transform:translate(-50%, -50%); }
-    .rankcard-art{ width:100%; height:auto; aspect-ratio:1; }
-    .rankcard-body{ width:100%; }
-    .rankcard-meter{ max-width:none; margin-left:auto; margin-right:auto; }
-    .rankcard-name{ font-size:.74rem; margin-bottom:.3rem; }
-    .rankcard-rewards{ font-size:.62rem; }
+    .rankcard-name{ font-size:1.05rem; }
+    .rankcard-req{ font-size:.86rem; }
+    .rankcard-rewards{ font-size:.8rem; }
+    .rankcard-state{ font-size:.66rem; }
+    .rankcard-bg svg{ right:-10%; width:56%; opacity:.085; }
+    /* The emblem is the thing being awarded, so on a screen with room it
+       is not a 62px thumbnail beside three lines of text. */
+    .rankcard-art{ width:6.4rem; height:6.4rem; }
+  }
+  @media (min-width:62rem){
+    .rankcard-art{ width:7.4rem; height:7.4rem; }
+    .rankcard{ padding:1.15rem 1.5rem; }
   }
   @media (hover:hover){
     .rankcard:hover{ border-color:color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent); }
@@ -8100,6 +8111,14 @@
     -webkit-tap-highlight-color:transparent;
   }
   .profile-classline:active{ background:rgba(255,255,255,.1); }
+  /* The level block lives inside the identity card now, so it drops its
+     own border, background and outer margin and keeps only the rule that
+     separates the two halves. */
+  .profile-level-joined{
+    background:none; border:none; box-shadow:none;
+    padding:1rem 0 0; margin:1rem 0 0;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
   .profile-classline-arrow{ font-size:1.2rem; line-height:1; opacity:.7; }
 
   .profile-level-row{
@@ -8293,19 +8312,33 @@
      rendering at, because the phone version of this screen was signed
      off as it stands; only the large screens were reported as small. */
   .panel.home.charselect-panel .avatarchar-option{ max-width:3.7rem; }
-  .swatch{ width:3.4rem; height:3.4rem; }
-  .swatch .dot{ width:2.25rem; height:2.25rem; }
+  /* The dot was 2.25rem against a 3.7rem character - "the theme color and
+     the characters need to match closer on size, so maybe the theme color
+     circles needs to be enlarged". The ring around it is what the swatch
+     box is for, so the box grows with it rather than closing up. */
+  .swatch{ width:3.9rem; height:3.9rem; }
+  .swatch .dot{ width:3.1rem; height:3.1rem; }
+  /* Four equal columns across a wide panel put the characters at the
+     centre of cells nearly twice their own width - "the avatar spacing is
+     kinda weird on some devices, very spread out". Capping the track to
+     the character's own size and centring the tracks keeps the row
+     together whatever the panel is doing around it. */
+  .avatarchar-grid-appearance{
+    grid-template-columns:repeat(4, minmax(0, 3.7rem));
+    justify-content:center; gap:.9rem .75rem;
+  }
   @media (min-width:27rem){
     .badge-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
   }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
+    .avatarchar-grid-appearance{ grid-template-columns:repeat(4, minmax(0, 4.5rem)); gap:1.1rem .9rem; }
     /* 6rem, not the 7rem an earlier pass tried: that one came back as
        "absolutely massive". This is a third bigger than what a large
        screen was actually getting and still short of that. */
     .panel.home.charselect-panel .avatarchar-option{ max-width:6rem; }
-    .swatch{ width:4.2rem; height:4.2rem; }
-    .swatch .dot{ width:2.8rem; height:2.8rem; }
+    .swatch{ width:4.7rem; height:4.7rem; }
+    .swatch .dot{ width:3.8rem; height:3.8rem; }
     .badge-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1rem; }
     .badge-tile-art{ max-width:6.6rem; }
     .badge-grid{ padding:1.6rem 1.2rem 1.8rem; gap:1.5rem .9rem; }
@@ -20655,13 +20688,23 @@ new MutationObserver(() => {
      dataset read, no fetch. Piggybacking the observer that already runs
      here is what lets a held notice appear the instant someone returns to
      Home, rather than waiting out the next check interval. */
-  syncNoticeVisibility();
-  /* Self-healing: if the load-time check was spent during the splash, or
-     bailed because a test was running, arriving at a new screen tries
-     again. Safe to call this often - every early bail above is a cheap
-     synchronous test, and the 15-minute throttle is stamped before the
-     fetch is awaited, so this can never produce overlapping requests. */
-  checkForUpdate();
+  /* Neither of these can do anything while a question is on screen -
+     both notices are gated to Welcome and Home by dataset.screen, which
+     no question screen sets - and this observer fires on every mutation
+     under #stage, which during a test includes the timer's own text
+     once a second. Skipping them there takes that work off the one
+     screen where a dropped frame is felt. Any missed check heals on the
+     next screen change, which is the same guarantee they already had. */
+  if(!isQuestion){
+    syncNoticeVisibility();
+    /* Self-healing: if the load-time check was spent during the splash,
+       or bailed because a test was running, arriving at a new screen
+       tries again. Safe to call this often - every early bail above is a
+       cheap synchronous test, and the 15-minute throttle is stamped
+       before the fetch is awaited, so this can never produce overlapping
+       requests. */
+    checkForUpdate();
+  }
 }).observe(stage, { childList: true, subtree: true });
 const meterEl   = document.getElementById("meter");
 const countEl   = document.getElementById("count");
@@ -23358,7 +23401,12 @@ function buildTierIconSVG(tierKey){
    gain. */
 const RANK_DISPLAY_NAME = {
   rookie: "Iron", ranger: "Bronze", veteran: "Silver", vanguard: "Gold",
-  adept: "Sapphire", elite: "Amethyst", titan: "Crimson"
+  /* "Supernova", not a seventh colour name. The other six say their own
+     colour, which is what makes them readable at a glance - but the top
+     rank was explicitly asked for by name: "the very last one needs to
+     be called supernova and it needs to be very cool". It is also the
+     app's own name going off, which is the right place for it. */
+  adept: "Sapphire", elite: "Amethyst", titan: "Supernova"
 };
 /* A rank's own colour, and deliberately NOT ACCENT_SWATCH. Those are
    the flare colours - the thing a rank hands over - and a rank that is
@@ -23369,44 +23417,27 @@ const RANK_COLOR = {
   rookie: "#8B939E", ranger: "#C07A3E", veteran: "#CAD3DC", vanguard: "#E5B63F",
   adept: "#3D74E8", elite: "#A855F7", titan: "#E23B3B"
 };
-/* Every rank is the SAME MARK at a different stage of its life, and
-   the mark is a burst of light.
+/* SEVEN DIFFERENT MARKS, not one mark at seven sizes.
 
-   NOTHING IN IT IS A CIRCLE OR A SPOKE. An earlier version had a corona
-   ring with rays coming off it and it read as a wheel, which is what a
-   ring plus evenly spaced radial lines always reads as. The arms are
-   concave-sided instead - each side is a quadratic curve pulled in
-   towards the centre - which is the shape a light source makes and
-   cannot be mistaken for a rim.
+   The set this replaces was generated from a single table - same star,
+   more points, bigger radius - and was reported exactly as what it was:
+   "I dont like how they are all nearly identical just different in
+   size, that's not the idea i had in mind."
 
-   Generated from this table rather than drawn seven times, so the
-   escalation is a property of the numbers. Read down any column and it
-   only ever grows.
+   The reference escalates by CHANGING WHAT THE MARK IS. The bottom of
+   the ladder is service insignia: chevrons, flat, earned by turning up.
+   The middle is where the shape breaks - the chevrons hand over to a
+   star and stop being drawn. The top two are the reward for the climb,
+   and the seventh is the app itself going off: a supernova.
 
-     pts     arms on the burst
-     r       how far they reach
-     waist   how pinched the sides are, as a fraction of r
-     second  a half-step-rotated burst behind, as a fraction of r
-     bevel   a smaller, brighter burst ON TOP, as a fraction of r - the
-             concentric highlight that makes a flat star read as a cut
-             one, and the cheapest depth there is
-     bloom   a soft oversized burst behind everything, as a multiple of r
-     glints  small sparkles set in the gaps between the arms
-     sparks  scattered motes, in mirrored pairs so the axis holds
-     flare   half-length of a horizontal light streak, in user units
-     vflare  the same vertically, always shorter - equal lengths make a
-             cross, unequal ones make a lens flare
-     core    the bright centre
-     halo    a thin ring just off the core, top ranks only */
-const RANK_STAR = {
-  rookie:   { pts: 4, r: 24, waist: 0.13, second: 0,    bevel: 0,    star2: 0,    bloom: 0,   glints: 0, sparks: 0, flare: 0,  vflare: 0,  core: 0,  halo: 0 },
-  ranger:   { pts: 4, r: 29, waist: 0.14, second: 0.40, bevel: 0.50, star2: 0,    bloom: 0,   glints: 0, sparks: 0, flare: 0,  vflare: 0,  core: 0,  halo: 0 },
-  veteran:  { pts: 4, r: 33, waist: 0.15, second: 0.46, bevel: 0.52, star2: 0,    bloom: 0,   glints: 2, sparks: 0, flare: 0,  vflare: 0,  core: 4,  halo: 0 },
-  vanguard: { pts: 6, r: 36, waist: 0.17, second: 0.50, bevel: 0.54, star2: 0,    bloom: 0.9, glints: 2, sparks: 0, flare: 0,  vflare: 0,  core: 5,  halo: 0 },
-  adept:    { pts: 6, r: 40, waist: 0.17, second: 0.52, bevel: 0.56, star2: 0,    bloom: 1.3, glints: 4, sparks: 4, flare: 48, vflare: 0,  core: 7,  halo: 0 },
-  elite:    { pts: 8, r: 44, waist: 0.19, second: 0.55, bevel: 0.58, star2: 0.74, bloom: 1.4, glints: 6, sparks: 6, flare: 54, vflare: 36, core: 9,  halo: 15 },
-  titan:    { pts: 8, r: 49, waist: 0.20, second: 0.58, bevel: 0.60, star2: 0.80, bloom: 1.6, glints: 8, sparks: 8, flare: 58, vflare: 44, core: 12, halo: 19 }
-};
+   Three rules carried over from the version before this one, because
+   each was learned the hard way:
+     - nothing is a circle with spokes on it. That reads as a wheel,
+       every time. Rings here are broken arcs, never closed.
+     - an arm's sides are quadratic curves pulled in towards the centre,
+       so the tips are sharp and the shape is a light source.
+     - a sparkle sits in the GAP between two arms, never on an arm's
+       axis, where it is just that arm made longer. */
 let rankEmblemSeq = 0;
 /* One rank's emblem, as a real SVG element. Always drawn in the rank's
    OWN colour - a locked rank is dimmed by the card around it, not
@@ -23419,12 +23450,12 @@ function buildRankEmblemSVG(rankKey){
   svg.setAttribute("viewBox", "0 0 128 128");
   svg.setAttribute("class", "rank-emblem-svg");
   svg.setAttribute("aria-hidden", "true");
-  const spec = RANK_STAR[rankKey] || RANK_STAR.rookie;
   const base = RANK_COLOR[rankKey] || "#8B939E";
   const uid = "rk" + (++rankEmblemSeq);
   const C = 64;
 
   const defs = document.createElementNS(NS, "defs");
+  svg.appendChild(defs);
   function ramp(id, stops, cx, cy, rr){
     const g = document.createElementNS(NS, "radialGradient");
     g.setAttribute("id", id);
@@ -23438,11 +23469,28 @@ function buildRankEmblemSVG(rankKey){
     defs.appendChild(g);
     return "url(#" + id + ")";
   }
-  const body = ramp(uid, [[0, "#FFFFFF"], [0.18, badgeShade(base, 0.66)],
-                          [0.6, base], [1, badgeShade(base, -0.4)]], "50%", "44%", "58%");
-  const glow = ramp(uid + "b", [[0, badgeShade(base, 0.5), 0.55],
-                                [0.55, base, 0.22], [1, base, 0]], "50%", "50%", "50%");
-  svg.appendChild(defs);
+  function linear(id, stops, x1, y1, x2, y2){
+    const g = document.createElementNS(NS, "linearGradient");
+    g.setAttribute("id", id);
+    g.setAttribute("x1", x1); g.setAttribute("y1", y1);
+    g.setAttribute("x2", x2); g.setAttribute("y2", y2);
+    stops.forEach(([o, c, a]) => {
+      const st = document.createElementNS(NS, "stop");
+      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
+      if(a !== undefined) st.setAttribute("stop-opacity", String(a));
+      g.appendChild(st);
+    });
+    defs.appendChild(g);
+    return "url(#" + id + ")";
+  }
+  /* The metal the low ranks are struck from: lit from the top-left,
+     shaded at the bottom, in the rank's own colour. */
+  const metal = linear(uid + "m", [[0, badgeShade(base, 0.72)], [0.42, base],
+                                   [1, badgeShade(base, -0.42)]], "18%", "0%", "82%", "100%");
+  const body  = ramp(uid + "s", [[0, "#FFFFFF"], [0.18, badgeShade(base, 0.66)],
+                                 [0.6, base], [1, badgeShade(base, -0.4)]], "50%", "44%", "58%");
+  const glow  = ramp(uid + "g", [[0, badgeShade(base, 0.5), 0.55],
+                                 [0.55, base, 0.22], [1, base, 0]], "50%", "50%", "50%");
 
   function add(d, attrs){
     const el = document.createElementNS(NS, "path");
@@ -23451,96 +23499,224 @@ function buildRankEmblemSVG(rankKey){
     svg.appendChild(el);
     return el;
   }
-  /* The burst. Each arm's two sides are one quadratic curve whose
-     control point sits on the bisector at `waist`, so the tips are
-     sharp and the sides are drawn in - a sparkle, not a cog. */
+  const P = (cx, cy, a, rr) =>
+    (cx + Math.cos(a) * rr).toFixed(2) + " " + (cy + Math.sin(a) * rr).toFixed(2);
+  /* A burst: each arm's two sides are one quadratic curve whose control
+     point sits on the bisector at `waist`, so the tips are sharp and the
+     sides are drawn in - a sparkle, not a cog. */
   function burst(cx, cy, pts, r, waist, rot){
-    const P = (a, rr) => (cx + Math.cos(a) * rr).toFixed(2) + " " + (cy + Math.sin(a) * rr).toFixed(2);
     let d = "";
     for(let i = 0; i < pts; i++){
       const a0 = rot + i * 2 * Math.PI / pts;
       const a1 = rot + (i + 1) * 2 * Math.PI / pts;
       const am = (a0 + a1) / 2;
-      if(i === 0) d += "M" + P(a0, r);
-      d += "Q" + P(am, r * waist) + " " + P(a1, r);
+      if(i === 0) d += "M" + P(cx, cy, a0, r);
+      d += "Q" + P(cx, cy, am, r * waist) + " " + P(cx, cy, a1, r);
     }
     return d + "Z";
   }
-  /* A lens streak: a very thin lens through the centre. Horizontal and
-     vertical are deliberately DIFFERENT lengths - equal ones make a
-     cross, and a cross is a plus sign, not a flare. */
+  /* A chevron: two arms meeting at a point, with a parallel inner edge,
+     so it is a stroke of metal rather than a filled triangle. */
+  function chevron(cy, halfW, rise, thick){
+    const x0 = C - halfW, x1 = C + halfW;
+    return "M" + x0 + " " + (cy + rise) +
+           "L" + C + " " + cy +
+           "L" + x1 + " " + (cy + rise) +
+           "L" + x1 + " " + (cy + rise + thick) +
+           "L" + C + " " + (cy + thick) +
+           "L" + x0 + " " + (cy + rise + thick) + "Z";
+  }
+  /* A lens streak through the centre. Horizontal and vertical are
+     deliberately DIFFERENT lengths - equal ones make a cross, and a
+     cross is a plus sign, not a flare. */
   function streak(len, w, vertical){
     const a = vertical ? (x, y) => y + " " + x : (x, y) => x + " " + y;
     return "M" + a(C - len, C) + "Q" + a(C, C - w) + " " + a(C + len, C) +
            "Q" + a(C, C + w) + " " + a(C - len, C) + "Z";
   }
+  /* A BROKEN arc, never a closed ring: the shell of a blast seen
+     edge-on. Two of them facing each other read as a shockwave; one
+     closed circle reads as a rim, and a rim with anything radial near it
+     reads as a wheel. */
+  function arc(r, fromDeg, toDeg){
+    const f = fromDeg * Math.PI / 180, t = toDeg * Math.PI / 180;
+    const large = (toDeg - fromDeg) > 180 ? 1 : 0;
+    return "M" + P(C, C, f, r) + "A" + r + " " + r + " 0 " + large + " 1 " + P(C, C, t, r);
+  }
   const UP = -Math.PI / 2;
-  const half = Math.PI / spec.pts;
-
-  if(spec.bloom){
-    add(burst(C, C, spec.pts, spec.r * spec.bloom, spec.waist * 1.6, UP), { fill: glow });
-  }
-  if(spec.flare){
-    add(streak(spec.flare, 3.4, false), { fill: badgeShade(base, 0.5), opacity: ".45" });
-    add(streak(spec.flare * 0.55, 1.5, false), { fill: "#FFFFFF", opacity: ".55" });
-  }
-  if(spec.vflare){
-    add(streak(spec.vflare, 2.6, true), { fill: badgeShade(base, 0.5), opacity: ".38" });
-    add(streak(spec.vflare * 0.5, 1.2, true), { fill: "#FFFFFF", opacity: ".45" });
-  }
-  for(let i = 0; i < spec.sparks; i += 2){
-    /* Motes, in MIRRORED PAIRS at varying radii. Evenly spaced ones at
-       one radius would be a ring of dots, and a ring of dots round a
-       star is a wheel again; a scatter that happens to be symmetric is
-       debris thrown off a burst. The angles are irrational-ish steps so
-       four pairs do not land on the same two diagonals. */
-    const a = 0.34 + (i / 2) * 0.79;
-    const rr = spec.r * (1.05 + ((i / 2) % 3) * 0.14);
-    [a, Math.PI - a].forEach(ang => {
-      const sx = C + Math.cos(UP + ang) * rr, sy = C + Math.sin(UP + ang) * rr;
-      add(burst(sx, sy, 4, spec.r * (0.1 + ((i / 2) % 2) * 0.04), 0.1, UP),
-          { fill: badgeShade(base, 0.6), opacity: ".8" });
-    });
-  }
-  for(let i = 0; i < spec.glints; i++){
-    /* Small sparkles set in the GAPS between the arms, not on their
-       axes: a sparkle on an arm's axis is that arm made longer, which
-       is a spoke, which is the one thing this drawing is avoiding. */
-    const a = UP + half + i * 2 * Math.PI / spec.glints;
-    const gr = spec.r * 0.8;
-    add(burst(C + Math.cos(a) * gr, C + Math.sin(a) * gr, 4, spec.r * 0.17, 0.12, UP),
-        { fill: badgeShade(base, 0.55), opacity: ".9" });
-  }
-  if(spec.second){
-    add(burst(C, C, spec.pts, spec.r * spec.second, spec.waist * 1.8, UP + half),
-        { fill: badgeShade(base, -0.12), opacity: ".95" });
-  }
-  add(burst(C, C, spec.pts, spec.r, spec.waist, UP),
-      { fill: body, stroke: "rgba(0,0,0,.28)", "stroke-width": ".8", "stroke-linejoin": "round" });
-  if(spec.star2){
-    /* A SECOND star, rotated half a step, on top and slightly shorter.
-       Sixteen visible points instead of eight. This is the one thing
-       kept for the top two ranks only, because busier is exactly what
-       the climax of a ladder should be and exactly what the bottom of
-       one should not. */
-    add(burst(C, C, spec.pts, spec.r * spec.star2, spec.waist * 1.3, UP + half),
-        { fill: badgeShade(base, 0.3), opacity: ".8" });
-  }
-  if(spec.bevel){
-    /* Concentric, not rotated. A brighter copy of the same star inside
-       the same star is the facet line a cut stone has, and it is what
-       stops the arms reading as flat paper. */
-    add(burst(C, C, spec.pts, spec.r * spec.bevel, spec.waist * 1.15, UP),
-        { fill: badgeShade(base, 0.68), opacity: ".8" });
-  }
+  const dark = "rgba(0,0,0,.3)";
   const circle = (r) => "M" + (C - r) + " " + C + "a" + r + " " + r + " 0 1 0 " + (r * 2) + " 0" +
                         "a" + r + " " + r + " 0 1 0 " + (-r * 2) + " 0Z";
-  if(spec.halo){
-    add(circle(spec.halo), { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.3", opacity: ".38" });
+  /* The glow is a CIRCLE filled with the falloff gradient, not a burst
+     shape filled with it. A twelve-point burst at waist 1.5 is a bulging
+     rounded square, and filled with a soft gradient that is exactly what
+     it looked like - a coloured tile behind the emblem rather than light
+     coming off it. */
+  const halo = (r) => add(circle(r), { fill: glow });
+  /* A mirrored pair about the VERTICAL axis. Reflecting an absolute
+     angle is th -> PI - th; the obvious-looking `[a, PI - a]` applied to
+     the OFFSET from straight up is not a reflection at all - it lands
+     both copies on the same side, which is why every spark in an earlier
+     pass came out on the right. */
+  function pair(offset, fn){
+    const th = UP + offset;
+    [th, Math.PI - th].forEach(fn);
   }
-  if(spec.core){
-    add(circle(spec.core * 1.7), { fill: "#FFFFFF", opacity: ".22" });
-    add(circle(spec.core), { fill: "#FFFFFF", opacity: ".95" });
+
+  /* ---- the low ranks: service insignia, flat, struck from metal ---- */
+  const CH = { rise: 17, thick: 9.5, gap: 14.5, halfW: 30 };
+  /* The stack is centred on the frame whatever its count, so one, two
+     and three chevrons sit in the same place rather than drifting up the
+     emblem as the rank climbs. Stacked so the topmost is the one the eye
+     lands on, the way a sleeve reads. `lift` moves the whole group up
+     where something else (Silver's spark) has to share the frame. */
+  function chevrons(n, lift){
+    const H = CH.rise + CH.thick + (n - 1) * CH.gap;
+    const top = C - H / 2 - (lift || 0);
+    for(let i = 0; i < n; i++){
+      add(chevron(top + i * CH.gap, CH.halfW, CH.rise, CH.thick),
+          { fill: metal, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    }
+    /* One hairline of light along the top edge of the topmost chevron. A
+       flat stamping with no light on it reads as a cut-out. */
+    add("M" + (C - CH.halfW) + " " + (top + CH.rise) + "L" + C + " " + top +
+        "L" + (C + CH.halfW) + " " + (top + CH.rise),
+        { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.5", opacity: ".5",
+          "stroke-linecap": "round", "stroke-linejoin": "round" });
+    return top;
+  }
+
+  if(rankKey === "rookie"){
+    /* IRON. One chevron. The lowest thing the app can call you, and it
+       has to look like the bottom of a ladder or nothing above it reads
+       as a climb. */
+    chevrons(1);
+  } else if(rankKey === "ranger"){
+    /* BRONZE. Two. */
+    chevrons(2);
+  } else if(rankKey === "veteran"){
+    /* SILVER. Three, and a first small spark above them - the hint that
+       the mark is about to become something else. The stack lifts to
+       make room for it rather than the spark being dropped on top. */
+    const top = chevrons(3, 9);
+    add(burst(C, top - 15, 4, 11, 0.12, UP), { fill: body });
+  } else if(rankKey === "vanguard"){
+    /* GOLD. The turn. The chevrons collapse to a single base and the
+       star takes the frame - the rank where insignia becomes an award.
+       The base is drawn first and the star overlaps it, so the two read
+       as one object rather than a star parked above a chevron. */
+    halo(34);
+    /* The base sits just under the star's lowest point rather than
+       behind it. At C+22 the star's own bottom tip landed on the
+       chevron's apex and swallowed it, which left two wings floating
+       either side of the star instead of one mark. */
+    add(chevron(C + 31, 26, 13, 8),
+        { fill: metal, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    add(burst(C, C - 8, 6, 36, 0.17, UP),
+        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    add(burst(C, C - 8, 6, 19, 0.2, UP), { fill: badgeShade(base, 0.68), opacity: ".85" });
+    add(burst(C, C - 8, 4, 6, 0.1, UP), { fill: "#FFFFFF", opacity: ".9" });
+  } else if(rankKey === "adept"){
+    /* SAPPHIRE. No base at all any more. A cut stone: an eight-point
+       burst with a faceted core and two crescents held off its flanks,
+       which is where the shape stops being military. */
+    halo(46);
+    [-1, 1].forEach(side => {
+      /* A crescent held off each flank: one arc bowed outwards, pulled
+         back by a second bowed the same way but less far, so the shape
+         has real thickness in the middle and points at both ends. The
+         first version's two control points were 8px apart and it came
+         out as a hairline nobody could see. */
+      const x = C + side * 46;
+      add("M" + x + " " + (C - 24) +
+          "Q" + (C + side * 26) + " " + C + " " + x + " " + (C + 24) +
+          "Q" + (C + side * 38) + " " + C + " " + x + " " + (C - 24) + "Z",
+          { fill: badgeShade(base, 0.3), stroke: dark, "stroke-width": ".7", opacity: ".95" });
+    });
+    add(burst(C, C, 8, 38, 0.2, UP + Math.PI / 8),
+        { fill: badgeShade(base, -0.18), opacity: ".95" });
+    add(burst(C, C, 8, 41, 0.18, UP),
+        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    add(burst(C, C, 8, 22, 0.24, UP), { fill: badgeShade(base, 0.7), opacity: ".85" });
+    add("M" + C + " " + (C - 13) + "L" + (C + 9) + " " + C + "L" + C + " " + (C + 13) +
+        "L" + (C - 9) + " " + C + "Z", { fill: "#FFFFFF", opacity: ".92" });
+  } else if(rankKey === "elite"){
+    /* AMETHYST. The same stone, crowned. Three peaks above it, sixteen
+       visible points instead of eight, long flares through the middle
+       and sparks thrown clear of it. */
+    halo(56);
+    add(streak(56, 3.2, false), { fill: badgeShade(base, 0.5), opacity: ".45" });
+    add(streak(31, 1.4, false), { fill: "#FFFFFF", opacity: ".55" });
+    add(streak(38, 2.4, true), { fill: badgeShade(base, 0.5), opacity: ".38" });
+    add(streak(19, 1.1, true), { fill: "#FFFFFF", opacity: ".45" });
+    /* The crown: three peaks on one baseline, not a separate object
+       floating above the star. */
+    add("M" + (C - 26) + " " + (C - 40) + "L" + (C - 17) + " " + (C - 54) +
+        "L" + (C - 8) + " " + (C - 42) + "L" + C + " " + (C - 59) +
+        "L" + (C + 8) + " " + (C - 42) + "L" + (C + 17) + " " + (C - 54) +
+        "L" + (C + 26) + " " + (C - 40) + "Z",
+        { fill: metal, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    add(burst(C, C, 8, 34, 0.22, UP + Math.PI / 8),
+        { fill: badgeShade(base, -0.15), opacity: ".95" });
+    add(burst(C, C, 8, 44, 0.19, UP),
+        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    add(burst(C, C, 8, 26, 0.24, UP), { fill: badgeShade(base, 0.68), opacity: ".85" });
+    [0.62, 1.42, 2.26].forEach((a, i) => {
+      const rr = 50 + (i % 3) * 5;
+      pair(a, (th) => {
+        add(burst(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 4, 5 + (i % 2) * 2, 0.1, UP),
+            { fill: badgeShade(base, 0.6), opacity: ".85" });
+      });
+    });
+    add(burst(C, C, 4, 9, 0.1, UP), { fill: "#FFFFFF", opacity: ".95" });
+  } else {
+    /* SUPERNOVA. The last one, and it is the app going off.
+       Everything here is about a star that has stopped being a star: a
+       white-hot core rather than a coloured one, a blast shell drawn as
+       two BROKEN arcs rather than a ring, flares longer than the frame
+       is wide, and debris thrown well past the shell. */
+    halo(74);
+    halo(52);
+    /* Flares first, so everything else sits on top of them. Four
+       different lengths - a star this violent does not throw symmetric
+       light. */
+    add(streak(64, 3.6, false), { fill: badgeShade(base, 0.55), opacity: ".5" });
+    add(streak(36, 1.5, false), { fill: "#FFFFFF", opacity: ".65" });
+    add(streak(47, 2.6, true), { fill: badgeShade(base, 0.55), opacity: ".42" });
+    add(streak(24, 1.2, true), { fill: "#FFFFFF", opacity: ".5" });
+    /* The shell. Two arcs, opposed, with a gap top and bottom - it reads
+       as an expanding front seen edge-on. A closed circle here is a rim,
+       and a rim around a star is the wheel this whole set avoids. */
+    [[-62, 62], [118, 242]].forEach(([f, t]) => {
+      add(arc(54, f, t), { fill: "none", stroke: badgeShade(base, 0.45),
+                           "stroke-width": "2.2", opacity: ".55", "stroke-linecap": "round" });
+    });
+    [[-40, 40], [140, 220]].forEach(([f, t]) => {
+      add(arc(63, f, t), { fill: "none", stroke: badgeShade(base, 0.6),
+                           "stroke-width": "1.2", opacity: ".38", "stroke-linecap": "round" });
+    });
+    /* Debris, outside the shell, in mirrored pairs at uneven radii. */
+    [0.34, 0.92, 1.5, 2.08, 2.66].forEach((a, i) => {
+      const rr = 58 + ((i * 2) % 3) * 6;
+      pair(a, (th) => {
+        add(burst(C + Math.cos(th) * rr, C + Math.sin(th) * rr,
+                  4, 4.5 + (i % 2) * 2.5, 0.1, UP),
+            { fill: badgeShade(base, 0.62), opacity: ".9" });
+      });
+    });
+    /* The star itself: sixteen points, two rotations of eight. */
+    add(burst(C, C, 8, 38, 0.24, UP + Math.PI / 8),
+        { fill: badgeShade(base, -0.1), opacity: ".95" });
+    add(burst(C, C, 8, 48, 0.2, UP),
+        { fill: body, stroke: dark, "stroke-width": ".8", "stroke-linejoin": "round" });
+    add(burst(C, C, 8, 30, 0.24, UP + Math.PI / 8), { fill: badgeShade(base, 0.55), opacity: ".8" });
+    add(burst(C, C, 8, 22, 0.26, UP), { fill: badgeShade(base, 0.8), opacity: ".9" });
+    /* The core is WHITE, not the rank's colour. That is the one thing
+       that says this star is hotter than the six below it - every other
+       emblem's brightest point is its own hue. */
+    add(burst(C, C, 4, 17, 0.08, UP), { fill: "#FFFFFF", opacity: ".55" });
+    add(circle(11), { fill: "#FFFFFF", opacity: ".35" });
+    add(circle(7), { fill: "#FFFFFF" });
   }
   return svg;
 }
@@ -30460,7 +30636,7 @@ function render(){
   testQCounterEl.textContent = (runLabel === "Daily question") ? "" : (pos + 1) + "/" + order.length;
 
   const panel = document.createElement("section");
-  panel.className = "panel";
+  panel.className = "panel qpanel";
 
   const numRow = document.createElement("div");
   numRow.className = "qnumrow";
@@ -35175,7 +35351,10 @@ function showAnswerReview(units){
    you had to swipe between them to learn both - so they are one Ranks
    tab now. Five labels only ever fitted a 375px phone by being
    tightened for five specifically; four fit on their own. */
-const PROFILE_TABS = ["profile", "badges", "stats", "ranks"];
+/* The swipe order and the button order are the same list and have to
+   stay that way - a thumb swipe that skips a tab is worse than none.
+   Stats and Badges swapped places per explicit request. */
+const PROFILE_TABS = ["profile", "stats", "badges", "ranks"];
 /* Every name this tab has ever had still lands on it, so an older link
    or a stored value goes where it means rather than silently falling
    back to Profile. */
@@ -35235,11 +35414,20 @@ function showProfile(defaultTab){
 
   const profileTabDefs = [
     { key: "profile", label: "Profile", node: identityTab, cls: "" },
-    { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
     /* .profile-stats-tab-btn is not decorative - the Profile tour
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
-    { key: "ranks",   label: "Ranks",   node: ranksTab,   cls: "" }
+    { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
+    /* "Ladder", not "Ranks". The bottom bar already says Rankings and
+       having both was reported as confusing - "the ranks tab within
+       profile should be renamed because the main bottom tab already has
+       something called rankings". Renaming the bottom tab was the other
+       option offered and is the worse one: "Rankings" there is a
+       measured WIDTH decision (see showRankings), and "Leaderboard" does
+       not fit a 320px phone's bar. The key stays "ranks" so nothing
+       stored or linked has to move, and "ladder" was already an accepted
+       alias for this tab. */
+    { key: "ranks",   label: "Ladder",  node: ranksTab,   cls: "" }
   ];
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
@@ -35351,12 +35539,12 @@ function showProfile(defaultTab){
   nameSaveBtn.addEventListener("click", saveNameEdit);
   nameInput.addEventListener("keydown", (e) => { if(e.key === "Enter") saveNameEdit(); });
 
-  const heroMeta = document.createElement("div");
-  heroMeta.className = "profile-hero-meta";
-  const streakBadge = buildStreakBadge();
-  if(streakBadge) heroMeta.appendChild(streakBadge);
-
-  heroId.append(nameDisplayRow, nameInput, nameSaveBtn, heroMeta);
+  /* The consecutive-day streak is gone from this screen per explicit
+     request - "let's remove the consecutive day streak counter
+     completing. No longer a thing." buildStreakBadge() is left where it
+     is; the calendar still draws its own streak, and this is the one
+     place that was presenting it as a headline stat. */
+  heroId.append(nameDisplayRow, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
@@ -35375,8 +35563,17 @@ function showProfile(defaultTab){
   classLineArrow.textContent = "›";
   classLine.append(classLineText, classLineArrow);
   classLine.addEventListener("click", showCalendar);
-  heroSect.appendChild(classLine);
-  identityTab.appendChild(heroSect);
+  const reviewLine = document.createElement("button");
+  reviewLine.type = "button";
+  reviewLine.className = "profile-classline";
+  const reviewLineText = document.createElement("span");
+  reviewLineText.textContent = "Recent test review";
+  const reviewLineArrow = document.createElement("span");
+  reviewLineArrow.className = "profile-classline-arrow";
+  reviewLineArrow.setAttribute("aria-hidden", "true");
+  reviewLineArrow.textContent = "\u203a";
+  reviewLine.append(reviewLineText, reviewLineArrow);
+  reviewLine.addEventListener("click", showTestReviewList);
 
   /* ---------- level and badges ----------------------------------------
      The level bar, per explicit request, and it is the reason this
@@ -35433,7 +35630,19 @@ function showProfile(defaultTab){
     : prog.total.toLocaleString() + " XP · " + prog.toNext.toLocaleString() +
       " to level " + (prog.level + 1);
   levelSect.appendChild(xpLine);
-  identityTab.appendChild(levelSect);
+  /* One card, not two. "Maybe the top two boxes, the one with the level
+     and the other with the name, could be joined instead of appearing as
+     two separate boxes" - they are two halves of the same statement, so
+     the level block goes inside the identity card with a rule between
+     them rather than beside it as a second slab.
+     The class calendar line keeps its own row BELOW the card rather than
+     inside it: it is a destination, not a fact about you, and inside the
+     card it was the one tappable thing in a block of read-only text. */
+  levelSect.classList.add("profile-level-joined");
+  heroSect.appendChild(levelSect);
+  identityTab.appendChild(heroSect);
+  identityTab.appendChild(classLine);
+  identityTab.appendChild(reviewLine);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden, and a bar
@@ -35453,7 +35662,7 @@ function showProfile(defaultTab){
   avatarSect.appendChild(avatarLab);
 
   const avatarGrid = document.createElement("div");
-  avatarGrid.className = "avatarchar-grid";
+  avatarGrid.className = "avatarchar-grid avatarchar-grid-appearance";
 
   /* No initials fallback \u2014 a character is required. Anyone who still
      has no character saved from before this was required (the initials
@@ -35482,7 +35691,7 @@ function showProfile(defaultTab){
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
   const accentLab = document.createElement("p");
-  accentLab.className = "slab motion-summary"; accentLab.textContent = "Theme color";
+  accentLab.className = "slab motion-summary"; accentLab.textContent = "App theme color";
   accentSect.appendChild(accentLab);
   const swatches = document.createElement("div");
   swatches.className = "swatches";
@@ -35549,7 +35758,12 @@ function showProfile(defaultTab){
 
   const totals = studyTotals();
   const grid = document.createElement("div");
-  grid.className = "stat-grid";
+  /* Four cards in a three-column grid left two empty cells on every
+     large screen - "the study time box seems incomplete on the larger
+     devices because there's open space in the box". The lifetime grid
+     below has six and wants three columns, so this is its own modifier
+     rather than a change to the shared class. */
+  grid.className = "stat-grid stat-grid-four";
   let sumTestMs = 0, sumTestPlays = 0;
   Object.values(store.testStats).forEach(s => { sumTestMs += s.totalMs; sumTestPlays += s.plays; });
   /* "Average test time" replaced with a session count, per explicit
@@ -35617,12 +35831,10 @@ function showProfile(defaultTab){
      tapping any entry there still opens the same detail view this
      always had. Matches the same "next ghost" button treatment every
      other button on this screen already uses. */
-  const reviewBtn = document.createElement("button");
-  reviewBtn.type = "button"; reviewBtn.className = "next ghost";
-  reviewBtn.style.cssText = "width:100%;";
-  reviewBtn.textContent = "Recent test review";
-  reviewBtn.addEventListener("click", showTestReviewList);
-  statsTab.appendChild(reviewBtn);
+  /* On the Profile tab, not Stats - "I also think the test review button
+     may not belong in this tab". Stats is a wall of read-only numbers
+     and this is the one thing on it you can open; beside the class
+     calendar row it reads as what it is, a second destination. */
 
 
   /* No Done button - see the note in showAppearance(). The Home tab
@@ -36296,7 +36508,7 @@ function buildRanksTab(){
 
     /* The meter belongs to the rank you are CLIMBING TO and nothing
        else. Every unreached rank carried one, which put a half-full bar
-       on Crimson while you were working on Bronze - progress towards
+       on Supernova while you were working on Bronze - progress towards
        something you are not working towards, which is the thing that
        was asked against. A locked rank says what it costs and stops
        there. */
@@ -36357,60 +36569,16 @@ function buildRanksTab(){
   });
   tab.appendChild(track);
 
-  /* ---- the one unlock that is not a rank ---- */
-  const secretHead = document.createElement("p");
-  secretHead.className = "slab section-divider motion-summary";
-  secretHead.textContent = "Secret Flares";
-  tab.appendChild(secretHead);
-  const secretNote = document.createElement("p");
-  secretNote.className = "ranks-note";
-  secretNote.textContent = "Not a rank, and not earned by studying — three of these are hidden in the app itself. Finding all three unlocks the Eclipse colour, and Crimson needs them too.";
-  tab.appendChild(secretNote);
-
-  const found = mysteryColorsFoundCount();
-  const secretRow = document.createElement("div");
-  secretRow.className = "unlock-row" + (found >= 3 ? " got" : "");
-  const preview = document.createElement("span");
-  preview.className = "unlock-preview" + (found >= 3 ? " mystery-dot-revealed" : " mystery-dot");
-  const mark = document.createElement("span");
-  mark.className = "unlock-mark";
-  if(found >= 3) mark.textContent = "✓"; else mark.appendChild(buildLockIcon());
-  const info = document.createElement("span");
-  info.className = "unlock-info";
-  const status = document.createElement("span");
-  status.className = "unlock-status";
-  status.textContent = found >= 3 ? "UNLOCKED" : "LOCKED";
-  const nm = document.createElement("span");
-  nm.className = "unlock-name" + (found >= 3 ? " shine-silver" : "");
-  nm.textContent = "“" + ACCENT_DISPLAY_NAME.mystery + "” colour";
-  info.append(status, nm);
-  if(found >= 3){
-    const done = document.createElement("span");
-    done.className = "unlock-req"; done.textContent = "You have this!";
-    info.appendChild(done);
-  } else {
-    const barWrap = document.createElement("span");
-    barWrap.className = "unlock-barwrap";
-    const barTrack = document.createElement("span");
-    barTrack.className = "unlock-bartrack";
-    const barFill = document.createElement("span");
-    barFill.className = "unlock-barfill";
-    barFill.style.width = Math.round((found / 3) * 100) + "%";
-    barTrack.appendChild(barFill);
-    const barLabel = document.createElement("span");
-    barLabel.className = "unlock-barlabel";
-    barLabel.textContent = found + "/3 found";
-    barWrap.append(barTrack, barLabel);
-    const req = document.createElement("span");
-    req.className = "unlock-req";
-    req.textContent = "Find all 3 Secret Flares scattered through your drills";
-    info.append(barWrap, req);
-  }
-  secretRow.append(preview, mark, info);
-  const secretList = document.createElement("div");
-  secretList.className = "unlocks-list";
-  secretList.appendChild(secretRow);
-  tab.appendChild(secretList);
+  /* The Secret Flares box used to sit here and is gone per explicit
+     request - "you can remove the eclipse color information from the
+     bottom of these screens, it doesn't need its own unlock box ...
+     this rank screen needs to be very simple to understand". It was the
+     one thing on the screen that was not a rank, with its own header,
+     its own progress bar and its own vocabulary. The hunt itself is
+     untouched: the flares are still hidden in the app, finding all
+     three still unlocks the Eclipse colour, and the top rank still
+     needs them - which the top rank's own card says, because its
+     requirement line lists them like any other requirement. */
 
   requestAnimationFrame(() => {
     fillsToAnimate.forEach(({ el, prop, value }) => {
@@ -36433,6 +36601,7 @@ pauseBtn.addEventListener("click", pauseRun);
 /* ---------- swipe to advance (optional, Appearance) ---------------------- */
 
 let swipeStartX = null;
+let swipeTouchId = null;
 let swipeStartY = null;
 
 /* ---------- back to top ---------------------------------------------- */
@@ -37041,22 +37210,45 @@ function applyGlassRefraction(el, mapImgId){
   document.addEventListener("pointercancel", onPointerUp);
 })();
 
+/* Reported as "the next question swipe is bugged and sometimes doesn't
+   work", and there were three separate ways to lose one.
+   The first is the shape of the test. `Math.abs(dy) < 70` is an absolute
+   cap, so a long, fast swipe that also drifts 80px down - which is what
+   a thumb arc actually does on a tall phone - failed even though it was
+   obviously horizontal. A RATIO is the right test: three times as much
+   sideways as vertical is a left swipe whatever its length.
+   The second is touchcancel. iOS fires it instead of touchend whenever
+   the system takes the gesture over, and nothing reset the start point,
+   so the next swipe measured from a stale origin.
+   The third is a second finger. touchstart overwrote the origin with
+   whatever touch arrived last, so resting a thumb mid-swipe moved the
+   start under the gesture. The origin is pinned to one identifier now
+   and a second finger abandons the gesture rather than redefining it. */
 stage.addEventListener("touchstart", (e) => {
   if(!theme.swipeAdvance) return;
+  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; return; }
   const t = e.touches[0];
+  swipeTouchId = t.identifier;
   swipeStartX = t.clientX;
   swipeStartY = t.clientY;
 }, { passive: true });
 
+function endSwipeGesture(){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; }
+stage.addEventListener("touchcancel", endSwipeGesture, { passive: true });
+
 stage.addEventListener("touchend", (e) => {
   if(!theme.swipeAdvance || swipeStartX === null) return;
-  const t = e.changedTouches[0];
+  let t = null;
+  for(let i = 0; i < e.changedTouches.length; i++){
+    if(e.changedTouches[i].identifier === swipeTouchId){ t = e.changedTouches[i]; break; }
+  }
+  if(!t){ if(e.touches.length === 0) endSwipeGesture(); return; }
   const dx = t.clientX - swipeStartX;
   const dy = t.clientY - swipeStartY;
-  swipeStartX = null; swipeStartY = null;
-  // A clear, mostly-horizontal left swipe, and only while an actual
-  // question (with its answer choices) is on screen.
-  if(dx < -70 && Math.abs(dy) < 70 && document.querySelector(".choices")){
+  endSwipeGesture();
+  /* A clear, mostly-horizontal left swipe, and only while an actual
+     question (with its answer choices) is on screen. */
+  if(dx < -55 && Math.abs(dx) > Math.abs(dy) * 3 && document.querySelector(".choices")){
     const next = document.getElementById("nextbtn");
     if(next && !next.hidden && !next.disabled) next.click();
   }
