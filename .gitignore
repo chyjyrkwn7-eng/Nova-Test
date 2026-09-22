@@ -8,3 +8,7 @@ __pycache__/
 # SHOOT_OUT). Regenerated on every run, ~130MB a time, and nothing at runtime
 # reads them - they exist to be looked at once and sent on.
 tools/walk/
+
+# GIFs written by tools/record-cutscenes.py. Same reasoning as tools/walk/:
+# regenerated on demand, several MB each, looked at once and sent on.
+recordings/

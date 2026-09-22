@@ -27200,8 +27200,17 @@ function showWhatsNew(){
    people chose \u2014 deriving from it would just wash the sphere out to
    grey, which is what broke it the first time \u2014 so that specific
    case keeps Nova's own signature gradient instead. */
-function accentToGradientStops(){
-  if(!theme.accent || theme.accent === "ink"){
+/* `forceAccent` is for the rank cutscenes, which show the rank's own
+   colour rather than the person's chosen one. It is not decoration: the
+   early return below is keyed on theme.accent - the STORED accent - so
+   for anybody on the default theme (which, after a reset, is everybody)
+   this returned the default three stops no matter what the cutscene had
+   just swapped data-accent to, and all seven rank cutscenes rendered the
+   same sphere. Caught on a screen recording of four of them side by
+   side, not by reading the code, which says the opposite. */
+function accentToGradientStops(forceAccent){
+  const key = forceAccent || theme.accent;
+  if(!key || key === "ink"){
     return ["#FFD37A", "#F5804D", "#C23B7A"];
   }
   const raw = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
@@ -27213,7 +27222,7 @@ function accentToGradientStops(){
   return [mix([255, 255, 255], 0.75), "rgb(" + r + "," + g + "," + b + ")", mix([0, 0, 0], 0.45)];
 }
 
-function buildCosmicHero(useTierIcons){
+function buildCosmicHero(useTierIcons, forceAccent){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
   wrap.className = "cosmic-hero-wrap";
@@ -27248,7 +27257,7 @@ function buildCosmicHero(useTierIcons){
   const grad = document.createElementNS(svgNS, "radialGradient");
   grad.setAttribute("id", "cosmicSphereGrad");
   grad.setAttribute("cx", "32%"); grad.setAttribute("cy", "28%");
-  accentToGradientStops().forEach((color, i) => {
+  accentToGradientStops(forceAccent).forEach((color, i) => {
     const stop = document.createElementNS(svgNS, "stop");
     stop.setAttribute("offset", [0, 45, 100][i] + "%"); stop.setAttribute("stop-color", color);
     grad.appendChild(stop);
@@ -28859,16 +28868,32 @@ function playTierCutscene(tierKey){
   overlay.id = "supernova-cutscene";
   overlay.classList.add("tier-cutscene");
 
-  /* Temporarily forces the sphere to render in THIS tier's own color
-     regardless of the person's actual chosen theme \\u2014 buildCosmicHero
-     reads the live --accent/data-accent at build time only, so
-     swapping it right before building and restoring it right after
-     is enough; nothing reactive needs to track the swap. */
+  /* This comment used to say that swapping data-accent on <html> right
+     before building the hero and restoring it right after was enough,
+     because buildCosmicHero reads the live accent at build time. It is
+     not, and it does not - see below. Left in as the record of what was
+     believed while all seven cutscenes played the same colour. */
+  /* The rank's own colour is carried on the OVERLAY, not swapped onto
+     <html> for the length of one function call. Both halves of the
+     cutscene need it and only one of them was getting it: the sphere is
+     built in JS (hence forceAccent below), but the burst flash and the
+     title's glow are CSS reading var(--theme-c1/c2), which resolved
+     against the restored root long after this function returned. The
+     accent variables are declared on a plain [data-accent="..."]
+     attribute selector, so putting the pair on this element gives its
+     whole subtree the tier's triad for as long as it exists - and
+     leaves the rest of the app on the person's own theme.
+     The root swap below still has to stay: accentToGradientStops()
+     resolves --accent off documentElement, so it is what the sphere's
+     own stops are read from. Both, or the sphere and the flash
+     disagree. */
   const realAccent = document.documentElement.dataset.accent;
   document.documentElement.dataset.accent = tierKey;
+  overlay.dataset.theme = document.documentElement.dataset.theme || "dark";
+  overlay.dataset.accent = tierKey;
   const stageWrap = document.createElement("div");
   stageWrap.className = "supernova-stage";
-  const hero = buildCosmicHero(true);
+  const hero = buildCosmicHero(true, tierKey);
   stageWrap.appendChild(hero);
   overlay.appendChild(stageWrap);
   document.documentElement.dataset.accent = realAccent;
@@ -28967,11 +28992,16 @@ function playSupernovaCutscene(){
      that tier's own dramatic red regardless of whatever theme the
      person happens to have actively selected, the same reasoning
      that already applies to every tier below it. */
+  /* Same as playTierCutscene above: the pair on the overlay is what
+     actually colours the flash and the title glow, and forceAccent is
+     what colours the sphere. */
   const realAccent = document.documentElement.dataset.accent;
   document.documentElement.dataset.accent = "titan";
+  overlay.dataset.theme = document.documentElement.dataset.theme || "dark";
+  overlay.dataset.accent = "titan";
   const stageWrap = document.createElement("div");
   stageWrap.className = "supernova-stage";
-  const hero = buildCosmicHero(true);
+  const hero = buildCosmicHero(true, "titan");
   stageWrap.appendChild(hero);
   overlay.appendChild(stageWrap);
   document.documentElement.dataset.accent = realAccent;
@@ -29197,12 +29227,20 @@ function showHome(){
      lets this same early check simply fall through to the normal
      screen on that second call. Same pattern for any other tier's
      shorter cutscene via pendingTierCutscene. */
-  if(store.pendingSupernovaCutscene){
-    playSupernovaCutscene();
-    return;
-  }
-  if(store.pendingTierCutscene){
-    playTierCutscene(store.pendingTierCutscene);
+  if(store.pendingSupernovaCutscene || store.pendingTierCutscene){
+    /* Clear whatever is still mounted before handing over. A rank-up is
+       reached from the results screen ("Main menu"), and both cutscenes
+       fade in and fade out over 0.5s against whatever is behind them -
+       so without this the 100% card was visible under the fade at both
+       ends, and reappeared for half a second after the rank was
+       announced, before Home mounted. Caught on the recording of a real
+       run, not by reading the code. */
+    stage.replaceChildren();
+    if(store.pendingSupernovaCutscene){
+      playSupernovaCutscene();
+    } else {
+      playTierCutscene(store.pendingTierCutscene);
+    }
     return;
   }
   testInProgress = false;
@@ -31848,7 +31886,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-84";
+const APP_BUILD = "2026-09-22-85";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -33,6 +33,13 @@ disagreed, the repo won and the difference is called out.
 - `tools/shoot-flow.py` — screenshots every onboarding screen, Home and
   Settings by *clicking through* from a fresh install on seven devices,
   rather than mounting screens. Use it for anything Madison will look at.
+- `tools/record-cutscenes.py` — the animations, **as animations**: GIFs of
+  the badge unlock, the badge queue, all seven rank cutscenes, the
+  Supernova cutscene, and a real full-unit 100% run from the last question
+  through to both cutscenes it triggers. A still of a cutscene is a still
+  of one arbitrary frame; picking that frame by hand is how a 20-second
+  cutscene gets reported as "nothing happens". See **Recording an
+  animation**.
 - `tools/check-fixes.py` — the third question, after "is anything
   broken" (the sweep) and "did it land where I meant it to"
   (check-positions): **is this specific fix actually in effect here**,
@@ -1100,6 +1107,30 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   is still `titan` and its colour is still `#E23B3B`. It shares a name
   with its own flare, which the rule about ranks and rewards would
   normally forbid — here it is the point: the rank IS the app going off.
+- **A CUTSCENE'S COLOUR HAS TO REACH BOTH HALVES OF IT, AND FOR A LONG
+  TIME IT REACHED NEITHER.** `playTierCutscene()` swapped
+  `document.documentElement.dataset.accent` to the tier key, built the
+  hero, and swapped it back — and the comment above it said that was
+  enough because `buildCosmicHero` reads the accent at build time. It
+  does not. `accentToGradientStops()` returns early on `theme.accent`,
+  the STORED accent, so for anybody on the default theme (after a reset,
+  everybody) it handed back the default three stops and ignored
+  `--accent` entirely; and the burst flash and the title's glow are CSS
+  reading `var(--theme-c1/c2)`, which resolve long after the swap has
+  been undone. All seven rank cutscenes played the same sphere and the
+  same flash. The fix is both halves: `buildCosmicHero(true, tierKey)`
+  for the JS-built gradient, and **`data-accent` plus `data-theme` on
+  the OVERLAY** for the CSS — the accent variables are declared on a
+  plain `[data-accent="..."]` attribute selector, so they apply to any
+  element's subtree, which is also what lets the rest of the app stay on
+  the person's own theme. **Found on a screen recording of four of them
+  side by side, not by reading the code**, which asserted the opposite
+  in a comment.
+- **A cutscene fades in and out over whatever is behind it, so `showHome()`
+  clears the stage before handing over.** A rank-up is reached from the
+  results screen via Main menu, and without this the 100% card showed
+  through both fades and came back for half a second after the rank was
+  announced, before Home mounted. Also found on the recording.
 - **A locked rank still shows its colour.** The emblem is always drawn in
   the rank's own colour and the card only turns it down; it used to
   redraw in grey with the name in `--soft`, so four of the seven cards
@@ -1789,6 +1820,40 @@ update banner "not aligned to the top".
 Fixed-position elements render oddly in Playwright `fullPage` screenshots, so
 screenshot the viewport and scroll, and measure with `getBoundingClientRect()`
 rather than trusting a tall capture.
+
+### Recording an animation
+
+`tools/record-cutscenes.py`. Four of the things asked about most — the badge
+unlock, a rank cutscene, the Supernova cutscene, the flight to the Profile
+tab — are only animation, and a screenshot of one is a screenshot of one
+arbitrary frame.
+
+- **There is no ffmpeg here, and Playwright's own recorder only emits
+  `.webm`**, which is not a safe bet on an iPhone. Frames come off the
+  compositor with CDP `Page.startScreencast` — real paint timing, where a
+  screenshot loop samples at whatever rate the screenshots happen to
+  complete and misses the fast parts — and Pillow writes a GIF, which plays
+  anywhere including inside a message.
+- **One palette for the whole clip, built from frames sampled ACROSS it.**
+  Quantising against frame 0 is quantising a gold burst against a palette
+  taken from a near-black Home screen: the payoff comes out grey, which
+  reads as the cutscene having no colour rather than as an encoding
+  artifact. That is exactly how it was first read here.
+- **No dithering.** The noise defeats LZW and roughly doubles the file on a
+  screen that is mostly smooth dark gradient.
+- **Know the real length before recording.** The Supernova cutscene bursts
+  at 9s and finishes at 20s — two and a half times any other tier's 8s. A
+  12s capture of it is a recording of the wind-up and nothing else.
+- **Drive a run by waiting on the DOM, never on a timer.** `beginRun()` puts
+  a ~3s LOADING TEST screen up first, and the slide between questions has
+  two questions mounted at once, so a click on a fixed delay lands on the
+  outgoing one and registers as a wrong answer — which silently turns a
+  100% run into a 92% one and no badge at the end. `answer_all()` waits for
+  `.choice`, then for `pos` to actually change.
+- **Identity Crimes is the unit to use for a real earn**: 12 questions, the
+  smallest in the app, and `recordUnitPerfectIfEligible()` only credits a
+  hundo for a run covering the unit IN FULL (`isFullUnitRun()`), so a
+  10-question slice of Penal Code earns nothing however perfect it is.
 
 ### Where things currently land
 
