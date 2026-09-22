@@ -2840,6 +2840,45 @@
   .lb-rank.is-pending{
     color:var(--soft); font-weight:700; opacity:.7;
   }
+  /* Your own score, broken down. Its own surface rather than a row in the
+     list, because it is the one thing on this screen that is about you
+     rather than about the room - and it is there the moment you finish,
+     while everybody else's is still sealed. */
+  .vroom-mine{
+    margin:.2rem 0 1.1rem; padding:1rem 1.1rem .9rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.09);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .vroom-mine[hidden]{ display:none; }
+  .vroom-mine-head{
+    margin:0 0 .65rem; font-size:.7rem; font-weight:800; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--soft);
+  }
+  .vroom-mine-row{
+    display:grid; grid-template-columns:1fr auto auto; gap:.6rem;
+    align-items:baseline; padding:.3rem 0; text-align:left;
+  }
+  .vroom-mine-row.is-total{
+    grid-template-columns:1fr auto; margin-top:.35rem; padding-top:.6rem;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
+  .vroom-mine-label{ font-size:.86rem; font-weight:600; color:var(--ink); }
+  .vroom-mine-raw{ font-size:.84rem; color:var(--soft); font-variant-numeric:tabular-nums; }
+  /* A fixed width on the arithmetic column, so the + and the minus line up
+     under each other rather than drifting with the length of the number. */
+  .vroom-mine-delta{
+    font-size:.84rem; font-weight:800; color:var(--soft);
+    font-variant-numeric:tabular-nums; min-width:4.2rem; text-align:right;
+  }
+  .vroom-mine-total{
+    font-size:1.25rem; font-weight:900; color:var(--theme-c1);
+    font-variant-numeric:tabular-nums;
+  }
+  .vroom-mine-note{
+    margin:.6rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.35;
+    text-align:left;
+  }
   /* The finale reveal screen \u2014 each line fades/slides in together
      once the wait is over (vroom-finale-in added right as the reveal
      becomes visible), then the total count-up runs after a short
@@ -2911,14 +2950,34 @@
       display:flex; flex-direction:column;
       border-top:1px solid rgba(255,255,255,.12);
       border-radius:20px 20px 0 0;
-      background:rgba(20,25,32,.92);
+      /* Liquid Glass, not a panel. At .92 this was opaque - the blur was
+         doing nothing you could see, because there was nothing showing
+         through to blur. .52 with a heavier blur is the recipe every
+         other glass surface in the app uses. */
+      background:rgba(20,25,32,.52);
       will-change:backdrop-filter;
-      backdrop-filter:blur(18px) saturate(1.5);
-      -webkit-backdrop-filter:blur(18px) saturate(1.5);
-      box-shadow:0 -12px 40px rgba(0,0,0,.5);
+      backdrop-filter:blur(22px) saturate(1.6);
+      -webkit-backdrop-filter:blur(22px) saturate(1.6);
+      box-shadow:0 -12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
       transform:translateY(102%);
       transition:transform .28s cubic-bezier(.2,.8,.25,1);
+      touch-action:pan-y;
     }
+    /* A solid-coloured child inside a backdrop-filter surface can tear on
+       real iOS - reported on the update banner's own button. The parent
+       already has will-change; the Send button needs its own compositing
+       layer so it is rasterised once rather than resampled through the
+       filter every frame. */
+    .vroom-chat .vroom-chat-send{
+      transform:translateZ(0); backface-visibility:hidden; isolation:isolate;
+    }
+    /* The grab handle. A sheet you can swipe needs to look like one. */
+    .vroom-chat::before{
+      content:""; display:block; width:2.4rem; height:.28rem; border-radius:999px;
+      background:rgba(255,255,255,.28); margin:-.35rem auto .7rem;
+      flex:0 0 auto;
+    }
+    .vroom-chat.is-dragging{ transition:none; }
     .vroom-chat.is-open{ transform:translateY(0); }
     .vroom-chat .vroom-chat-list{ flex:1 1 auto; max-height:none; }
     /* The tab bar would otherwise sit on top of an open sheet. */
@@ -3690,6 +3749,14 @@
     color:var(--soft); font-weight:600; cursor:pointer; margin-bottom:1rem;
     display:block; text-align:left; position:relative; z-index:1;
   }
+  /* display:block on a class beats [hidden]'s UA display:none on
+     specificity, so this button ignored .hidden = true entirely. The
+     Virtual Room results screen gates "Back to Home" on everybody having
+     finished - a real gate, not a courtesy message - and that gate has
+     never actually worked: the button was always there to tap. Same trap
+     as .opt .box and .bottomtab-label, found by looking at a screenshot
+     of the waiting state rather than at the line that sets .hidden. */
+  .back-link[hidden]{ display:none; }
   @media (hover:hover){ .back-link:hover{ color:var(--ink); } }
   .startbar{
     display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
@@ -8251,6 +8318,13 @@
     position:relative; overflow:hidden;
   }
   [data-layout="modern"] .back-link:active{ background-color:#141416; }
+  /* Same specificity as the rule above and ~4,500 lines later, so this is
+     what actually has to carry [hidden] - the plain .back-link[hidden]
+     further up loses on source order. Exactly the trap this file already
+     documents for .opt .box, .next's box-shadow and .bottomtab-label, and
+     the reason the Virtual Room's "nobody leaves until everyone finishes"
+     gate has never once hidden its button. */
+  [data-layout="modern"] .back-link[hidden]{ display:none; }
   @media (hover:hover){ [data-layout="modern"] .back-link:hover{ color:#fff; } }
   [data-layout="modern"] .floatbtn{ border-radius:0; box-shadow:none; }
   /* The original floating button is kept functional (its click handler
@@ -32378,7 +32452,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-89";
+const APP_BUILD = "2026-09-22-90";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35483,6 +35557,35 @@ function buildVroomChatPanel(container){
   }
   toggle.addEventListener("click", () => { sheetOpen ? closeSheet() : openSheet(); });
   closeBtn.addEventListener("click", closeSheet);
+
+  /* Swipe down to close. Only from the sheet's own chrome, never from the
+     message list: a list you can scroll and a sheet you can drag share a
+     gesture, and letting the list start a drag means every attempt to
+     scroll back through the chat closes it instead. Starting the drag on
+     the handle, the title row or the input row is unambiguous. */
+  let dragFrom = null, dragDy = 0;
+  wrap.addEventListener("touchstart", (e) => {
+    if(!sheetOpen) return;
+    if(list.contains(e.target)) return;
+    dragFrom = e.touches[0].clientY; dragDy = 0;
+    wrap.classList.add("is-dragging");
+  }, { passive: true });
+  wrap.addEventListener("touchmove", (e) => {
+    if(dragFrom === null) return;
+    dragDy = Math.max(0, e.touches[0].clientY - dragFrom);
+    wrap.style.transform = "translateY(" + dragDy + "px)";
+  }, { passive: true });
+  function endDrag(){
+    if(dragFrom === null) return;
+    wrap.classList.remove("is-dragging");
+    wrap.style.transform = "";
+    /* A short flick and a long drag both close it; anything less springs
+       back, so a mis-touch on the title row does not dismiss the chat. */
+    if(dragDy > 70) closeSheet();
+    dragFrom = null; dragDy = 0;
+  }
+  wrap.addEventListener("touchend", endDrag);
+  wrap.addEventListener("touchcancel", endDrag);
   let newestTs = 0;
 
   function renderMessages(messages){
@@ -35817,6 +35920,55 @@ function showVirtualRoomResults(){
      standings arrive all at once when the last person lands. */
   let revealed = false;
 
+  /* YOUR OWN card, and only yours. The total is the number people are
+     ranked by, so it has to show its working - "make sure your score you
+     get after the virtual room is broken down so you see how the score
+     came about". Everybody else's stays sealed until the board goes up,
+     which is the whole point of the wait. */
+  const mineCard = document.createElement("div");
+  mineCard.className = "vroom-mine";
+  mineCard.hidden = true;
+  panel.appendChild(mineCard);
+
+  function renderMine(p){
+    if(!p || !p.finished){ mineCard.hidden = true; return; }
+    mineCard.hidden = false;
+    mineCard.replaceChildren();
+    const head = document.createElement("p");
+    head.className = "vroom-mine-head"; head.textContent = "Your score";
+    const pct = p.score || 0;
+    const secs = Math.round((p.elapsedMs || 0) / 1000);
+    const fromScore = Math.round(pct * 100);
+    const total = p.totalScore != null ? p.totalScore : (fromScore - secs);
+    const rows = document.createElement("div");
+    rows.className = "vroom-mine-rows";
+    /* Each line says what it is, what it was, and what it contributed -
+       the middle column is the raw fact and the right column is the
+       arithmetic, so the total underneath is obviously the sum. */
+    [["Accuracy", pct + "%", "+" + fromScore.toLocaleString()],
+     ["Time", formatClock(p.elapsedMs || 0), "\u2212" + secs.toLocaleString()]
+    ].forEach(function(parts){
+      const r = document.createElement("div");
+      r.className = "vroom-mine-row";
+      const a = document.createElement("span"); a.className = "vroom-mine-label"; a.textContent = parts[0];
+      const b = document.createElement("span"); b.className = "vroom-mine-raw"; b.textContent = parts[1];
+      const c = document.createElement("span"); c.className = "vroom-mine-delta"; c.textContent = parts[2];
+      r.append(a, b, c); rows.appendChild(r);
+    });
+    const totalRow = document.createElement("div");
+    totalRow.className = "vroom-mine-row is-total";
+    const tl = document.createElement("span");
+    tl.className = "vroom-mine-label"; tl.textContent = "Total";
+    const tr = document.createElement("span");
+    tr.className = "vroom-mine-total"; tr.textContent = total.toLocaleString() + " pts";
+    totalRow.append(tl, tr);
+    rows.appendChild(totalRow);
+    const note = document.createElement("p");
+    note.className = "vroom-mine-note";
+    note.textContent = "Every point of accuracy is worth 100. Each second costs 1.";
+    mineCard.append(head, rows, note);
+  }
+
   const list = document.createElement("div");
   list.className = "cal-list";
   panel.appendChild(list);
@@ -35835,6 +35987,7 @@ function showVirtualRoomResults(){
        is what the leaderboard and lobby already correctly use
        elsewhere. */
     const entries = Object.entries(data.participants || {});
+    renderMine((data.participants || {})[vroomMyKey]);
     /* Ranked by totalScore now \u2014 the combined score+time number the
        finale reveal just showed everyone, per explicit request
        ("that's how you'd be ranked"), not the separate score-then-time
