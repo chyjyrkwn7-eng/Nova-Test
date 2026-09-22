@@ -8552,9 +8552,11 @@
   .profile-classcard-btns{
     display:flex; gap:.6rem; margin-top:.95rem; flex-wrap:wrap;
   }
+  /* One button across the whole row. It was one of a pair sharing the
+     width; on its own it is the card's single action and reads like one. */
   .profile-classcard-btn{
-    flex:1 1 8rem; min-width:0; font-size:.8rem;
-    padding:.7rem .6rem; line-height:1.25;
+    flex:1 1 100%; min-width:0; font-size:.88rem;
+    padding:.8rem 1rem; line-height:1.25;
   }
   @media (min-width:40rem){
     .profile-classcard{ padding:1.5rem 1.6rem 1.4rem; }
@@ -21879,6 +21881,16 @@ function buildAvatarCharSVG(charId){
        outline, because a fluffy outline turns to a smudge at 42px. */
     const skin = headGrad("#FFF0E2", "#F7DCC6", "#D8B79C");
     const hair = headGrad("#FF8A5C", "#E8552F", "#A8321A");
+    /* Shoulders, like the rest of the set. These three were drawn before
+       the body became part of the recipe and read as heads floating with
+       nothing under them once the other nine had one. A ruff for the
+       clown, because a plain collar on a clown is a wasted opportunity. */
+    const ruff = headGrad("#8FE3FF", "#4FB9DC", "#2C7E9C");
+    svg.appendChild(mk("path", { d: "M6.4 40 Q7.2 32.4 14.4 30.4 L25.6 30.4 Q32.8 32.4 33.6 40 Z",
+                                 fill: "#3C4450" }));
+    [9.4, 14.2, 20, 25.8, 30.6].forEach((x, i) => {
+      svg.appendChild(mk("circle", { cx: x, cy: 30.6 + (i % 2 ? 1 : 0), r: 3.1, fill: ruff }));
+    });
     [8.6, 31.4].forEach((x, i) => {
       const s = i ? -1 : 1;
       svg.appendChild(mk("circle", { cx: x, cy: 19.5, r: 4.3, fill: hair }));
@@ -21906,6 +21918,15 @@ function buildAvatarCharSVG(charId){
   }
 
   if(def.kind === "robot"){
+    /* A chassis under the head, for the same reason every other character
+       has shoulders: without one this was a head hanging in space. */
+    const chassis = headGrad("#8E9AA8", "#697585", "#454F5C");
+    svg.appendChild(mk("path", { d: "M6.8 40 Q7.6 32.6 14.6 30.6 L25.4 30.6 Q32.4 32.6 33.2 40 Z",
+                                 fill: chassis }));
+    svg.appendChild(mk("rect", { x: 15.6, y: 32.4, width: 8.8, height: 3.4, rx: 1.1,
+                                 fill: "#2E3541" }));
+    svg.appendChild(mk("circle", { cx: 18, cy: 34.1, r: .78, fill: "#4DD4E8" }));
+    svg.appendChild(mk("circle", { cx: 22, cy: 34.1, r: .78, fill: "#FFD84D" }));
     /* The "someone that is animated" one. Everything else in the set is
        still; this has a light that travels across its visor, which is
        the whole reason it is here. The sweep is a CSS animation on a
@@ -21961,6 +21982,10 @@ function buildAvatarCharSVG(charId){
       lg.appendChild(st);
     });
     defs.appendChild(lg);
+    /* Shoulders. The suit's helmet ring already reads as a collar, so this
+       is the torso below it rather than a second collar on top. */
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6.2 32.8 13.8 30.6 L26.2 30.6 Q33.8 32.8 34.6 40 Z",
+                                 fill: headGrad("#E6ECF3", "#C2CCD8", "#8E9AA8") }));
     svg.appendChild(mk("rect", { x: 5.6, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
     svg.appendChild(mk("rect", { x: 30.8, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
     svg.appendChild(mk("rect", { x: 8.2, y: 7.6, width: 23.6, height: 24, rx: 9.4, fill: suit,
@@ -24716,7 +24741,10 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
               reduceMotion: false, keepAwake: false, muteBanners: false,
               /* Off by default: silently rewriting someone's flag list is
                  not something to opt people into without them asking. */
-              autoFlagMissed: false };
+              autoFlagMissed: false,
+              /* On by default. Somebody who has never opened Settings should
+                 see the count - it is the thing the card is for. */
+              showClassDaysLeft: true };
 
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
@@ -24740,6 +24768,7 @@ function loadTheme(){
     if(typeof store.theme.keepAwake === "boolean") theme.keepAwake = store.theme.keepAwake;
     if(typeof store.theme.muteBanners === "boolean") theme.muteBanners = store.theme.muteBanners;
     if(typeof store.theme.autoFlagMissed === "boolean") theme.autoFlagMissed = store.theme.autoFlagMissed;
+    if(typeof store.theme.showClassDaysLeft === "boolean") theme.showClassDaysLeft = store.theme.showClassDaysLeft;
   }
 }
 
@@ -24907,7 +24936,8 @@ function saveTheme(){
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
                   reduceMotion: theme.reduceMotion,
                   keepAwake: theme.keepAwake, muteBanners: theme.muteBanners,
-                  autoFlagMissed: theme.autoFlagMissed };
+                  autoFlagMissed: theme.autoFlagMissed,
+                  showClassDaysLeft: theme.showClassDaysLeft };
   saveStore();
 }
 
@@ -33782,6 +33812,34 @@ function showAppearance(){
   bannerRow.append(bannerCb, bannerBox, bannerWrap);
   studyDetails.appendChild(bannerRow);
 
+  /* The countdown on Profile's class card. It is the one number in the
+     app that gets worse the closer it gets for some people and better for
+     others, so it is a switch rather than a decision. */
+  const classDaysRow = document.createElement("label");
+  classDaysRow.className = "opt";
+  const classDaysCb = document.createElement("input");
+  classDaysCb.type = "checkbox";
+  classDaysCb.checked = theme.showClassDaysLeft !== false;
+  classDaysCb.addEventListener("change", () => {
+    theme.showClassDaysLeft = classDaysCb.checked;
+    saveTheme();
+    showToast(theme.showClassDaysLeft
+      ? "Class days remaining is back on your profile."
+      : "Class days remaining hidden.");
+  });
+  const classDaysBox = document.createElement("span");
+  classDaysBox.className = "box"; classDaysBox.setAttribute("aria-hidden", "true");
+  classDaysBox.textContent = "\u2713";
+  const classDaysWrap = document.createElement("span");
+  classDaysWrap.className = "otext";
+  classDaysWrap.appendChild(document.createTextNode("Show class days remaining"));
+  const classDaysHint = document.createElement("span");
+  classDaysHint.className = "ohint";
+  classDaysHint.textContent = "The countdown to graduation on your profile\u2019s class card.";
+  classDaysWrap.appendChild(classDaysHint);
+  classDaysRow.append(classDaysCb, classDaysBox, classDaysWrap);
+  studyDetails.appendChild(classDaysRow);
+
   const autoFlagRow = document.createElement("label");
   autoFlagRow.className = "opt";
   const autoFlagCb = document.createElement("input");
@@ -36899,6 +36957,9 @@ function showProfile(defaultTab){
   const classCount = document.createElement("span");
   classCount.className = "profile-classcard-count";
   classCount.textContent = daysLeftNow + (daysLeftNow === 1 ? " class day left" : " class days left");
+  /* Off by choice, not by accident: a countdown to graduation is either
+     the best thing on the screen or the worst, depending on the week. */
+  classCount.hidden = theme.showClassDaysLeft === false;
   classHead.append(classTitle, classCount);
   classSect.appendChild(classHead);
 
@@ -36934,25 +36995,22 @@ function showProfile(defaultTab){
   classSect.appendChild(classDayRow("Today", todaysClassEntry(), true));
   classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
 
+  /* One button, full width. The Class days remaining button that used to
+     sit beside it said the same thing the count in this card's own header
+     already says, so it was a control whose only job was to repeat the
+     line above it. The count itself stays, and Settings can switch it off
+     for anybody who would rather not watch it tick down. */
   const classBtns = document.createElement("div");
   classBtns.className = "profile-classcard-btns";
-  const daysBtn = document.createElement("button");
-  daysBtn.type = "button";
-  daysBtn.className = "next ghost profile-classcard-btn";
-  daysBtn.textContent = "Class days remaining";
-  daysBtn.addEventListener("click", () => {
-    const n = classDaysRemaining();
-    showDailyAlert(n === 0
-      ? "No class days left \u2014 the course is done."
-      : n + (n === 1 ? " class day" : " class days") + " left before graduation.");
-  });
 
   const classLine = document.createElement("button");
   classLine.type = "button";
-  classLine.className = "next profile-classcard-btn profile-classline";
+  /* ghost, which on this surface renders as the black pill rather than
+     the pale one - asked for as "make the button black". */
+  classLine.className = "next ghost profile-classcard-btn profile-classline";
   classLine.textContent = "View class calendar";
   classLine.addEventListener("click", showCalendar);
-  classBtns.append(daysBtn, classLine);
+  classBtns.appendChild(classLine);
   classSect.appendChild(classBtns);
 
   /* ---------- level and badges ----------------------------------------
