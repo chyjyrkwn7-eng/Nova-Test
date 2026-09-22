@@ -8910,12 +8910,12 @@
       "> booting core runtime...",
       "> loading Drill, Game & Exam modes...",
       "> syncing unit progress...",
-      "> initializing achievement engine...",
-      "> calibrating XP system...",
+      "> initializing badge case...",
+      "> calibrating XP curve...",
       "> indexing question bank...",
       "> connecting to cloud sync...",
       "> verifying local profile...",
-      "> loading ranks...",
+      "> loading rank ladder...",
       "> preparing interface...",
       "> ready."
     ];
@@ -26881,32 +26881,32 @@ const RELEASE_NOTES = [
       { label: "Settings", items: [
         { icon: buildSkipForwardIcon, color: "#5CA8FF", title: "Auto-Advance", body: "Moves you on automatically a moment after you answer \u2014 once you get it right in Drill or Game, or as soon as you pick one in Exam \u2014 with no extra tap needed." },
         { icon: buildScreenAwakeIcon, color: "#FFD84D", title: "Keep Screen Awake", body: "Stops your screen from locking mid-question. Tells you plainly if your specific device can't support it, rather than silently doing nothing." },
-        { icon: buildToggleIcon, color: "#C583FF", title: "Mute Achievement Banners", body: "Turn off the level-up and unlock celebrations if you'd rather just see your result without the extra fanfare." },
-        { icon: buildTrophyIcon, color: "#F5C518", title: "Leaderboard Sharing, Your Choice", body: "Off by default \u2014 nothing about you appears on the leaderboard, and you can't view it either, until you turn this on yourself." },
-        { icon: buildDotsIcon, color: "#8E9BA5", title: "Advanced, Tucked Away", body: "Reset and analytics options live behind their own collapsed section now, out of the way of the settings you'll actually use day to day." },
         { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Add Nova to Your Home Screen", body: "A short, real walkthrough for getting the app onto your home screen like any other app, with steps specific to your device." }
       ]},
-      { label: "Rewards, Achievements & Unlocks", items: [
-        { icon: buildLadderIcon, color: "#FFD84D", title: "The Mastery Ladder", body: "Seven tiers from Spark all the way to Supernova, each one taking both stars (from mastering units) and points (from studying overall) together \u2014 not either alone." },
-        { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top of the ladder and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." },
-        { icon: buildStarIcon, color: "#FACC15", title: "Secret Flares", body: "A handful of hidden stars scattered through your drills, tracked automatically so you always know how close you are to finding them all." },
-        { icon: buildSwatchClusterIcon, color: "#C583FF", title: "Theme Colors to Unlock", body: "A new color for every tier you climb, each one reshaping the sphere, the loading screens, and the app's whole accent \u2014 not just a swatch in a menu." }
+      { label: "Ranks, Badges & Unlocks", items: [
+        { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Iron, Bronze, Silver, Gold, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
+        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty-five times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
+        { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 an officer, a clown, a robot and an astronaut. You can see all four from day one, locked, so you know what is up there." },
+        { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
+        { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
       ]},
-      { label: "Leaderboard", items: [
-        { icon: buildDualBoardIcon, color: "#F5C518", title: "Two Boards, Genuinely Live", body: "Points and Stars ranked separately, side by side, updating in real time as anyone in the class studies \u2014 opt in any time from Settings to share your name, avatar, points, and stars, nothing else." }
+      { label: "Rankings", items: [
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "Three Boards, Genuinely Live", body: "Level, Badges and Hundos ranked separately, updating in real time as anyone in 26E studies. Level is everything you have done; Badges is units you have mastered; Hundos is units finished at 100%." },
+        { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Find Anyone, Including You", body: "Search the class by username, or tap Find me to jump straight to your own row and have it flash. Nothing to refresh \u2014 the numbers move on their own." },
+        { icon: buildTrophyIcon, color: "#4ADE80", title: "Sharing Is Yours to Choose", body: "Off by default. Nothing about you appears on the boards, and you cannot see them either, until you turn it on \u2014 and it shares your username, character, rank and those three numbers, nothing else." }
       ]},
       { label: "Profile", items: [
-        { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Choose from a full roster \u2014 ninja, ghost, queen, wizard, bear, alien, samurai, and dragon \u2014 each with real detail at every size, right down to the tab bar." },
-        { icon: buildFireIcon, color: "#FF9457", title: "A Real Correct-Answer Streak", body: "Tracks correct answers in a row across every test, with your current streak and personal best shown side by side \u2014 the daily question never touches it either way." },
+        { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Twelve to choose from \u2014 ninja, ghost, queen, wizard, bear, alien, samurai, dragon, and four more the top ranks hand over. Each one is drawn to read at every size, right down to the tab bar." },
+        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Ladder for the whole climb. Swipe between them or tap." },
         { icon: buildArchiveIcon, color: "#4ADE80", title: "Every Past Test, Saved", body: "A full answer-by-answer breakdown the moment you finish, plus a running history you can revisit any time, right from Profile." },
         { icon: buildBarStatsIcon, color: "#C583FF", title: "Study Time & Testing Stats", body: "Questions answered, tests completed, time spent \u2014 tracked automatically and laid out clearly, not buried in a menu." }
       ]},
       { label: "Home", items: [
         { icon: buildPlanetIcon, color: "#C583FF", title: "The Cosmic Sphere", body: "A living centerpiece that recolors itself to match whatever theme you've unlocked and selected \u2014 the same planet, in your own colors." },
-        { icon: buildQuestionMarkIcon, color: "#5CA8FF", title: "The Daily Question", body: "One quick question a day, no retakes, worth a genuine 100 points when you get it right \u2014 a small extra that lives right on Home." }
+        { icon: buildQuestionMarkIcon, color: "#5CA8FF", title: "The Daily Question", body: "One quick question a day, no retakes, worth a genuine 100 XP when you get it right \u2014 a small extra that lives right on Home." }
       ]},
       { label: "Modes", items: [
-        { icon: () => modeIcon("drill"), title: "Drill", body: "Instant feedback on every question, with unlimited retries until you get it right \u2014 built for actually learning the material, not just getting through it." },
+        { icon: () => modeIcon("drill"), title: "Drill", body: "The classic mode. Instant feedback on every question, with unlimited retries until you get it right \u2014 built for actually learning the material, not just getting through it." },
         { icon: () => modeIcon("exam"), title: "Exam", body: "Feedback held until the very end, just like the real thing \u2014 one answer, no retries, no second-guessing." },
         { icon: () => modeIcon("game"), title: "Game", body: "A timer on every question and a limited number of lives \u2014 Easy, Average, or Hardcore \u2014 built for testing yourself under real pressure." },
         { icon: () => modeIcon("vroom"), title: "Virtual Room", body: "Take the exact same test live against classmates in a shared lobby, ranked by a combined score and time, with a genuine race to the finish and live chat both before and after." }
@@ -26920,11 +26920,6 @@ const RELEASE_NOTES = [
       { label: "Calendar & Class Days", items: [
         { icon: buildCalendarGridIcon, color: "#5CA8FF", title: "The Full Class Calendar", body: "Every class day and holiday, searchable, collapsible by month, with one tap to jump straight to today." },
         { icon: buildHourglassIcon, color: "#FFD84D", title: "Days Remaining, At a Glance", body: "See exactly how much of the class is left without doing the math yourself." }
-      ]},
-      { label: "Tooltips, Toggles & Small Touches", items: [
-        { icon: buildTooltipBubbleIcon, color: "#4DD0E1", title: "Guided Tooltips Everywhere", body: "A quick guided pointer through every screen the first time you see it, connected with a real line instead of a floating box, so nothing is left unexplained." },
-        { icon: buildToggleIcon, color: "#4ADE80", title: "Real Flip Switches", body: "On/off settings are genuine sliding switches now, with side-by-side selectors for choices like Mode \u2014 not text pretending to be a control." },
-        { icon: buildPillTabBarIcon, color: "#C583FF", title: "One Bottom Pill Tab, Every Screen", body: "Home, Profile, Rewards, and Settings stay one tap away from anywhere in the app, with Start merging in as its own pill wherever it's needed." }
       ]}
     ]
   },
@@ -26939,23 +26934,22 @@ const RELEASE_NOTES = [
         { icon: buildDevicesIcon, title: "Link a Device", body: "One code links a second device with everything already on it, staying in sync from then on, live, everywhere you're signed in." }
       ]},
       { label: "Achievements & Rewards", items: [
-        { icon: buildTrophyIcon, title: "The Mastery Ladder", body: "One unified path from Spark all the way to Supernova, across seven tiers, each taking both stars (from mastering units) and points (from studying overall) together \u2014 built with real room to grow as more units are added over time." },
-        { icon: buildCoinIcon, title: "Points and Stars, Together", body: "Your points and star totals sit side by side, both feeding the same ladder \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
-        { icon: buildStarIcon, title: "Tap Any Tier to See What's Next", body: "Every orbiting badge on Home, and every tier on the Rewards ladder, is interactive \u2014 tap any one to see exactly how many stars and points are left before it lights up." },
-        { icon: buildStarIcon, title: "Secret Flares", body: "Three hidden stars to find as you go, tracked automatically so you always know how close you are." },
-        { icon: buildRocketIcon, title: "The Supernova Event", body: "Reach the very top of the Mastery Ladder \u2014 which also asks you to find every Secret Flare \u2014 and Home changes for good: a full-screen event plays out, culminating in an actual supernova, leaving your orbit permanently brighter afterward." },
-        { icon: buildGiftIcon, title: "Unlocks", body: "A new color for every tier you reach on the ladder, plus the Home screen's own orbit lighting up to match your progress." }
+        { icon: buildTrophyIcon, title: "The Rank Ladder", body: "One unified path from Iron all the way to Supernova, across seven ranks, each taking both a level and a number of badges together \u2014 built with real room to grow as more units are added over time." },
+        { icon: buildCoinIcon, title: "Level and Badges, Together", body: "Your level and badge totals sit side by side, both feeding the same ladder \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
+        { icon: buildStarIcon, title: "Tap Any Rank to See What's Next", body: "Every orbiting flare on Home, and every rank on the ladder, is interactive \u2014 tap any one to see exactly how many badges and levels are left before it lights up." },
+        { icon: buildRocketIcon, title: "The Supernova Event", body: "Reach the very top of the ladder and Home changes for good: a full-screen event plays out, culminating in an actual supernova, leaving your orbit permanently brighter afterward." },
+        { icon: buildGiftIcon, title: "Unlocks", body: "A new colour for every rank you reach, plus the Home screen's own orbit lighting up to match your progress." }
       ]},
       { label: "Interface & Navigation", items: [
-        { icon: buildPersonIcon, title: "Profile and Rewards, Separated", body: "Two distinct screens \u2014 Profile for your name, avatar, and stats; Rewards for achievements and unlocks." },
+        { icon: buildPersonIcon, title: "Profile and Rewards, Separated", body: "Two distinct screens \u2014 Profile for your name, avatar, and stats; Rankings for the class boards." },
         { icon: buildSwipeIcon, title: "A Tab Bar You Can Drag", body: "Press and drag across the bottom bar and the glass bubble follows your finger instantly, snapping between tabs the way iOS's own bars do." },
         { icon: buildPaletteIcon, title: "Genuine Liquid Glass Throughout", body: "The active tab, tooltips, and popups all now share one real frosted-glass treatment \u2014 translucent and blurred, not a flat solid fill." },
-        { icon: buildStarIcon, title: "Home, Reimagined", body: "The same cosmic sphere from Welcome now lives on Home too, its orbit lighting up one badge at a time as you climb the Mastery Ladder." },
+        { icon: buildStarIcon, title: "Home, Reimagined", body: "The same cosmic sphere from Welcome now lives on Home too, its orbit lighting up one flare at a time as you climb the ranks." },
         { icon: buildClipboardIcon, title: "Helpful Tooltips", body: "A quick guided pointer through Home, every tab, and what's new to unlock \u2014 so nothing is left unexplained the first time you look for it." }
       ]},
       { label: "Personalization", items: [
         { icon: buildPersonIcon, title: "A Full Cast of Characters", body: "Your avatar got a complete redraw \u2014 choose from a full roster: ninja, ghost, queen, wizard, bear, alien, samurai, and dragon \u2014 each redrawn and polished for real detail at every size, including the tab bar." },
-        { icon: buildPaletteIcon, title: "More Theme Colors", body: "A growing palette of colors to personalize the app with, including ones unlocked by climbing the Mastery Ladder." }
+        { icon: buildPaletteIcon, title: "More Theme Colors", body: "A growing palette of colors to personalize the app with, including ones unlocked by climbing the ranks." }
       ]}
     ]
   },
@@ -27099,7 +27093,7 @@ function showWhatsNew(){
   const intro = document.createElement("p");
   intro.className = "hometagline";
   intro.style.cssText = "position:relative;z-index:1;";
-  intro.textContent = "Nova \u2014 a space-themed study app with cloud sync, achievements, and a Liquid Glass interface throughout.";
+  intro.textContent = "Nova \u2014 a space-themed study app for 26E, with cloud sync, ranks and badges, and a Liquid Glass interface throughout.";
   panel.appendChild(intro);
 
   /* Pulled from RELEASE_NOTES[0].groups directly now, not a separate
@@ -31820,7 +31814,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-82";
+const APP_BUILD = "2026-09-22-83";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -37844,6 +37838,54 @@ restartEl.addEventListener("click", confirmMainMenu);
 /* ---------- boot -------------------------------------------------------- */
 
 loadStore();
+
+/* ---------- THE ONE-TIME FRESH START ----------
+   Every device clears itself once and lands back on Welcome. Asked for
+   directly: "I want the app to be reset, meaning we move all the
+   profiles and start from scratch so everyone who goes into it will be
+   seeing the sign in/sign up screen."
+
+   THIS HALF ONLY CLEARS THIS DEVICE. It does not touch the cloud at
+   all. The other half - making sure nobody can sign back in with an old
+   code - is `python3 tools/firestore-admin.py purge --yes`, run by hand
+   once this build is live. Both halves are needed and neither works
+   alone: clearing the cloud on its own achieves nothing, because
+   pullFromCloud() treats a missing document as `not-found` and leaves
+   local progress untouched, so ~40 phones would simply push everything
+   back within a day. Clearing devices on its own leaves the old codes
+   working, so anyone who kept one could sign straight back in.
+
+   TO DISARM: set FRESH_START back to 0 before this reaches `main`.
+   Once a device has run it that device records the number and never
+   runs it again, so lowering it afterwards stops future installs but
+   cannot give anybody their progress back. There is no undo. Raise the
+   number to do this again another time.
+
+   THE MARKER IS IN localStorage, NOT ON `store`, and that is the whole
+   safety of it: the wipe clears `store`, so a flag living there would
+   be erased by the very thing it is meant to stop and every launch
+   would wipe the account again, forever. It is also written BEFORE the
+   wipe rather than after, so a crash halfway through costs one reset
+   rather than an endless loop. */
+const FRESH_START = 1;
+const FRESH_START_KEY = "class26e.freshstart";
+(function freshStartOnce(){
+  if(!FRESH_START) return;
+  let seen = 0;
+  try { seen = parseInt(window.localStorage.getItem(FRESH_START_KEY) || "0", 10) || 0; }
+  catch(e){ return; }            /* no storage, no marker - never loop */
+  if(seen >= FRESH_START) return;
+  try { window.localStorage.setItem(FRESH_START_KEY, String(FRESH_START)); }
+  catch(e){ return; }
+  /* detachLiveListener() first, so the listener for the code this device
+     is about to forget cannot fire a stale callback into a half-cleared
+     store on its way out. */
+  detachLiveListener();
+  clearSyncCode();
+  wipeLocalProgressAndSettings();
+  saveStore();
+})();
+
 migrateTestStatsToPerUnit();
 migrateBlackStarToGameBeat();
 applySaved();
