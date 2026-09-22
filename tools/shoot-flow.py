@@ -329,8 +329,15 @@ def main():
                 # This Week, not Level. The filenames say so - a screenshot
                 # named for a board that no longer exists is a screenshot
                 # nobody can match to the app.
-                for i, (key, name) in enumerate([("week", "week"), ("badges", "badges"),
-                                                 ("hundos", "hundos")]):
+                # NAMES READ OFF THE SCREEN, never a list written here. The
+                # board set has changed twice now and each time this file
+                # kept saving the new board under the old board's name -
+                # a screenshot that gets reported as a bug on the screen
+                # it is not of.
+                board_names = page.evaluate(
+                    """()=>[...document.querySelectorAll('.panel .navsegment .iconbtn')]"""
+                    """.map(b=>b.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-'))""")
+                for i, name in enumerate(board_names):
                     page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(700)
