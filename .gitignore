@@ -12,3 +12,9 @@ tools/walk/
 # GIFs written by tools/record-cutscenes.py. Same reasoning as tools/walk/:
 # regenerated on demand, several MB each, looked at once and sent on.
 recordings/
+
+# Screenshots copied here to be sent on. They have to live inside the working
+# directory for the app to be able to open them, which is the only reason they
+# are not in the scratchpad with everything else. Same reasoning as
+# tools/walk/: regenerated on demand, looked at once, nothing reads them.
+shots/
