@@ -1,4 +1,24 @@
-# Nova — working notes
+# Nova — working notes (RETIRED COPY — DO NOT WORK FROM THIS REPO)
+
+> **STOP. This repo is retired and everything below it is frozen at build
+> 97.** The app moved to **`chyjyrkwn7-eng/index.html`**, which is the LIVE
+> repo serving ~40 classmates; that repo has the current `CLAUDE.md`, and
+> where the two disagree, **that one is right and this one is wrong**.
+>
+> Two differences matter enough to name here, because acting on the stale
+> version of either does real damage:
+>
+> - **This file still calls itself a test repo and describes going live as
+>   copying files across.** That copy happened at build 97. There is no test
+>   URL any more. A merge to `main` in `index.html` is live to the class in
+>   about a minute.
+> - **This file says to merge to `main` on green, without asking.** That is
+>   superseded. Madison asked for a hold: gates green, both reference
+>   screenshots sent, and then **wait for her go** before merging.
+>
+> `GO-LIVE.md` in this repo is history for the same reason. Nothing here is
+> deployed, and editing `index.html` here changes nothing anyone can see.
+
 
 Study app for Class 26E, used by ~40 classmates. **26E is a police academy
 class**, which is worth knowing before writing any copy for it: "While you

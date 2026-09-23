@@ -1,4 +1,15 @@
-# Going live — the copy list
+# Going live — the copy list (DONE, AT BUILD 97 — HISTORY)
+
+> **This copy has already happened.** `index.html`, `version.json`,
+> `launch/` and `tools/` all moved to **`chyjyrkwn7-eng/index.html`** at
+> build 97, and that repo is now the live one. There is no copy left to
+> make and no second URL to push to. Deploying is a merge to `main`
+> there — held, since Madison asked for it, until she has seen the
+> screenshots and said go.
+>
+> Kept because the reasoning below still applies to a deploy from the
+> live repo, and because the "Current state" figures record what shipped
+> at 97. Treat every number in it as of that date, not as current.
 
 The app ~40 classmates use lives in a different repo at a different URL.
 Going live is a copy, not a deploy. **Three things move, and all three
